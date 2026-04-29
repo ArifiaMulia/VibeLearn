@@ -1,0 +1,87 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: vibelearn_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vibelearn_db
+      POSTGRES_USER: vibelearn_user
+      POSTGRES_PASSWORD: vibelearn_pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vibelearn_user -d vibelearn_db"]
+      interval: 10s
+      retries: 5
+      start_period: 20s
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: vibelearn_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://vibelearn_user:vibelearn_pass@db:5432/vibelearn_db
+      JWT_SECRET: ${JWT_SECRET:-vibelearn_super_secret_key_change_in_prod}
+      NODE_ENV: production
+      PORT: 3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vibelearn-api.rule=Host(`${DOMAIN:-vibelearn.local}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.vibelearn-api.entrypoints=websecure"
+      - "traefik.http.routers.vibelearn-api.tls=true"
+      - "traefik.http.routers.vibelearn-api.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.strip-api.stripprefix.prefixes=/api"
+      - "traefik.http.routers.vibelearn-api.middlewares=strip-api"
+      - "traefik.http.services.vibelearn-api.loadbalancer.server.port=3000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vibelearn_frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vibelearn.rule=Host(`${DOMAIN:-vibelearn.local}`)"
+      - "traefik.http.routers.vibelearn.entrypoints=websecure"
+      - "traefik.http.routers.vibelearn.tls=true"
+      - "traefik.http.routers.vibelearn.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vibelearn.loadbalancer.server.port=80"
+      # HTTP -> HTTPS redirect
+      - "traefik.http.routers.vibelearn-http.rule=Host(`${DOMAIN:-vibelearn.local}`)"
+      - "traefik.http.routers.vibelearn-http.entrypoints=web"
+      - "traefik.http.routers.vibelearn-http.middlewares=redirect-https"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+
+  traefik:
+    image: traefik:v3.0
+    container_name: vibelearn_traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@vibelearn.id}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+
+volumes:
+  pgdata:
+  letsencrypt:
