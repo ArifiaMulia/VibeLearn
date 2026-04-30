@@ -37,14 +37,15 @@ services:
       PORT: 3000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.vibelearn-api.rule=Host(`${DOMAIN:-vibe.virtuenet.space}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.vibelearn-api.entrypoints=https"
-      - "traefik.http.routers.vibelearn-api.tls=true"
-      - "traefik.http.routers.vibelearn-api.tls.certresolver=letsencrypt"
-      - "traefik.http.middlewares.strip-api.stripprefix.prefixes=/api"
-      - "traefik.http.routers.vibelearn-api.middlewares=strip-api"
-      - "traefik.http.services.vibelearn-api.loadbalancer.server.port=3000"
       - "traefik.docker.network=coolify"
+      - "traefik.http.routers.vibe-api-https.rule=Host(`${DOMAIN:-vibe.virtuenet.space}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.vibe-api-https.entrypoints=https"
+      - "traefik.http.routers.vibe-api-https.tls=true"
+      - "traefik.http.routers.vibe-api-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.vibe-api-https.service=vibe-api-svc"
+      - "traefik.http.middlewares.vibe-strip-api.stripprefix.prefixes=/api"
+      - "traefik.http.routers.vibe-api-https.middlewares=vibe-strip-api"
+      - "traefik.http.services.vibe-api-svc.loadbalancer.server.port=3000"
 
   frontend:
     build:
@@ -58,17 +59,18 @@ services:
       - coolify
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.vibelearn.rule=Host(`${DOMAIN:-vibe.virtuenet.space}`)"
-      - "traefik.http.routers.vibelearn.entrypoints=https"
-      - "traefik.http.routers.vibelearn.tls=true"
-      - "traefik.http.routers.vibelearn.tls.certresolver=letsencrypt"
-      - "traefik.http.services.vibelearn.loadbalancer.server.port=80"
       - "traefik.docker.network=coolify"
+      - "traefik.http.routers.vibe-fe-https.rule=Host(`${DOMAIN:-vibe.virtuenet.space}`)"
+      - "traefik.http.routers.vibe-fe-https.entrypoints=https"
+      - "traefik.http.routers.vibe-fe-https.tls=true"
+      - "traefik.http.routers.vibe-fe-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.vibe-fe-https.service=vibe-fe-svc"
+      - "traefik.http.services.vibe-fe-svc.loadbalancer.server.port=80"
       # HTTP -> HTTPS redirect
-      - "traefik.http.routers.vibelearn-http.rule=Host(`${DOMAIN:-vibe.virtuenet.space}`)"
-      - "traefik.http.routers.vibelearn-http.entrypoints=http"
-      - "traefik.http.routers.vibelearn-http.middlewares=redirect-https"
-      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.vibe-fe-http.rule=Host(`${DOMAIN:-vibe.virtuenet.space}`)"
+      - "traefik.http.routers.vibe-fe-http.entrypoints=http"
+      - "traefik.http.routers.vibe-fe-http.middlewares=vibe-redirect-https"
+      - "traefik.http.middlewares.vibe-redirect-https.redirectscheme.scheme=https"
 
 networks:
   coolify:
