@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { User, Mail, CreditCard, Shield, Settings, Zap } from 'lucide-react';
-import { XPLevel, XPBadge } from '../../components/XPBadge';
+import BadgesGrid from '../../components/BadgesGrid';
+import { XPLevel } from '../../components/XPBadge';
 
 export default function ProfilePage() {
   const { user, authFetch, logout } = useAuth();
@@ -14,6 +15,14 @@ export default function ProfilePage() {
       authFetch('/progress/me').then(setProgress).catch(console.error);
     }
   }, []);
+
+  const mappedBadges = [
+    { name: 'First Lab', type: 'completion', earned: progress?.achievements.some(a => a.badge_name === 'first_lab') },
+    { name: 'On Fire', type: 'streak', earned: (progress?.streak || 0) >= 3 },
+    { name: 'Code Master', type: 'mastery', earned: (progress?.completed_lessons || 0) >= 10 },
+    { name: 'Secure Coder', type: 'security', earned: false },
+    { name: 'Lightning Fast', type: 'speed', earned: false },
+  ];
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -52,16 +61,8 @@ export default function ProfilePage() {
           </div>
 
           <div className="card">
-            <h3 style={{ marginBottom: '1.5rem' }}>Earned Badges</h3>
-            {progress.achievements?.length > 0 ? (
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                {progress.achievements.map((badge, i) => (
-                  <XPBadge key={i} badgeName={badge} />
-                ))}
-              </div>
-            ) : (
-              <p style={{ color: 'var(--text-muted)' }}>Complete lessons and labs to earn your first badges!</p>
-            )}
+            <h3 style={{ marginBottom: '1.5rem' }}>Achievements</h3>
+            <BadgesGrid badges={mappedBadges} />
           </div>
         </>
       )}

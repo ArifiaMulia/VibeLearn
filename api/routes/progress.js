@@ -11,14 +11,29 @@ router.get('/me', auth, async (req, res) => {
     const completedLessons = await pool.query(`SELECT COUNT(*) FROM progress WHERE user_id=$1 AND status='completed'`, [req.user.id]);
     const completedLabs = await pool.query(`SELECT COUNT(*) FROM lab_sessions WHERE user_id=$1 AND completed_at IS NOT NULL`, [req.user.id]);
     const completedCourses = await pool.query(`SELECT COUNT(*) FROM enrollments WHERE user_id=$1 AND completed_at IS NOT NULL`, [req.user.id]);
-    const recentXP = await pool.query(`SELECT * FROM xp_log WHERE user_id=$1 ORDER BY created_at DESC LIMIT 10`, [req.user.id]);
+    
+    // Daily goal stats
+    const lessonsToday = await pool.query(`
+      SELECT COUNT(*) FROM progress 
+      WHERE user_id=$1 AND status='completed' AND created_at >= CURRENT_DATE
+    `, [req.user.id]);
+
+    // Activity history (last 7 days) for the dashboard chart
+    const activityHistory = await pool.query(`
+      SELECT TO_CHAR(created_at, 'Mon DD') as n, COUNT(*) as v 
+      FROM usage_logs WHERE user_id=$1 AND created_at > NOW() - INTERVAL '7 days'
+      GROUP BY n, DATE(created_at) ORDER BY DATE(created_at) ASC
+    `);
+
     res.json({
       total_xp: parseInt(xp.rows[0].total),
       achievements: achievements.rows,
       completed_lessons: parseInt(completedLessons.rows[0].count),
+      completed_lessons_today: parseInt(lessonsToday.rows[0].count),
       completed_labs: parseInt(completedLabs.rows[0].count),
       completed_courses: parseInt(completedCourses.rows[0].count),
-      recent_xp: recentXP.rows,
+      activity_history: activityHistory.rows,
+      streak: 3, // Mocked streak
     });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });

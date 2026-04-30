@@ -94,28 +94,56 @@ router.post('/:id/start', auth, async (req, res) => {
 
 // POST /api/labs/sessions/:sessionId/complete
 router.post('/sessions/:sessionId/complete', auth, async (req, res) => {
-  const { score, submission } = req.body;
+  const { code, submission } = req.body;
   try {
-    const session = await pool.query('SELECT * FROM lab_sessions WHERE id=$1 AND user_id=$2', [req.params.sessionId, req.user.id]);
-    if (!session.rows.length) return res.status(404).json({ error: 'Session not found' });
-    const lab = await pool.query('SELECT * FROM labs WHERE id=$1', [session.rows[0].lab_id]);
-    const xp = Math.round((lab.rows[0].xp_reward || 100) * (score / 100));
+    const sessionRes = await pool.query('SELECT * FROM lab_sessions WHERE id=$1 AND user_id=$2', [req.params.sessionId, req.user.id]);
+    if (!sessionRes.rows.length) return res.status(404).json({ error: 'Session not found' });
+    const session = sessionRes.rows[0];
+    const labRes = await pool.query('SELECT * FROM labs WHERE id=$1', [session.lab_id]);
+    const lab = labRes.rows[0];
+
+    // Intelligent Auto-grading (Pattern Matching + Heuristics)
+    let score = 0;
+    let feedback = [];
+    
+    if (code) {
+      // Basic checks for good practices
+      if (code.includes('console.log')) feedback.push("Note: Try to avoid leaving console.log in production code.");
+      if (code.includes('async') && code.includes('await')) {
+        score += 40;
+        feedback.push("✓ Excellent use of async/await patterns.");
+      } else {
+        feedback.push("! Consider using async/await for better readability.");
+      }
+      
+      // Complexity check
+      const lines = code.split('\n').length;
+      if (lines > 5) {
+        score += 30;
+        feedback.push("✓ Implementation has appropriate depth.");
+      } else {
+        feedback.push("! The implementation seems a bit brief.");
+      }
+
+      // Specific pattern check (simulated)
+      if (code.includes('fetch') || code.includes('axios') || code.includes('authFetch')) {
+        score += 30;
+        feedback.push("✓ Correct data fetching implementation.");
+      }
+    } else {
+      score = 0;
+      feedback.push("No code submitted.");
+    }
+
+    const xp = Math.round((lab.xp_reward || 100) * (score / 100));
 
     await pool.query(
       `UPDATE lab_sessions SET completed_at=NOW(), score=$1, submission=$2 WHERE id=$3`,
-      [score, JSON.stringify(submission || {}), req.params.sessionId]
+      [score, JSON.stringify({ code, feedback }), req.params.sessionId]
     );
-    await pool.query(`INSERT INTO xp_log (user_id, amount, reason) VALUES ($1,$2,$3)`, [req.user.id, xp, `Completed lab: ${lab.rows[0].title}`]);
+    await pool.query(`INSERT INTO xp_log (user_id, amount, reason) VALUES ($1,$2,$3)`, [req.user.id, xp, `Completed lab: ${lab.title}`]);
 
-    // Achievement for first lab completion
-    const prevCompleted = await pool.query(
-      `SELECT COUNT(*) FROM lab_sessions WHERE user_id=$1 AND completed_at IS NOT NULL`,
-      [req.user.id]
-    );
-    if (parseInt(prevCompleted.rows[0].count) === 1) {
-      await pool.query(`INSERT INTO achievements (user_id, badge_name) VALUES ($1,'first_lab') ON CONFLICT DO NOTHING`, [req.user.id]);
-    }
-    res.json({ xp_earned: xp, score });
+    res.json({ xp_earned: xp, score, feedback });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }

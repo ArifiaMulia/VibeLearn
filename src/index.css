@@ -350,3 +350,92 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
   h1 { font-size: 1.8rem; }
   h2 { font-size: 1.4rem; }
 }
+
+/* ── Recharts Customization ── */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border-light);
+}
+.recharts-tooltip-cursor {
+  fill: var(--bg-surface);
+  opacity: 0.5;
+}
+.recharts-default-tooltip {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+.recharts-tooltip-label {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  margin-bottom: 4px !important;
+}
+
+/* ── Interactive Goal Circle ── */
+.goal-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--bg-surface);
+  border: 4px solid var(--border-light);
+  transition: var(--transition);
+}
+.goal-circle.active {
+  border-color: var(--success);
+  box-shadow: 0 0 15px var(--success-glow);
+}
+
+/* ── Badge Grid ── */
+.badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  transition: var(--transition);
+}
+.badge-item:hover {
+  background: var(--bg-card-hover);
+  transform: scale(1.05);
+}
+.badge-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-glow);
+  color: var(--primary-light);
+  margin-bottom: 0.25rem;
+}
+
+/* ── Video Player ── */
+.video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: black;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 2rem;
+  text-align: center;
+}

@@ -112,19 +112,29 @@ router.post('/:id/enroll', auth, async (req, res) => {
   }
 });
 
-// GET /api/courses/my/enrollments
-router.get('/my/enrollments', auth, async (req, res) => {
+// POST /api/courses/generate-content — AI Assistant
+router.post('/generate-content', auth, requireRole('super_admin', 'master'), async (req, res) => {
+  const { topic, type } = req.body;
   try {
-    const result = await pool.query(
-      `SELECT c.*, e.enrolled_at, e.completed_at,
-        (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as total_lessons,
-        (SELECT COUNT(*) FROM progress p WHERE p.user_id = $1 AND p.lesson_id IN (SELECT id FROM lessons WHERE course_id = c.id) AND p.status = 'completed') as completed_lessons
-       FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE e.user_id = $1`,
-      [req.user.id]
-    );
-    res.json(result.rows);
+    // Mock AI Response
+    let content = {};
+    if (type === 'outline') {
+      content = [
+        { title: `Basics of ${topic}`, order: 1 },
+        { title: `Intermediate ${topic} Patterns`, order: 2 },
+        { title: `Mastering ${topic} in Production`, order: 3 },
+      ];
+    } else {
+      content = {
+        title: `Deep Dive into ${topic}`,
+        markdown: `## Understanding ${topic}\n\n${topic} is a transformative technology that allows developers to...`
+      };
+    }
+
+    // Simulate AI thinking time
+    setTimeout(() => res.json(content), 1500);
   } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'AI Assistant failed' });
   }
 });
 

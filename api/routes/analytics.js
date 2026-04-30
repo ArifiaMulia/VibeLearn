@@ -18,10 +18,17 @@ router.get('/overview', auth, requireRole('super_admin', 'master'), async (req, 
     const labSessions = await pool.query('SELECT COUNT(*) FROM lab_sessions');
     const totalXP = await pool.query('SELECT COALESCE(SUM(amount),0) as total FROM xp_log');
 
-    // Daily active users last 7 days
+    // Churn Risk: users inactive > 7 days
+    const retentionRisk = await pool.query(`
+      SELECT COUNT(*) FROM users 
+      WHERE role='participant' AND (last_activity < NOW() - INTERVAL '7 days' OR last_activity IS NULL)
+    `);
+
+    // Daily active users last 14 days for trend
     const dauData = await pool.query(`
       SELECT DATE(last_activity) as date, COUNT(*) as count FROM users
-      WHERE last_activity > NOW() - INTERVAL '7 days' GROUP BY DATE(last_activity) ORDER BY date ASC`
+      WHERE last_activity > NOW() - INTERVAL '14 days' AND last_activity IS NOT NULL
+      GROUP BY DATE(last_activity) ORDER BY date ASC`
     );
 
     // Top courses by enrollment
@@ -36,13 +43,23 @@ router.get('/overview', auth, requireRole('super_admin', 'master'), async (req, 
       ORDER BY ul.created_at DESC LIMIT 20`
     );
 
+    // Calculate simple trend
+    const currentDAU = dauData.rows.length > 0 ? parseInt(dauData.rows[dauData.rows.length - 1].count) : 0;
+    const prevDAU = dauData.rows.length > 1 ? parseInt(dauData.rows[dauData.rows.length - 2].count) : 0;
+    const dauTrend = prevDAU === 0 ? (currentDAU > 0 ? 100 : 0) : Math.round(((currentDAU - prevDAU) / prevDAU) * 100);
+
     res.json({
-      users: { total: parseInt(totalUsers.rows[0].count), active_today: parseInt(activeToday.rows[0].count) },
+      users: { 
+        total: parseInt(totalUsers.rows[0].count), 
+        active_today: parseInt(activeToday.rows[0].count),
+        retention_risk: parseInt(retentionRisk.rows[0].count)
+      },
       courses: { total: parseInt(totalCourses.rows[0].count) },
       labs: { total: parseInt(totalLabs.rows[0].count), sessions: parseInt(labSessions.rows[0].count) },
       enrollments: { total: parseInt(totalEnrollments.rows[0].count), completed: parseInt(completions.rows[0].count) },
       total_xp: parseInt(totalXP.rows[0].total),
       dau: dauData.rows,
+      dau_trend: dauTrend,
       top_courses: topCourses.rows,
       recent_activity: recentActivity.rows,
     });
