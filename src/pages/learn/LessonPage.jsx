@@ -4,6 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { ArrowLeft, CheckCircle, Zap, Play, Trophy } from 'lucide-react';
 import { XPPopup } from '../../components/XPBadge';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import mermaid from 'mermaid';
 
 export default function LessonPage() {
   const { id } = useParams();
@@ -19,19 +23,33 @@ export default function LessonPage() {
   const [xpEarned, setXPEarned] = useState(0);
 
   useEffect(() => {
+    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+  }, []);
+
+  useEffect(() => {
     authFetch(`/lessons/${id}`)
       .then(setLesson)
       .catch(err => { error(err.message); navigate('/courses'); })
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (lesson) {
+      setTimeout(() => {
+        try {
+          mermaid.run({ querySelector: '.mermaid' });
+        } catch (e) {
+          console.error("Mermaid error:", e);
+        }
+      }, 100);
+    }
+  }, [lesson]);
+
   const handleComplete = async () => {
     if (lesson.type === 'quiz') {
-      // Validate all answered
       if (Object.keys(quizAnswers).length < lesson.quizzes.length) {
         return error('Please answer all questions before completing.');
       }
-      // Calculate score
       let correct = 0;
       lesson.quizzes.forEach((q, i) => { if (quizAnswers[q.id] === q.correct_answer) correct++; });
       const score = Math.round((correct / lesson.quizzes.length) * 100);
@@ -82,41 +100,67 @@ export default function LessonPage() {
 
       {/* Video Content */}
       {lesson.type === 'video' && lesson.video_url && (
-        <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-light)' }}>
+        <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-light)', position: 'relative' }}>
            <Play size={48} color="rgba(255,255,255,0.2)" />
-           {/* In a real app, render an iframe or video tag here */}
            <span style={{ position: 'absolute', color: 'var(--text-muted)' }}>Video Player Placeholder</span>
         </div>
       )}
 
-      {/* Text Content */}
+      {/* Text Content rendered with Markdown */}
       {(lesson.type === 'text' || lesson.type === 'video') && (
-        <div className="card" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-          {lesson.content.split('\\n\\n').map((paragraph, i) => {
-            if (paragraph.startsWith('# ')) return <h2 key={i} style={{ marginTop: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>{paragraph.replace('# ', '')}</h2>;
-            if (paragraph.startsWith('## ')) return <h3 key={i} style={{ marginTop: '1.5rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>{paragraph.replace('## ', '')}</h3>;
-            if (paragraph.startsWith('- ')) return <ul key={i} style={{ marginLeft: '1.5rem', marginBottom: '1rem' }}>{paragraph.split('\\n').map((li, j) => <li key={j}>{li.replace('- ', '')}</li>)}</ul>;
-            return <p key={i} style={{ marginBottom: '1rem' }}>{paragraph}</p>;
-          })}
+        <div className="card markdown-content" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]} 
+            rehypePlugins={[rehypeRaw]}
+            components={{
+              h1: ({node, ...props}) => <h1 style={{ marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-primary)' }} {...props} />,
+              h2: ({node, ...props}) => <h2 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }} {...props} />,
+              h3: ({node, ...props}) => <h3 style={{ marginTop: '1.25rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }} {...props} />,
+              p: ({node, ...props}) => <p style={{ marginBottom: '1rem' }} {...props} />,
+              ul: ({node, ...props}) => <ul style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'disc' }} {...props} />,
+              ol: ({node, ...props}) => <ol style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'decimal' }} {...props} />,
+              li: ({node, ...props}) => <li style={{ marginBottom: '0.5rem' }} {...props} />,
+              blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid var(--primary)', paddingLeft: '1rem', color: 'var(--text-muted)', margin: '1rem 0', background: 'rgba(124,58,237,0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)' }} {...props} />,
+              code: ({node, inline, className, children, ...props}) => {
+                const match = /language-(\w+)/.exec(className || '');
+                if (!inline && match && match[1] === 'mermaid') {
+                  return <div className="mermaid" style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0', padding: '1rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>{String(children).replace(/\n$/, '')}</div>;
+                }
+                return !inline ? (
+                  <pre style={{ background: '#1e1e2e', padding: '1rem', borderRadius: 'var(--radius-md)', overflowX: 'auto', marginBottom: '1rem', border: '1px solid var(--border-light)' }}>
+                    <code style={{ color: '#cdd6f4', fontFamily: 'monospace' }} {...props}>{children}</code>
+                  </pre>
+                ) : (
+                  <code style={{ background: 'rgba(124,58,237,0.15)', padding: '0.2rem 0.4rem', borderRadius: '4px', color: 'var(--primary)', fontFamily: 'monospace', fontSize: '0.9em' }} {...props}>{children}</code>
+                )
+              }
+            }}
+          >
+            {lesson.content}
+          </ReactMarkdown>
         </div>
       )}
 
       {/* Quiz Content */}
       {lesson.type === 'quiz' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <p style={{ fontSize: '1.1rem' }}>{lesson.content}</p>
+          <div className="markdown-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lesson.content}</ReactMarkdown>
+          </div>
           {lesson.quizzes?.map((q, i) => (
             <div key={q.id} className="card">
               <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {q.options.map((opt, optIdx) => (
                   <button key={optIdx} 
-                    onClick={() => setQuizAnswers(prev => ({ ...prev, [q.id]: optIdx }))}
+                    onClick={() => !isCompleted && setQuizAnswers(prev => ({ ...prev, [q.id]: optIdx }))}
+                    disabled={isCompleted}
                     style={{ 
                       textAlign: 'left', padding: '1rem', borderRadius: 'var(--radius-sm)',
                       background: quizAnswers[q.id] === optIdx ? 'rgba(124,58,237,0.15)' : 'var(--bg-surface)',
                       border: `1px solid ${quizAnswers[q.id] === optIdx ? 'var(--primary)' : 'var(--border-light)'}`,
-                      color: 'var(--text-primary)', cursor: 'pointer', transition: 'var(--transition)'
+                      color: 'var(--text-primary)', cursor: isCompleted ? 'default' : 'pointer', transition: 'var(--transition)',
+                      opacity: isCompleted && quizAnswers[q.id] !== optIdx ? 0.6 : 1
                     }}>
                     {opt}
                   </button>
@@ -130,12 +174,12 @@ export default function LessonPage() {
       {/* Completion CTA */}
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
         <button 
-          className="btn btn-primary btn-lg" 
+          className={`btn btn-lg ${isCompleted ? 'btn-ghost' : 'btn-primary'}`} 
           onClick={handleComplete} 
           disabled={completing || isCompleted}
-          style={{ minWidth: 200, display: 'flex', justifyContent: 'center' }}
+          style={{ minWidth: 200, display: 'flex', justifyContent: 'center', opacity: isCompleted ? 0.6 : 1 }}
         >
-          {isCompleted ? <><CheckCircle size={18} /> Completed</> : completing ? 'Processing...' : <><Trophy size={18} /> Complete Lesson</>}
+          {isCompleted ? <><CheckCircle size={18} /> Already Completed</> : completing ? 'Processing...' : <><Trophy size={18} /> Complete Lesson</>}
         </button>
       </div>
     </div>

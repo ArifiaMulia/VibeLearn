@@ -163,10 +163,69 @@ export default function CourseEditor() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button className="btn btn-ghost btn-sm" onClick={() => removeLesson(lesson.id)} style={{ color: 'var(--danger)' }}><Trash2 size={14} /></button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => info("Editor for individual lesson content is coming soon!")}><ChevronRight size={14} /></button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => {
+                    const newLessons = [...lessons];
+                    newLessons[index].expanded = !newLessons[index].expanded;
+                    setLessons(newLessons);
+                  }}>
+                    <ChevronRight size={14} style={{ transform: lesson.expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+                  </button>
                 </div>
               </div>
-            ))}
+              
+              {/* Expandable Lesson Editor */}
+              {lesson.expanded && (
+                <div className="card" style={{ marginLeft: '2.5rem', marginTop: '-0.5rem', marginBottom: '1rem', background: 'var(--bg-card)', borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+                  <div className="form-group mb-3">
+                    <label className="form-label">Lesson Type</label>
+                    <select 
+                      className="form-select" 
+                      value={lesson.type || 'text'} 
+                      onChange={e => {
+                        const newLessons = [...lessons];
+                        newLessons[index].type = e.target.value;
+                        setLessons(newLessons);
+                      }}
+                    >
+                      <option value="text">Text / Article</option>
+                      <option value="video">Video</option>
+                      <option value="quiz">Quiz</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group mb-3">
+                    <label className="form-label">XP Reward</label>
+                    <input 
+                      type="number"
+                      className="form-input" 
+                      value={lesson.xp_reward || 50} 
+                      onChange={e => {
+                        const newLessons = [...lessons];
+                        newLessons[index].xp_reward = parseInt(e.target.value) || 0;
+                        setLessons(newLessons);
+                      }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Content (Markdown Supported)</label>
+                    <textarea 
+                      className="form-input" 
+                      rows="6"
+                      value={lesson.content || ''} 
+                      placeholder="# Heading\nWrite your content here..."
+                      onChange={e => {
+                        const newLessons = [...lessons];
+                        newLessons[index].content = e.target.value;
+                        setLessons(newLessons);
+                      }}
+                      style={{ resize: 'vertical', fontFamily: 'monospace' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
 
             {lessons.length === 0 && (
               <div className="card text-center" style={{ padding: '3rem', borderStyle: 'dashed' }}>
