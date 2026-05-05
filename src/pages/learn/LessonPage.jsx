@@ -2,69 +2,70 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
-import { ArrowLeft, ArrowRight, CheckCircle, Zap, Play, Trophy, BookOpen } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Zap, Play, Trophy, ExternalLink } from 'lucide-react';
 import { XPPopup } from '../../components/XPBadge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 
-// Resolve a video_url to the correct embed URL regardless of format
-function resolveEmbedUrl(url) {
-  if (!url) return null;
-  // Already an embed URL
-  if (url.includes('/embed/')) return url;
-  // youtube.com/watch?v=ID
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
-  if (ytMatch) return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0`;
-  return url;
-}
-
-// Detect if URL is a direct video file
-function isDirectVideo(url) {
-  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
-}
-
+// Always show a watchable fallback link below the video
 function VideoPlayer({ url, title }) {
-  const embedUrl = resolveEmbedUrl(url);
-  const direct = isDirectVideo(url);
-  const [embedFailed, setEmbedFailed] = useState(false);
+  if (!url) return null;
 
-  if (direct) {
+  // Determine embed URL and external watch URL
+  let embedUrl = url;
+  let externalUrl = url;
+  let platform = 'Video';
+
+  if (url.includes('vimeo.com')) {
+    platform = 'Vimeo';
+    // Already a player URL?
+    if (!url.includes('player.vimeo.com')) {
+      const match = url.match(/vimeo\.com\/(\d+)/);
+      if (match) embedUrl = `https://player.vimeo.com/video/${match[1]}`;
+    }
+    const idMatch = embedUrl.match(/\/video\/(\d+)/);
+    externalUrl = idMatch ? `https://vimeo.com/${idMatch[1]}` : url;
+  } else if (url.includes('youtube') || url.includes('youtu.be')) {
+    platform = 'YouTube';
+    const idMatch = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([^&?]+)/);
+    if (idMatch) {
+      embedUrl = `https://www.youtube-nocookie.com/embed/${idMatch[1]}?rel=0`;
+      externalUrl = `https://www.youtube.com/watch?v=${idMatch[1]}`;
+    }
+  } else if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
     return (
       <video controls style={{ width: '100%', height: '100%', objectFit: 'contain' }}>
         <source src={url} />
-        Your browser does not support the video tag.
       </video>
     );
   }
 
-  if (embedFailed) {
-    // Fallback: open in new tab
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1rem', background: 'var(--bg-card)' }}>
-        <Play size={48} color="var(--text-muted)" />
-        <p style={{ color: 'var(--text-muted)', textAlign: 'center', maxWidth: 320, fontSize: '0.9rem' }}>
-          This video cannot be embedded. Click below to watch it in a new tab.
-        </p>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-          <Play size={16} /> Watch Video
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+        <iframe
+          src={embedUrl}
+          width="100%"
+          height="100%"
+          style={{ border: 'none' }}
+          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          allowFullScreen
+          title={title}
+        />
+      </div>
+      {/* Always show external watch link as backup */}
+      <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
+        <a href={externalUrl} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none' }}
+          onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          <ExternalLink size={12} /> Watch on {platform}
         </a>
       </div>
-    );
-  }
-
-  return (
-    <iframe
-      src={embedUrl}
-      width="100%"
-      height="100%"
-      style={{ border: 'none' }}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowFullScreen
-      title={title}
-      onError={() => setEmbedFailed(true)}
-    />
+    </div>
   );
 }
 
@@ -76,8 +77,6 @@ export default function LessonPage() {
 
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [enrolled, setEnrolled] = useState(false);
-  const [enrolling, setEnrolling] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showXP, setShowXP] = useState(false);
@@ -88,12 +87,11 @@ export default function LessonPage() {
   }, []);
 
   useEffect(() => {
+    setLesson(null);
+    setLoading(true);
+    setQuizAnswers({});
     authFetch(`/lessons/${id}`)
-      .then(data => {
-        setLesson(data);
-        // Check enrollment via progress
-        setEnrolled(!!data.user_progress);
-      })
+      .then(setLesson)
       .catch(err => { error(err.message); navigate('/courses'); })
       .finally(() => setLoading(false));
   }, [id]);
@@ -106,35 +104,18 @@ export default function LessonPage() {
     }
   }, [lesson]);
 
-  const handleEnroll = async () => {
-    setEnrolling(true);
-    try {
-      // Mark lesson as started by posting progress with "in_progress"
-      await authFetch(`/lessons/${id}/complete`, {
-        method: 'POST',
-        body: JSON.stringify({ score: 0, status: 'in_progress' })
-      });
-      setEnrolled(true);
-      success('Enrolled! Let\'s start learning.');
-    } catch (err) {
-      // If already exists or any error, just set enrolled
-      setEnrolled(true);
-    } finally {
-      setEnrolling(false);
-    }
-  };
-
   const handleComplete = async (andNavigateNext = false) => {
     if (lesson.type === 'quiz') {
-      if (Object.keys(quizAnswers).length < lesson.quizzes.length) {
+      if (Object.keys(quizAnswers).length < (lesson.quizzes?.length || 0)) {
         return error('Please answer all questions before completing.');
       }
       let correct = 0;
-      lesson.quizzes.forEach(q => { if (quizAnswers[q.id] === q.correct_answer) correct++; });
+      lesson.quizzes?.forEach(q => { if (quizAnswers[q.id] === q.correct_answer) correct++; });
       const score = Math.round((correct / lesson.quizzes.length) * 100);
       if (score < 80) return error(`You scored ${score}%. You need 80% to pass.`);
     }
 
+    // If already completed and user just wants to navigate next
     if (isCompleted && andNavigateNext && lesson.next_lesson_id) {
       navigate(`/lessons/${lesson.next_lesson_id}`);
       return;
@@ -147,12 +128,12 @@ export default function LessonPage() {
       });
       setXPEarned(res.xp_earned || lesson.xp_reward);
       setShowXP(true);
+      success('Lesson completed! 🎉');
 
       if (andNavigateNext && lesson.next_lesson_id) {
-        setTimeout(() => navigate(`/lessons/${lesson.next_lesson_id}`), 1500);
+        setTimeout(() => navigate(`/lessons/${lesson.next_lesson_id}`), 1200);
       } else {
-        success('Lesson completed! Awesome job. 🎉');
-        setTimeout(() => navigate(`/courses/${lesson.course_id}`), 2500);
+        setTimeout(() => navigate(`/courses/${lesson.course_id}`), 2200);
       }
     } catch (err) {
       error(err.message);
@@ -160,50 +141,13 @@ export default function LessonPage() {
     }
   };
 
+  const handleNext = () => handleComplete(true);
+  const handlePrev = () => navigate(`/lessons/${lesson.prev_lesson_id}`);
+
   if (loading) return <div className="skeleton" style={{ height: '70vh', borderRadius: 'var(--radius-lg)' }} />;
   if (!lesson) return null;
 
   const isCompleted = lesson.user_progress?.status === 'completed';
-
-  // ── Enroll Gate ──
-  // Show "Enroll" gate only if the user has never started this lesson
-  if (!enrolled && !isCompleted) {
-    return (
-      <div style={{ maxWidth: 600, margin: '4rem auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center' }}>
-        <div style={{
-          width: 72, height: 72, borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 40px var(--primary-glow)',
-        }}>
-          <BookOpen size={32} color="white" />
-        </div>
-        <div>
-          <h1 style={{ marginBottom: '0.5rem', fontSize: '1.6rem' }}>{lesson.title}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-            You're about to start this lesson. Click below to enroll and begin learning!
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <span className="badge badge-accent" style={{ textTransform: 'uppercase' }}>{lesson.type}</span>
-          <span className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <Zap size={12} /> {lesson.xp_reward} XP
-          </span>
-        </div>
-        <button
-          className="btn btn-primary btn-lg"
-          onClick={handleEnroll}
-          disabled={enrolling}
-          style={{ minWidth: 200, fontSize: '1rem' }}
-        >
-          {enrolling ? 'Enrolling...' : <><Play size={18} /> Enroll Now</>}
-        </button>
-        <button className="btn btn-ghost" onClick={() => navigate(`/courses/${lesson.course_id}`)}>
-          <ArrowLeft size={15} /> Back to Course
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -215,25 +159,23 @@ export default function LessonPage() {
 
       {/* Header */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <span className="badge badge-accent" style={{ textTransform: 'uppercase' }}>{lesson.type}</span>
           <span className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             <Zap size={12} /> {lesson.xp_reward} XP
           </span>
           {isCompleted && <span className="badge badge-success"><CheckCircle size={12} /> Completed</span>}
         </div>
-        <h1 style={{ marginBottom: '1rem' }}>{lesson.title}</h1>
+        <h1 style={{ marginBottom: '0.5rem' }}>{lesson.title}</h1>
       </div>
 
       {/* Video Content */}
       {lesson.type === 'video' && lesson.video_url && (
-        <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '1.5rem' }}>
-          <VideoPlayer url={lesson.video_url} title={lesson.title} />
-        </div>
+        <VideoPlayer url={lesson.video_url} title={lesson.title} />
       )}
 
-      {/* Text Content rendered with Markdown */}
-      {(lesson.type === 'text' || lesson.type === 'video') && (
+      {/* Text / Video Markdown Content */}
+      {(lesson.type === 'text' || lesson.type === 'video') && lesson.content && (
         <div className="card markdown-content" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -246,7 +188,7 @@ export default function LessonPage() {
               ul: ({node, ...props}) => <ul style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'disc' }} {...props} />,
               ol: ({node, ...props}) => <ol style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'decimal' }} {...props} />,
               li: ({node, ...props}) => <li style={{ marginBottom: '0.5rem' }} {...props} />,
-              blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid var(--primary)', paddingLeft: '1rem', color: 'var(--text-muted)', margin: '1rem 0', background: 'rgba(124,58,237,0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)' }} {...props} />,
+              blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid var(--primary)', color: 'var(--text-muted)', margin: '1rem 0', background: 'rgba(124,58,237,0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)' }} {...props} />,
               code: ({node, inline, className, children, ...props}) => {
                 const match = /language-(\w+)/.exec(className || '');
                 if (!inline && match && match[1] === 'mermaid') {
@@ -286,43 +228,52 @@ export default function LessonPage() {
                       background: quizAnswers[q.id] === optIdx ? 'rgba(124,58,237,0.15)' : 'var(--bg-surface)',
                       border: `1px solid ${quizAnswers[q.id] === optIdx ? 'var(--primary)' : 'var(--border-light)'}`,
                       color: 'var(--text-primary)', cursor: isCompleted ? 'default' : 'pointer', transition: 'var(--transition)',
-                      opacity: isCompleted && quizAnswers[q.id] !== optIdx ? 0.6 : 1
+                      opacity: isCompleted && quizAnswers[q.id] !== optIdx ? 0.6 : 1,
                     }}>
                     {opt}
                   </button>
                 ))}
               </div>
+              {isCompleted && q.explanation && (
+                <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--success)', background: 'rgba(16,185,129,0.08)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--success)' }}>
+                  💡 {q.explanation}
+                </p>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {/* Completion CTA & Navigation */}
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      {/* Navigation & Completion */}
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', paddingBottom: '2rem' }}>
         <div>
           {lesson.prev_lesson_id && (
-            <button className="btn btn-secondary" onClick={() => navigate(`/lessons/${lesson.prev_lesson_id}`)}>
+            <button className="btn btn-secondary" onClick={handlePrev}>
               <ArrowLeft size={16} /> Previous
             </button>
           )}
         </div>
 
-        <button
-          className={`btn btn-lg ${isCompleted ? 'btn-ghost' : 'btn-primary'}`}
-          onClick={() => handleComplete(false)}
-          disabled={completing || isCompleted}
-          style={{ minWidth: 200, display: 'flex', justifyContent: 'center', opacity: isCompleted ? 0.6 : 1 }}
-        >
-          {isCompleted ? <><CheckCircle size={18} /> Already Completed</> : completing ? 'Processing...' : <><Trophy size={18} /> Complete Lesson</>}
-        </button>
+        {!isCompleted && (
+          <button
+            className="btn btn-primary btn-lg"
+            onClick={() => handleComplete(false)}
+            disabled={completing}
+            style={{ minWidth: 200, display: 'flex', justifyContent: 'center' }}
+          >
+            {completing ? 'Processing...' : <><Trophy size={18} /> Complete Lesson</>}
+          </button>
+        )}
+
+        {isCompleted && (
+          <span className="badge badge-success" style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
+            <CheckCircle size={16} /> Completed
+          </span>
+        )}
 
         <div>
           {lesson.next_lesson_id && (
-            <button
-              className="btn btn-primary"
-              onClick={() => handleComplete(true)}
-              disabled={completing}
-            >
+            <button className="btn btn-primary" onClick={handleNext} disabled={completing}>
               Next <ArrowRight size={16} />
             </button>
           )}

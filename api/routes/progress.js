@@ -69,4 +69,23 @@ router.get('/course/:courseId', auth, async (req, res) => {
   }
 });
 
+// GET /api/progress/recent — last 10 completed lessons for the notification bell
+router.get('/recent', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.completed_at, p.created_at, p.xp_earned, l.title AS lesson_title, c.title AS course_title
+       FROM progress p
+       JOIN lessons l ON p.lesson_id = l.id
+       JOIN courses c ON l.course_id = c.id
+       WHERE p.user_id = $1 AND p.status = 'completed'
+       ORDER BY COALESCE(p.completed_at, p.created_at) DESC LIMIT 10`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
