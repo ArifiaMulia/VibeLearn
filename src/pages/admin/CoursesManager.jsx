@@ -2,16 +2,38 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { BookOpen, Plus, Edit2, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function CoursesManager() {
   const { authFetch } = useAuth();
-  const { error } = useAlert();
+  const { error, success } = useAlert();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    authFetch('/courses').then(setCourses).catch(e => error(e.message)).finally(() => setLoading(false));
+    loadCourses();
   }, []);
+
+  const loadCourses = async () => {
+    try {
+      const data = await authFetch('/courses');
+      setCourses(data);
+    } catch (e) { error(e.message); }
+    setLoading(false);
+  };
+
+  const handleNew = () => navigate('/admin/courses/edit/new');
+  const handleEdit = (id) => navigate(`/admin/courses/edit/${id}`);
+  
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this course?')) return;
+    try {
+      await authFetch(`/courses/${id}`, { method: 'DELETE' });
+      success('Course deleted');
+      loadCourses();
+    } catch (e) { error(e.message); }
+  };
 
   if (loading) return <div className="skeleton" style={{ height: '70vh', borderRadius: 'var(--radius-lg)' }} />;
 
@@ -21,7 +43,7 @@ export default function CoursesManager() {
         <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <BookOpen color="var(--primary)" /> Course Builder
         </h2>
-        <button className="btn btn-primary"><Plus size={16} /> New Course</button>
+        <button className="btn btn-primary" onClick={handleNew}><Plus size={16} /> New Course</button>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -41,8 +63,8 @@ export default function CoursesManager() {
                 <td style={{ padding: '1rem 1.5rem' }}><span className={`badge diff-${c.level}`}>{c.level}</span></td>
                 <td style={{ padding: '1rem 1.5rem', textTransform: 'capitalize' }}>{c.category}</td>
                 <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                  <button className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
-                  <button className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--danger)' }}><Trash2 size={16} /></button>
+                  <button className="btn btn-ghost" onClick={() => handleEdit(c.id)} style={{ padding: '0.4rem', color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
+                  <button className="btn btn-ghost" onClick={() => handleDelete(c.id)} style={{ padding: '0.4rem', color: 'var(--danger)' }}><Trash2 size={16} /></button>
                 </td>
               </tr>
             ))}

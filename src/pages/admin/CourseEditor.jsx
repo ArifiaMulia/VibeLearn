@@ -44,15 +44,43 @@ export default function CourseEditor() {
   };
 
   const handleSave = async () => {
+    if (!course.title) return error("Course title is required");
     try {
       const method = id === 'new' ? 'POST' : 'PUT';
       const url = id === 'new' ? '/courses' : `/courses/${id}`;
-      const savedCourse = await authFetch(url, { method, body: JSON.stringify(course) });
       
-      // Save lessons sequentially (in a real app, do batch update)
-      success("Course saved!");
+      // Merge lessons into the request body
+      const payload = { ...course, lessons };
+      
+      const savedCourse = await authFetch(url, { method, body: JSON.stringify(payload) });
+      
+      success(`Course ${id === 'new' ? 'created' : 'updated'} successfully!`);
       if (id === 'new') navigate(`/admin/courses/edit/${savedCourse.id}`);
-    } catch (e) { error(e.message); }
+      else {
+        // Refresh local state with saved data
+        setCourse(savedCourse);
+        setLessons(savedCourse.lessons || lessons);
+      }
+    } catch (e) { 
+      console.error('Save failed:', e);
+      error(e.message || "Failed to save course. Check your permissions."); 
+    }
+  };
+
+  const addLesson = () => {
+    const newLesson = {
+      id: 'temp-' + Date.now(),
+      title: 'New Lesson',
+      content: '',
+      type: 'text',
+      xp_reward: 50,
+      order_index: lessons.length + 1
+    };
+    setLessons([...lessons, newLesson]);
+  };
+
+  const removeLesson = (lessonId) => {
+    setLessons(lessons.filter(l => l.id !== lessonId));
   };
 
   if (loading) return <div className="skeleton" style={{ height: '80vh' }} />;
@@ -114,7 +142,7 @@ export default function CourseEditor() {
         <div className="flex-col gap-2">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3>Course Structure</h3>
-            <button className="btn btn-ghost btn-sm"><Plus size={14} /> Add Lesson</button>
+            <button className="btn btn-ghost btn-sm" onClick={addLesson}><Plus size={14} /> Add Lesson</button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -134,8 +162,8 @@ export default function CourseEditor() {
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }}><Trash2 size={14} /></button>
-                  <button className="btn btn-ghost btn-sm"><ChevronRight size={14} /></button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => removeLesson(lesson.id)} style={{ color: 'var(--danger)' }}><Trash2 size={14} /></button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => info("Editor for individual lesson content is coming soon!")}><ChevronRight size={14} /></button>
                 </div>
               </div>
             ))}

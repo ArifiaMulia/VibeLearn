@@ -59,32 +59,72 @@ router.get('/:id', auth, async (req, res) => {
 
 // POST /api/courses — master or super_admin
 router.post('/', auth, requireRole('super_admin', 'master'), async (req, res) => {
-  const { title, description, thumbnail, level, category, is_published, order_index } = req.body;
+  const { title, description, thumbnail, level, category, is_published, order_index, lessons } = req.body;
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    await client.query('BEGIN');
+    const result = await client.query(
       `INSERT INTO courses (title, description, thumbnail, level, category, created_by, is_published, order_index)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [title, description, thumbnail || null, level || 'beginner', category || 'general', req.user.id, is_published || false, order_index || 0]
     );
-    await pool.query('INSERT INTO usage_logs (user_id, action, resource_type, resource_id) VALUES ($1,$2,$3,$4)', [req.user.id, 'create_course', 'course', result.rows[0].id]);
+    const courseId = result.rows[0].id;
+
+    if (lessons && Array.isArray(lessons)) {
+      for (const lesson of lessons) {
+        await client.query(
+          `INSERT INTO lessons (course_id, lab_id, title, content, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [courseId, lesson.lab_id || null, lesson.title, lesson.content || '', lesson.type || 'text', lesson.xp_reward || 50, lesson.order_index || 0]
+        );
+      }
+    }
+
+    await client.query('INSERT INTO usage_logs (user_id, action, resource_type, resource_id) VALUES ($1,$2,$3,$4)', [req.user.id, 'create_course', 'course', courseId]);
+    await client.query('COMMIT');
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+    await client.query('ROLLBACK');
+    console.error('Error creating course:', err);
+    res.status(500).json({ error: 'Failed to create course' });
+  } finally {
+    client.release();
   }
 });
 
 // PUT /api/courses/:id
 router.put('/:id', auth, requireRole('super_admin', 'master'), async (req, res) => {
-  const { title, description, thumbnail, level, category, is_published, order_index } = req.body;
+  const { title, description, thumbnail, level, category, is_published, order_index, lessons } = req.body;
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    await client.query('BEGIN');
+    const result = await client.query(
       `UPDATE courses SET title=$1, description=$2, thumbnail=$3, level=$4, category=$5, is_published=$6, order_index=$7 WHERE id=$8 RETURNING *`,
       [title, description, thumbnail, level, category, is_published, order_index, req.params.id]
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'Course not found' });
+    if (!result.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    // Sync lessons: delete and re-insert for simplicity in this version
+    if (lessons && Array.isArray(lessons)) {
+      await client.query('DELETE FROM lessons WHERE course_id = $1', [req.params.id]);
+      for (const lesson of lessons) {
+        await client.query(
+          `INSERT INTO lessons (course_id, lab_id, title, content, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [req.params.id, lesson.lab_id || null, lesson.title, lesson.content || '', lesson.type || 'text', lesson.xp_reward || 50, lesson.order_index || 0]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+    await client.query('ROLLBACK');
+    console.error('Error updating course:', err);
+    res.status(500).json({ error: 'Failed to update course' });
+  } finally {
+    client.release();
   }
 });
 

@@ -64,6 +64,7 @@ const initDb = async (retries = 10, delay = 3000) => {
         CREATE TABLE IF NOT EXISTS lessons (
           id SERIAL PRIMARY KEY,
           course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+          lab_id INTEGER REFERENCES labs(id) ON DELETE SET NULL,
           title VARCHAR(255) NOT NULL,
           content TEXT DEFAULT '',
           video_url TEXT,
@@ -158,6 +159,14 @@ const initDb = async (retries = 10, delay = 3000) => {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Add lab_id to lessons if it doesn't exist (migration)
+      try {
+        await pool.query(`ALTER TABLE lessons ADD COLUMN lab_id INTEGER REFERENCES labs(id) ON DELETE SET NULL;`);
+        console.log('✅ Added lab_id to lessons table.');
+      } catch (e) {
+        // Ignore if column already exists
+      }
 
       // ─── SEED: Super Admin ───
       const bcrypt = require('bcrypt');
