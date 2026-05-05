@@ -208,11 +208,11 @@ export default function CourseEditor() {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Content (Markdown Supported)</label>
+                  <div className="form-group mb-3">
+                    <label className="form-label">{lesson.type === 'quiz' ? 'Intro Content (Markdown Supported)' : 'Content (Markdown Supported)'}</label>
                     <textarea 
                       className="form-input" 
-                      rows="6"
+                      rows={lesson.type === 'quiz' ? "3" : "6"}
                       value={lesson.content || ''} 
                       placeholder="# Heading\nWrite your content here..."
                       onChange={e => {
@@ -223,6 +223,87 @@ export default function CourseEditor() {
                       style={{ resize: 'vertical', fontFamily: 'monospace' }}
                     />
                   </div>
+
+                  {lesson.type === 'video' && (
+                    <div className="form-group mb-3">
+                      <label className="form-label">Video URL</label>
+                      <input 
+                        type="url"
+                        className="form-input" 
+                        value={lesson.video_url || ''} 
+                        placeholder="https://youtube.com/..."
+                        onChange={e => {
+                          const newLessons = [...lessons];
+                          newLessons[index].video_url = e.target.value;
+                          setLessons(newLessons);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {lesson.type === 'quiz' && (
+                    <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                      <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Quiz Questions</label>
+                      {(lesson.quizzes || []).map((q, qIndex) => (
+                        <div key={qIndex} className="card" style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--bg-surface)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Question {qIndex + 1}</span>
+                            <button className="btn btn-ghost btn-sm" onClick={() => {
+                              const newLessons = [...lessons];
+                              newLessons[index].quizzes.splice(qIndex, 1);
+                              setLessons(newLessons);
+                            }} style={{ color: 'var(--danger)', padding: 0, height: 'auto' }}><Trash2 size={14} /></button>
+                          </div>
+                          <input 
+                            className="form-input mb-2" 
+                            placeholder="Question text..."
+                            value={q.question || ''}
+                            onChange={e => {
+                              const newLessons = [...lessons];
+                              newLessons[index].quizzes[qIndex].question = e.target.value;
+                              setLessons(newLessons);
+                            }}
+                          />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                            {(q.options || ['', '', '', '']).map((opt, optIndex) => (
+                              <div key={optIndex} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input 
+                                  type="radio" 
+                                  name={`correct-${lesson.id}-${qIndex}`}
+                                  checked={q.correct_answer === optIndex}
+                                  onChange={() => {
+                                    const newLessons = [...lessons];
+                                    newLessons[index].quizzes[qIndex].correct_answer = optIndex;
+                                    setLessons(newLessons);
+                                  }}
+                                />
+                                <input 
+                                  className="form-input" 
+                                  style={{ flex: 1 }}
+                                  placeholder={`Option ${optIndex + 1}`}
+                                  value={opt}
+                                  onChange={e => {
+                                    const newLessons = [...lessons];
+                                    if (!newLessons[index].quizzes[qIndex].options) newLessons[index].quizzes[qIndex].options = ['', '', '', ''];
+                                    newLessons[index].quizzes[qIndex].options[optIndex] = e.target.value;
+                                    setLessons(newLessons);
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <button className="btn btn-secondary btn-sm" onClick={() => {
+                        const newLessons = [...lessons];
+                        if (!newLessons[index].quizzes) newLessons[index].quizzes = [];
+                        newLessons[index].quizzes.push({ question: '', options: ['', '', '', ''], correct_answer: 0 });
+                        setLessons(newLessons);
+                      }}>
+                        <Plus size={14} /> Add Question
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

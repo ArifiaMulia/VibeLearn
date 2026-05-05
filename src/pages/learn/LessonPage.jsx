@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
-import { ArrowLeft, CheckCircle, Zap, Play, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Zap, Play, Trophy } from 'lucide-react';
 import { XPPopup } from '../../components/XPBadge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -100,9 +100,16 @@ export default function LessonPage() {
 
       {/* Video Content */}
       {lesson.type === 'video' && lesson.video_url && (
-        <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-light)', position: 'relative' }}>
-           <Play size={48} color="rgba(255,255,255,0.2)" />
-           <span style={{ position: 'absolute', color: 'var(--text-muted)' }}>Video Player Placeholder</span>
+        <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '1.5rem' }}>
+          <iframe 
+            src={lesson.video_url} 
+            width="100%" 
+            height="100%" 
+            style={{ border: 'none' }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+            title={lesson.title}
+          />
         </div>
       )}
 
@@ -171,8 +178,16 @@ export default function LessonPage() {
         </div>
       )}
 
-      {/* Completion CTA */}
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
+      {/* Completion CTA & Navigation */}
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          {lesson.prev_lesson_id && (
+            <button className="btn btn-secondary" onClick={() => navigate(`/lessons/${lesson.prev_lesson_id}`)}>
+              <ArrowLeft size={16} /> Previous
+            </button>
+          )}
+        </div>
+        
         <button 
           className={`btn btn-lg ${isCompleted ? 'btn-ghost' : 'btn-primary'}`} 
           onClick={handleComplete} 
@@ -181,6 +196,14 @@ export default function LessonPage() {
         >
           {isCompleted ? <><CheckCircle size={18} /> Already Completed</> : completing ? 'Processing...' : <><Trophy size={18} /> Complete Lesson</>}
         </button>
+
+        <div>
+          {lesson.next_lesson_id && (
+            <button className="btn btn-secondary" onClick={() => navigate(`/lessons/${lesson.next_lesson_id}`)}>
+              Next <ArrowRight size={16} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

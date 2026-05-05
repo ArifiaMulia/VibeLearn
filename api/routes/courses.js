@@ -72,10 +72,20 @@ router.post('/', auth, requireRole('super_admin', 'master'), async (req, res) =>
 
     if (lessons && Array.isArray(lessons)) {
       for (const lesson of lessons) {
-        await client.query(
-          `INSERT INTO lessons (course_id, lab_id, title, content, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-          [courseId, lesson.lab_id || null, lesson.title, lesson.content || '', lesson.type || 'text', lesson.xp_reward || 50, lesson.order_index || 0]
+        const insertRes = await client.query(
+          `INSERT INTO lessons (course_id, lab_id, title, content, video_url, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+          [courseId, lesson.lab_id || null, lesson.title, lesson.content || '', lesson.video_url || null, lesson.type || 'text', lesson.xp_reward || 50, lesson.order_index || 0]
         );
+        const newLessonId = insertRes.rows[0].id;
+        
+        if (lesson.type === 'quiz' && lesson.quizzes && Array.isArray(lesson.quizzes)) {
+          for (const q of lesson.quizzes) {
+            await client.query(
+              `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5)`,
+              [newLessonId, q.question, JSON.stringify(q.options), q.correct_answer, q.explanation || '']
+            );
+          }
+        }
       }
     }
 
@@ -110,10 +120,21 @@ router.put('/:id', auth, requireRole('super_admin', 'master'), async (req, res) 
     if (lessons && Array.isArray(lessons)) {
       await client.query('DELETE FROM lessons WHERE course_id = $1', [req.params.id]);
       for (const lesson of lessons) {
-        await client.query(
-          `INSERT INTO lessons (course_id, lab_id, title, content, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-          [req.params.id, lesson.lab_id || null, lesson.title, lesson.content || '', lesson.type || 'text', lesson.xp_reward || 50, lesson.order_index || 0]
+        const insertRes = await client.query(
+          `INSERT INTO lessons (course_id, lab_id, title, content, video_url, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+          [req.params.id, lesson.lab_id || null, lesson.title, lesson.content || '', lesson.video_url || null, lesson.type || 'text', lesson.xp_reward || 50, lesson.order_index || 0]
         );
+        const newLessonId = insertRes.rows[0].id;
+        
+        // Save quizzes if present
+        if (lesson.type === 'quiz' && lesson.quizzes && Array.isArray(lesson.quizzes)) {
+          for (const q of lesson.quizzes) {
+            await client.query(
+              `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5)`,
+              [newLessonId, q.question, JSON.stringify(q.options), q.correct_answer, q.explanation || '']
+            );
+          }
+        }
       }
     }
 

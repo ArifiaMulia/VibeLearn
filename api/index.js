@@ -212,24 +212,43 @@ const initDb = async (retries = 10, delay = 3000) => {
 
           // Seed 3 lessons per course
           const lessonSeeds = [
-            { title: 'Introduction & Overview', content: `# Welcome to ${c.title}\n\nThis module will guide you through everything you need to know. Vibe coding isn't just about using AI; it's about collaborating with AI as a pair programmer.\n\n## What is Vibe Coding?\nVibe coding is a modern software development approach where the developer acts as an architect and director, while the AI acts as the primary code generator.\n\n### Core Benefits\n- **Speed**: Write complex algorithms in seconds.\n- **Exploration**: Rapidly prototype different architectures.\n- **Quality**: Use AI to perform comprehensive code reviews and security audits.\n\n## The Vibe Coding Workflow\n\n\`\`\`mermaid\ngraph TD\n  A[Understand Goal] --> B[Write Context-Rich Prompt]\n  B --> C[AI Generates Code]\n  C --> D{Review Code}\n  D -- Needs Changes --> E[Provide Specific Feedback]\n  E --> C\n  D -- Approved --> F[Test & Deploy]\n  style A fill:#4f46e5,color:#fff\n  style F fill:#10b981,color:#fff\n\`\`\`\n\n## Let's Get Started!\nRead through this lesson carefully, then proceed to the next one to learn about specific prompting techniques.`, type: 'text', xp_reward: 50, order_index: 1 },
-            { title: 'Core Concepts Deep Dive', content: `# Core Concepts\n\nLet's dive deep into the key ideas of this module.\n\n## Key Principles\n1. **Think in outcomes** — describe what you want, not how to build it. Focus on the end-state.\n2. **Iterate rapidly** — ship rough, refine quickly. Don't aim for perfection on the first prompt.\n3. **Trust + verify** — AI writes, you review. You are responsible for the security and efficiency of the code.\n\n## Example Context Block\nWhen prompting, always provide context. Here is an example of a good context block:\n\n\`\`\`javascript\n// CONTEXT: We are building a high-performance Node.js API.\n// The API connects to a PostgreSQL database.\n// We need to ensure all inputs are sanitized.\n\`\`\`\n\n## Practice Exercise\nTry applying these concepts in the lab session below. Navigate to the Labs tab to begin your first challenge.`, type: 'text', xp_reward: 75, order_index: 2 },
-            { title: 'Knowledge Check', content: 'Test your understanding of the Vibe Coding workflow with this quick quiz. Read the questions carefully.', type: 'quiz', xp_reward: 100, order_index: 3 },
+            { 
+              title: 'Introduction to AI Pair Programming', 
+              type: 'video', 
+              video_url: 'https://www.youtube.com/embed/tgbNymZ7vqY', // Placeholder dummy video
+              xp_reward: 50, 
+              order_index: 1,
+              content: `# The Dawn of Vibe Coding\n\nWelcome to ${c.title}. "Vibe Coding" isn't a buzzword; it's a paradigm shift. We're moving from *writing* code to *directing* AI to write code.\n\n## Core Philosophy\nAccording to top engineers from OpenAI and GitHub, AI coding assistants (like Copilot, Cursor, and Claude) amplify your output by 10x if you understand how to communicate with them.\n\n### The Shift in Skills\n- **Old Way**: Remembering syntax, hunting for missing semicolons.\n- **New Way**: System design, architecture planning, and articulating clear requirements (Prompt Engineering).\n\n## The Iterative Workflow\n\n\`\`\`mermaid\ngraph TD\n  A[Define Architecture] --> B[Write Context-Rich Prompt]\n  B --> C[AI Generates Code]\n  C --> D{Review & Validate}\n  D -- Bugs/Errors --> E[Provide Error Logs & Feedback]\n  E --> C\n  D -- Approved --> F[Test & Deploy]\n  style A fill:#7c3aed,color:#fff\n  style F fill:#10b981,color:#fff\n\`\`\`\n\nWatch the video above for a brief overview, then proceed to the next lesson.` 
+            },
+            { 
+              title: 'Mastering Context & Few-Shot Prompting', 
+              type: 'text', 
+              xp_reward: 100, 
+              order_index: 2,
+              content: `# Advanced Prompting Techniques\n\nIf you want the AI to write production-ready code, you must master the art of loading context. The AI only knows what you tell it.\n\n## Zero-Shot vs Few-Shot Prompting\n\n### 1. Zero-Shot Prompting\nYou ask the AI to do something without giving it any examples.\n> "Write a React component for a button."\n*Result*: Generic code that likely doesn't match your design system.\n\n### 2. Few-Shot Prompting (Recommended)\nYou provide examples of your desired output.\n> "Write a React component for a 'Submit' button. Use Tailwind CSS. Here is an example of our existing Cancel button: <Button className='bg-red-500 text-white rounded'>Cancel</Button>"\n*Result*: Code that perfectly matches your existing style.\n\n## The "Context Block" Pattern\nAlways start your prompts with a context block. This anchors the AI.\n\n\`\`\`javascript\n/*\nCONTEXT:\n- We are using Next.js 14 App Router.\n- We use TailwindCSS for styling.\n- This component is a user dashboard.\n\nTASK:\nCreate a profile card component that fetches data from /api/user.\n*/\n\`\`\`\n\n## Best Practices\n- **Be specific**: "Make it faster" means nothing. "Optimize this loop from O(n^2) to O(n) using a hash map" means everything.\n- **Give it a persona**: "Act as a Senior Web3 Security Auditor..."\n- **Ask it to plan**: "Before writing code, explain your step-by-step logic."`
+            },
+            { 
+              title: 'Vibe Coding Assessment', 
+              type: 'quiz', 
+              xp_reward: 150, 
+              order_index: 3,
+              content: '### Final Module Assessment\n\nTest your understanding of the Vibe Coding workflow and prompt engineering techniques. Answering correctly will grant you 150 XP. Think carefully!'
+            },
           ];
           for (const l of lessonSeeds) {
             const lessonRes = await pool.query(
-              `INSERT INTO lessons (course_id, title, content, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-              [courseId, l.title, l.content, l.type, l.xp_reward, l.order_index]
+              `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+              [courseId, l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index]
             );
             // Add quiz questions for quiz lessons
             if (l.type === 'quiz') {
               await pool.query(
                 `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
-                [lessonRes.rows[0].id, 'What is the core principle of vibe coding?', JSON.stringify(['Write every line of code manually', 'Describe outcomes and let AI generate code', 'Avoid using AI tools', 'Only use Python']), 1, 'Vibe coding is about describing what you want in natural language and collaborating with AI to build it.']
+                [lessonRes.rows[0].id, 'What is the primary difference between Zero-Shot and Few-Shot prompting?', JSON.stringify(['Zero-shot uses zero AI', 'Few-shot provides examples of desired output', 'Zero-shot is always better for complex code', 'Few-shot uses fewer words']), 1, 'Few-shot prompting involves giving the AI concrete examples of the pattern or style you want it to follow.']
               );
               await pool.query(
                 `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
-                [lessonRes.rows[0].id, 'Which is the best approach when AI generates code?', JSON.stringify(['Accept it blindly', 'Reject it always', 'Review and understand it', 'Only use 10 lines']), 2, 'Always review AI-generated code to understand what it does and catch any issues.']
+                [lessonRes.rows[0].id, 'Why is adding a "Context Block" important?', JSON.stringify(['It makes the code run faster', 'It prevents the AI from hallucinating generic code by anchoring it to your specific stack and rules', 'It is required by the JavaScript engine', 'It saves tokens']), 1, 'Context blocks anchor the AI to your specific project needs, preventing generic or irrelevant code generation.']
               );
             }
           }

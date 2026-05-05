@@ -12,6 +12,13 @@ router.get('/:id', auth, async (req, res) => {
     const result = await pool.query('SELECT * FROM lessons WHERE id = $1', [req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'Lesson not found' });
     const lesson = result.rows[0];
+
+    // Find previous and next lessons
+    const courseLessons = await pool.query('SELECT id FROM lessons WHERE course_id = $1 ORDER BY order_index ASC, id ASC', [lesson.course_id]);
+    const currentIndex = courseLessons.rows.findIndex(l => l.id === lesson.id);
+    lesson.prev_lesson_id = currentIndex > 0 ? courseLessons.rows[currentIndex - 1].id : null;
+    lesson.next_lesson_id = currentIndex < courseLessons.rows.length - 1 ? courseLessons.rows[currentIndex + 1].id : null;
+
     // Get quiz questions if quiz type
     if (lesson.type === 'quiz') {
       const quizzes = await pool.query('SELECT * FROM quizzes WHERE lesson_id = $1 ORDER BY id ASC', [lesson.id]);
@@ -23,6 +30,7 @@ router.get('/:id', auth, async (req, res) => {
     await pool.query('INSERT INTO usage_logs (user_id, action, resource_type, resource_id) VALUES ($1,$2,$3,$4)', [req.user.id, 'view_lesson', 'lesson', lesson.id]);
     res.json(lesson);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
