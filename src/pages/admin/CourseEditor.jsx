@@ -147,8 +147,9 @@ export default function CourseEditor() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {lessons.map((lesson, index) => (
-              <div key={lesson.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ cursor: 'grab', color: 'var(--text-muted)' }}><GripVertical size={20} /></div>
+              <div key={lesson.id} style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                <div className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottomLeftRadius: lesson.expanded ? 0 : undefined, borderBottomRightRadius: lesson.expanded ? 0 : undefined }}>
+                  <div style={{ cursor: 'grab', color: 'var(--text-muted)' }}><GripVertical size={20} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>LESSON {index + 1}</div>
                   <input 
