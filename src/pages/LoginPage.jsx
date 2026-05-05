@@ -88,14 +88,6 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {/* Demo credentials */}
-          <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>🔑 DEMO CREDENTIALS</p>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--accent)', lineHeight: 2 }}>
-              admin@vibelearn.id / Admin@2026!<br />
-              master@vibelearn.id / Master@2026!
-            </div>
-          </div>
         </div>
       </div>
 

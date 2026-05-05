@@ -5,6 +5,8 @@ import {
   CreditCard, Settings, LogOut, Zap, ChevronRight, Shield
 } from 'lucide-react';
 
+import pkg from '../../package.json';
+
 const ROLE_NAVS = {
   super_admin: [
     { icon: LayoutDashboard, label: 'Dashboard',     to: '/' },
@@ -113,11 +115,14 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Logout */}
-      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)' }}>
+      {/* Logout & Version */}
+      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <button onClick={handleLogout} className="btn btn-ghost w-full" style={{ justifyContent: 'flex-start' }}>
           <LogOut size={16} /> Sign Out
         </button>
+        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+          v{pkg.version}
+        </div>
       </div>
     </aside>
   );

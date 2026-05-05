@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Bell, Search, Zap } from 'lucide-react';
+import { Bell, Search, Zap, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function TopBar({ title, subtitle }) {
   const { user } = useAuth();
   const [xp, setXp] = useState(0);
   const [search, setSearch] = useState('');
+  const [theme, setTheme] = useState(localStorage.getItem('vl_theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('vl_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
     const saved = localStorage.getItem('vl_xp');
@@ -68,20 +76,30 @@ export default function TopBar({ title, subtitle }) {
         </div>
       )}
 
-      {/* Notifications */}
-      <button style={{
-        width: 38, height: 38, borderRadius: 'var(--radius-sm)',
-        background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        position: 'relative',
-      }}>
-        <Bell size={17} color="var(--text-muted)" />
-        <span style={{
-          position: 'absolute', top: 6, right: 6, width: 8, height: 8,
-          background: 'var(--primary)', borderRadius: '50%',
-          border: '2px solid var(--bg-base)',
-        }} />
-      </button>
+      {/* Theme Toggle & Notifications */}
+      <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <button onClick={toggleTheme} style={{
+          width: 38, height: 38, borderRadius: 'var(--radius-sm)',
+          background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          color: 'var(--text-muted)'
+        }}>
+          {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
+        <button style={{
+          width: 38, height: 38, borderRadius: 'var(--radius-sm)',
+          background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          position: 'relative',
+        }}>
+          <Bell size={17} color="var(--text-muted)" />
+          <span style={{
+            position: 'absolute', top: 6, right: 6, width: 8, height: 8,
+            background: 'var(--primary)', borderRadius: '50%',
+            border: '2px solid var(--bg-card)',
+          }} />
+        </button>
+      </div>
     </header>
   );
 }
