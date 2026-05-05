@@ -74,10 +74,21 @@ export function AuthProvider({ children }) {
     return data;
   }, [token]);
 
-  const isRole = (...roles) => roles.includes(user?.role);
+  const [previewRole, setPreviewRole] = useState(null);
+
+  const previewAs = (role) => {
+    // Only real super_admin can use preview mode
+    if (user?.role !== 'super_admin') return;
+    setPreviewRole(role); // null = exit preview mode
+  };
+
+  // The "effective" user role — previewRole overrides for UI, but token stays the same
+  const effectiveUser = previewRole ? { ...user, role: previewRole, _isPreview: true } : user;
+
+  const isRole = (...roles) => roles.includes(effectiveUser?.role);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, authFetch, isRole, ROLES }}>
+    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, logout, authFetch, isRole, ROLES, previewRole, previewAs }}>
       {children}
     </AuthContext.Provider>
   );

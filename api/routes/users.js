@@ -13,15 +13,13 @@ const requireRole = (...roles) => (req, res, next) => {
 router.get('/', auth, async (req, res) => {
   try {
     let result;
+    const baseSelect = `SELECT u.id, u.name, u.email, u.role, u.plan, u.avatar, u.last_activity, u.created_at,
+      s.status AS sub_status, s.expires_at AS sub_expires_at
+      FROM users u LEFT JOIN subscriptions s ON s.user_id = u.id`;
     if (req.user.role === 'super_admin') {
-      result = await pool.query(
-        `SELECT id, name, email, role, plan, avatar, last_activity, created_at FROM users ORDER BY id ASC`
-      );
+      result = await pool.query(`${baseSelect} ORDER BY u.id ASC`);
     } else if (req.user.role === 'master') {
-      result = await pool.query(
-        `SELECT u.id, u.name, u.email, u.role, u.plan, u.avatar, u.last_activity, u.created_at 
-         FROM users u WHERE u.role = 'participant' ORDER BY u.id ASC`
-      );
+      result = await pool.query(`${baseSelect} WHERE u.role = 'participant' ORDER BY u.id ASC`);
     } else {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -59,41 +57,50 @@ router.post('/', auth, requireRole('super_admin'), async (req, res) => {
     res.status(201).json(user);
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Email already exists' });
+    console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// PUT /api/users/:id — super_admin or self (limited fields)
+// PUT /api/users/:id — super_admin or self (limited fields). Dynamically builds query.
 router.put('/:id', auth, async (req, res) => {
   const { id } = req.params;
   const isSelf = req.user.id === parseInt(id);
   const isAdmin = req.user.role === 'super_admin';
   if (!isSelf && !isAdmin) return res.status(403).json({ error: 'Forbidden' });
+
   const { name, email, password, role, plan, avatar } = req.body;
+
   try {
-    let query, params;
+    const setClauses = [];
+    const params = [];
+    let idx = 1;
+
+    if (name !== undefined)   { setClauses.push(`name=$${idx++}`);   params.push(name); }
+    if (email !== undefined && isAdmin) { setClauses.push(`email=$${idx++}`); params.push(email); }
+    if (avatar !== undefined) { setClauses.push(`avatar=$${idx++}`); params.push(avatar); }
+    if (role !== undefined && isAdmin)  { setClauses.push(`role=$${idx++}`);  params.push(role); }
+    if (plan !== undefined && isAdmin)  { setClauses.push(`plan=$${idx++}`);  params.push(plan); }
     if (password && password.trim() !== '') {
       const hashed = await bcrypt.hash(password, 10);
-      if (isAdmin) {
-        query = `UPDATE users SET name=$1, email=$2, password=$3, role=$4, plan=$5, avatar=$6 WHERE id=$7 RETURNING id, name, email, role, plan, avatar, last_activity`;
-        params = [name, email, hashed, role, plan, avatar, id];
-      } else {
-        query = `UPDATE users SET name=$1, avatar=$2, password=$3 WHERE id=$4 RETURNING id, name, email, role, plan, avatar, last_activity`;
-        params = [name, avatar, hashed, id];
-      }
-    } else {
-      if (isAdmin) {
-        query = `UPDATE users SET name=$1, email=$2, role=$3, plan=$4, avatar=$5 WHERE id=$6 RETURNING id, name, email, role, plan, avatar, last_activity`;
-        params = [name, email, role, plan, avatar, id];
-      } else {
-        query = `UPDATE users SET name=$1, avatar=$2 WHERE id=$3 RETURNING id, name, email, role, plan, avatar, last_activity`;
-        params = [name, avatar, id];
-      }
+      setClauses.push(`password=$${idx++}`);
+      params.push(hashed);
     }
+
+    if (setClauses.length === 0) return res.status(400).json({ error: 'No fields to update' });
+
+    params.push(id);
+    const query = `UPDATE users SET ${setClauses.join(', ')} WHERE id=$${idx} RETURNING id, name, email, role, plan, avatar, last_activity`;
     const result = await pool.query(query, params);
     if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+
+    // Also sync subscription plan if admin changed plan
+    if (plan !== undefined && isAdmin) {
+      await pool.query(`UPDATE subscriptions SET plan=$1 WHERE user_id=$2`, [plan, id]);
+    }
     res.json(result.rows[0]);
   } catch (err) {
+    console.error(err);
     if (err.code === '23505') return res.status(400).json({ error: 'Email already exists' });
     res.status(500).json({ error: 'Internal server error' });
   }

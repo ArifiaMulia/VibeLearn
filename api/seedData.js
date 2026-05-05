@@ -3,7 +3,7 @@ module.exports = {
     {
       title: 'Introduction to Vibe Coding',
       type: 'video',
-      video_url: 'https://www.youtube.com/embed/zjkBMFhNj_g',
+      video_url: 'https://www.youtube.com/embed/IF9gVcmp1pE',
       xp_reward: 50,
       order_index: 1,
       content: `# What is Vibe Coding?
@@ -118,7 +118,7 @@ sequenceDiagram
     {
       title: 'Zero-Shot vs Few-Shot Prompting',
       type: 'video',
-      video_url: 'https://www.youtube.com/embed/_ZvnD73m40o',
+      video_url: 'https://www.youtube.com/embed/vRqLMkj7bRw',
       xp_reward: 50,
       order_index: 1,
       content: `# The Core Mechanics of Prompting
@@ -218,7 +218,7 @@ If you are using tools like Cursor or GitHub Copilot Workspace, you are using Re
     {
       title: 'Scaffolding the MVP',
       type: 'video',
-      video_url: 'https://www.youtube.com/embed/VbFOaTnsRuw',
+      video_url: 'https://www.youtube.com/embed/MnDOjE6jMN4',
       xp_reward: 50,
       order_index: 1,
       content: `# From Idea to MVP
@@ -311,7 +311,7 @@ If the AI introduces a breaking change that ruins the app, you need a way to \`g
     {
       title: 'Spotting AI Hallucinations',
       type: 'video',
-      video_url: 'https://www.youtube.com/embed/zjkBMFhNj_g?start=600',
+      video_url: 'https://www.youtube.com/embed/8I77H-JToZI',
       xp_reward: 50,
       order_index: 1,
       content: `# The Dangers of Generated Code
@@ -398,7 +398,7 @@ Always use tools like ESLint, TypeScript, and SonarQube in your Vibe Coding work
     {
       title: 'Prompt Injection & Data Leaks',
       type: 'video',
-      video_url: 'https://www.youtube.com/embed/bVDvLANRVjI',
+      video_url: 'https://www.youtube.com/embed/WbTuAiKPBLk',
       xp_reward: 50,
       order_index: 1,
       content: `# The Dark Side of AI
