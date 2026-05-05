@@ -211,45 +211,23 @@ const initDb = async (retries = 10, delay = 3000) => {
           const courseId = courseRes.rows[0].id;
 
           // Seed 3 lessons per course
-          const lessonSeeds = [
-            { 
-              title: 'Introduction to AI Pair Programming', 
-              type: 'video', 
-              video_url: 'https://www.youtube.com/embed/tgbNymZ7vqY', // Placeholder dummy video
-              xp_reward: 50, 
-              order_index: 1,
-              content: `# The Dawn of Vibe Coding\n\nWelcome to ${c.title}. "Vibe Coding" isn't a buzzword; it's a paradigm shift. We're moving from *writing* code to *directing* AI to write code.\n\n## Core Philosophy\nAccording to top engineers from OpenAI and GitHub, AI coding assistants (like Copilot, Cursor, and Claude) amplify your output by 10x if you understand how to communicate with them.\n\n### The Shift in Skills\n- **Old Way**: Remembering syntax, hunting for missing semicolons.\n- **New Way**: System design, architecture planning, and articulating clear requirements (Prompt Engineering).\n\n## The Iterative Workflow\n\n\`\`\`mermaid\ngraph TD\n  A[Define Architecture] --> B[Write Context-Rich Prompt]\n  B --> C[AI Generates Code]\n  C --> D{Review & Validate}\n  D -- Bugs/Errors --> E[Provide Error Logs & Feedback]\n  E --> C\n  D -- Approved --> F[Test & Deploy]\n  style A fill:#7c3aed,color:#fff\n  style F fill:#10b981,color:#fff\n\`\`\`\n\nWatch the video above for a brief overview, then proceed to the next lesson.` 
-            },
-            { 
-              title: 'Mastering Context & Few-Shot Prompting', 
-              type: 'text', 
-              xp_reward: 100, 
-              order_index: 2,
-              content: `# Advanced Prompting Techniques\n\nIf you want the AI to write production-ready code, you must master the art of loading context. The AI only knows what you tell it.\n\n## Zero-Shot vs Few-Shot Prompting\n\n### 1. Zero-Shot Prompting\nYou ask the AI to do something without giving it any examples.\n> "Write a React component for a button."\n*Result*: Generic code that likely doesn't match your design system.\n\n### 2. Few-Shot Prompting (Recommended)\nYou provide examples of your desired output.\n> "Write a React component for a 'Submit' button. Use Tailwind CSS. Here is an example of our existing Cancel button: <Button className='bg-red-500 text-white rounded'>Cancel</Button>"\n*Result*: Code that perfectly matches your existing style.\n\n## The "Context Block" Pattern\nAlways start your prompts with a context block. This anchors the AI.\n\n\`\`\`javascript\n/*\nCONTEXT:\n- We are using Next.js 14 App Router.\n- We use TailwindCSS for styling.\n- This component is a user dashboard.\n\nTASK:\nCreate a profile card component that fetches data from /api/user.\n*/\n\`\`\`\n\n## Best Practices\n- **Be specific**: "Make it faster" means nothing. "Optimize this loop from O(n^2) to O(n) using a hash map" means everything.\n- **Give it a persona**: "Act as a Senior Web3 Security Auditor..."\n- **Ask it to plan**: "Before writing code, explain your step-by-step logic."`
-            },
-            { 
-              title: 'Vibe Coding Assessment', 
-              type: 'quiz', 
-              xp_reward: 150, 
-              order_index: 3,
-              content: '### Final Module Assessment\n\nTest your understanding of the Vibe Coding workflow and prompt engineering techniques. Answering correctly will grant you 150 XP. Think carefully!'
-            },
-          ];
+          // Seed lessons uniquely per course using imported data
+          const seedData = require('./seedData.js');
+          const lessonSeeds = seedData[c.title] || [];
+          
           for (const l of lessonSeeds) {
             const lessonRes = await pool.query(
               `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
               [courseId, l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index]
             );
             // Add quiz questions for quiz lessons
-            if (l.type === 'quiz') {
-              await pool.query(
-                `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
-                [lessonRes.rows[0].id, 'What is the primary difference between Zero-Shot and Few-Shot prompting?', JSON.stringify(['Zero-shot uses zero AI', 'Few-shot provides examples of desired output', 'Zero-shot is always better for complex code', 'Few-shot uses fewer words']), 1, 'Few-shot prompting involves giving the AI concrete examples of the pattern or style you want it to follow.']
-              );
-              await pool.query(
-                `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
-                [lessonRes.rows[0].id, 'Why is adding a "Context Block" important?', JSON.stringify(['It makes the code run faster', 'It prevents the AI from hallucinating generic code by anchoring it to your specific stack and rules', 'It is required by the JavaScript engine', 'It saves tokens']), 1, 'Context blocks anchor the AI to your specific project needs, preventing generic or irrelevant code generation.']
-              );
+            if (l.type === 'quiz' && l.quizzes) {
+              for (const q of l.quizzes) {
+                await pool.query(
+                  `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+                  [lessonRes.rows[0].id, q.question, JSON.stringify(q.options), q.correct_answer, q.explanation]
+                );
+              }
             }
           }
         }
