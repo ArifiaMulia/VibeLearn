@@ -78,25 +78,44 @@ function VideoPlayer({ url, title }) {
   );
 }
 
-// Collapsible video transcript
-function TranscriptPanel({ text, isId, lang }) {
+// Bilingual transcript panel — reacts to lang toggle in real time
+function TranscriptPanel({ transcript, transcript_id, lang }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  if (!text) return null;
+
+  // Pick correct transcript based on current lang, with fallback
+  const preferred    = lang === 'id' ? transcript_id : transcript;
+  const fallback     = lang === 'id' ? transcript    : transcript_id;
+  const displayText  = preferred || fallback;
+  const isUsingFallback = !preferred && !!fallback;
+  const hasId        = !!transcript_id;
+  const hasEn        = !!transcript;
+
+  if (!displayText) return null;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(displayText).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
+  const label     = lang === 'id' ? 'Transkrip Video' : 'Video Transcript';
+  const langBadge = lang === 'id'
+    ? { flag: '🇮🇩', text: 'Bahasa Indonesia', color: 'var(--accent)', bg: 'rgba(6,182,212,0.12)', border: 'rgba(6,182,212,0.3)' }
+    : { flag: '🇬🇧', text: 'English',          color: 'var(--primary)', bg: 'rgba(124,58,237,0.1)', border: 'rgba(124,58,237,0.25)' };
+
+  const fallbackNote = lang === 'id'
+    ? '🇮🇩 Transkrip Bahasa Indonesia belum tersedia. Menampilkan versi Bahasa Inggris.'
+    : '🇬🇧 English transcript not available. Showing Indonesian version.';
+
   return (
     <div style={{
       border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)',
       overflow: 'hidden', background: 'var(--bg-surface)',
+      transition: 'border-color 0.2s',
     }}>
-      {/* Header toggle */}
+      {/* Header */}
       <button
         onClick={() => setOpen(v => !v)}
         style={{
@@ -104,49 +123,100 @@ function TranscriptPanel({ text, isId, lang }) {
           padding: '0.85rem 1.1rem', background: 'none', border: 'none',
           cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left',
           borderBottom: open ? '1px solid var(--border-light)' : 'none',
+          transition: 'background 0.15s',
         }}
+        onMouseOver={e => e.currentTarget.style.background = 'var(--bg-card)'}
+        onMouseOut={e => e.currentTarget.style.background = 'none'}
       >
-        <span style={{ fontSize: '1rem' }}>📄</span>
-        <span style={{ fontWeight: 700, fontSize: '0.88rem', flex: 1 }}>
-          {lang === 'id' ? 'Transkrip Video' : 'Video Transcript'}
+        <span style={{ fontSize: '1rem', flexShrink: 0 }}>📄</span>
+
+        <span style={{ fontWeight: 700, fontSize: '0.88rem', flex: 1 }}>{label}</span>
+
+        {/* Active language badge */}
+        <span style={{
+          fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.5rem',
+          borderRadius: 20, background: langBadge.bg,
+          color: langBadge.color, border: `1px solid ${langBadge.border}`,
+          display: 'flex', alignItems: 'center', gap: '0.25rem',
+          transition: 'all 0.2s',
+          flexShrink: 0,
+        }}>
+          {langBadge.flag} {langBadge.text}
         </span>
-        {isId && (
-          <span style={{
-            fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.45rem',
-            borderRadius: 20, background: 'rgba(6,182,212,0.15)',
-            color: 'var(--accent)', border: '1px solid rgba(6,182,212,0.3)',
-          }}>🇮🇩 Bahasa Indonesia</span>
-        )}
+
+        {/* Availability indicators */}
+        <div style={{ display: 'flex', gap: '0.25rem', marginLeft: '0.25rem', flexShrink: 0 }}>
+          {hasEn && (
+            <span title="English transcript available" style={{
+              fontSize: '0.65rem', padding: '0.1rem 0.3rem',
+              borderRadius: 8, background: lang === 'en' ? 'rgba(124,58,237,0.15)' : 'var(--bg-card)',
+              border: `1px solid ${lang === 'en' ? 'rgba(124,58,237,0.3)' : 'var(--border-light)'}`,
+              color: lang === 'en' ? 'var(--primary)' : 'var(--text-muted)',
+            }}>EN</span>
+          )}
+          {hasId && (
+            <span title="Indonesian transcript available" style={{
+              fontSize: '0.65rem', padding: '0.1rem 0.3rem',
+              borderRadius: 8, background: lang === 'id' ? 'rgba(6,182,212,0.15)' : 'var(--bg-card)',
+              border: `1px solid ${lang === 'id' ? 'rgba(6,182,212,0.3)' : 'var(--border-light)'}`,
+              color: lang === 'id' ? 'var(--accent)' : 'var(--text-muted)',
+            }}>ID</span>
+          )}
+        </div>
+
         <span style={{
           fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.3rem',
-          transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.2s',
-          display: 'inline-block',
+          transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s',
+          display: 'inline-block', flexShrink: 0,
         }}>▼</span>
       </button>
 
-      {/* Transcript body */}
+      {/* Body */}
       {open && (
         <div style={{ padding: '1rem 1.1rem' }}>
+          {/* Fallback notice */}
+          {isUsingFallback && (
+            <div style={{
+              fontSize: '0.78rem', color: 'var(--text-muted)',
+              background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
+              borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.75rem',
+              marginBottom: '0.85rem',
+            }}>
+              {fallbackNote}
+            </div>
+          )}
+
+          {/* Transcript text */}
           <div style={{
-            maxHeight: 320, overflowY: 'auto', fontSize: '0.85rem',
-            lineHeight: 1.8, color: 'var(--text-secondary)',
-            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-            paddingRight: '0.5rem',
+            maxHeight: 340, overflowY: 'auto',
+            fontSize: '0.85rem', lineHeight: 1.85,
+            color: 'var(--text-secondary)', whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word', paddingRight: '0.5rem',
           }}>
-            {text}
+            {displayText}
           </div>
-          <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+
+          {/* Footer actions */}
+          <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              {displayText.split(/\s+/).length} {lang === 'id' ? 'kata' : 'words'}
+            </span>
             <button
               onClick={handleCopy}
               style={{
-                fontSize: '0.75rem', padding: '0.3rem 0.8rem',
-                background: copied ? 'var(--success)' : 'var(--bg-card)',
-                border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)',
-                color: copied ? 'white' : 'var(--text-muted)',
-                cursor: 'pointer', transition: '0.2s',
+                fontSize: '0.75rem', padding: '0.3rem 0.85rem',
+                background: copied ? 'rgba(34,197,94,0.15)' : 'var(--bg-card)',
+                border: `1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'var(--border-light)'}`,
+                borderRadius: 'var(--radius-sm)',
+                color: copied ? '#22c55e' : 'var(--text-muted)',
+                cursor: 'pointer', transition: 'all 0.2s',
               }}
+              onMouseOver={e => { if (!copied) { e.currentTarget.style.background = 'var(--bg-card-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}}
+              onMouseOut={e => { if (!copied) { e.currentTarget.style.background = 'var(--bg-card)'; e.currentTarget.style.color = 'var(--text-muted)'; }}}
             >
-              {copied ? '✓ Copied!' : '📋 Copy Transcript'}
+              {copied
+                ? (lang === 'id' ? '✓ Disalin!' : '✓ Copied!')
+                : (lang === 'id' ? '📋 Salin Transkrip' : '📋 Copy Transcript')}
             </button>
           </div>
         </div>
@@ -491,22 +561,14 @@ export default function LessonPage() {
         <VideoPlayer url={lesson.video_url} title={lesson.title} />
       )}
 
-      {/* Video Transcript Panel */}
-      {lesson.type === 'video' && (lesson.transcript || lesson.transcript_id) && (() => {
-        const transcriptText = lang === 'id' && lesson.transcript_id
-          ? lesson.transcript_id
-          : lesson.transcript_id
-            ? lesson.transcript_id   // prefer ID transcript if exists regardless of lang for ID lessons
-            : lesson.transcript;
-        const isIdTranscript = !!(lesson.transcript_id);
-        return (
-          <TranscriptPanel
-            text={transcriptText}
-            isId={isIdTranscript}
-            lang={lang}
-          />
-        );
-      })()}
+      {/* Video Transcript Panel — language switches reactively with toggle */}
+      {lesson.type === 'video' && (lesson.transcript || lesson.transcript_id) && (
+        <TranscriptPanel
+          transcript={lesson.transcript}
+          transcript_id={lesson.transcript_id}
+          lang={lang}
+        />
+      )}
 
       {/* Text / Video Markdown Content */}
       {(lesson.type === 'text' || lesson.type === 'video') && lesson.content && (() => {
