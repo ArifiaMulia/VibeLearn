@@ -5,7 +5,7 @@ import { BookOpen, Zap, Trophy, ArrowRight, X, Star, CheckCircle } from 'lucide-
 const STEPS = [
   {
     icon: '🎉',
-    title: 'Welcome to Promptara!',,
+    title: 'Welcome to Promptara!',
     subtitle: 'Your AI Coding Academy',
     body: 'Promptara is where you learn to build real software using AI as your coding partner. No prior experience needed — just curiosity and a willingness to vibe!',
     visual: (
