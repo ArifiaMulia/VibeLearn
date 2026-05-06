@@ -1,46 +1,48 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
   LayoutDashboard, BookOpen, FlaskConical, Users, BarChart3,
   CreditCard, Settings, LogOut, Zap, ChevronRight, Shield
 } from 'lucide-react';
-
 import pkg from '../../package.json';
-
-const ROLE_NAVS = {
-  super_admin: [
-    { icon: LayoutDashboard, label: 'Dashboard',     to: '/' },
-    { icon: BookOpen,         label: 'Courses',       to: '/courses' },
-    { icon: FlaskConical,     label: 'Labs',          to: '/labs' },
-    { icon: Users,            label: 'Users',         to: '/admin/users' },
-    { icon: BarChart3,        label: 'Analytics',     to: '/admin/analytics' },
-    { icon: CreditCard,       label: 'Subscriptions', to: '/admin/subscriptions' },
-    { icon: Settings,         label: 'Course Builder',to: '/admin/courses' },
-  ],
-  master: [
-    { icon: LayoutDashboard, label: 'Dashboard',     to: '/' },
-    { icon: BookOpen,         label: 'Courses',       to: '/courses' },
-    { icon: FlaskConical,     label: 'Labs',          to: '/labs' },
-    { icon: Users,            label: 'Students',      to: '/admin/users' },
-    { icon: BarChart3,        label: 'Analytics',     to: '/admin/analytics' },
-    { icon: Settings,         label: 'Course Builder',to: '/admin/courses' },
-  ],
-  participant: [
-    { icon: LayoutDashboard, label: 'Dashboard',     to: '/' },
-    { icon: BookOpen,         label: 'My Courses',    to: '/courses' },
-    { icon: FlaskConical,     label: 'Labs',          to: '/labs' },
-    { icon: BarChart3,        label: 'Leaderboard',   to: '/leaderboard' },
-    { icon: Settings,         label: 'Profile',       to: '/profile' },
-  ],
-};
 
 const PLAN_COLORS = { free: 'var(--text-muted)', pro: 'var(--warning)', enterprise: 'var(--accent)' };
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { lang, toggleLang, t } = useLanguage();
   const navigate = useNavigate();
-  const navItems = ROLE_NAVS[user?.role] || ROLE_NAVS.participant;
 
+  // Nav items defined as keys mapped to translations + route
+  const NAV_ITEMS = {
+    super_admin: [
+      { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/' },
+      { icon: BookOpen,         key: 'nav_courses',       to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',          to: '/labs' },
+      { icon: Users,            key: 'nav_users',         to: '/admin/users' },
+      { icon: BarChart3,        key: 'nav_analytics',     to: '/admin/analytics' },
+      { icon: CreditCard,       key: 'nav_subscriptions', to: '/admin/subscriptions' },
+      { icon: Settings,         key: 'nav_course_builder',to: '/admin/courses' },
+    ],
+    master: [
+      { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/' },
+      { icon: BookOpen,         key: 'nav_courses',       to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',          to: '/labs' },
+      { icon: Users,            key: 'nav_students',      to: '/admin/users' },
+      { icon: BarChart3,        key: 'nav_analytics',     to: '/admin/analytics' },
+      { icon: Settings,         key: 'nav_course_builder',to: '/admin/courses' },
+    ],
+    participant: [
+      { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/' },
+      { icon: BookOpen,         key: 'nav_my_courses',    to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',          to: '/labs' },
+      { icon: BarChart3,        key: 'nav_leaderboard',   to: '/leaderboard' },
+      { icon: Settings,         key: 'nav_profile',       to: '/profile' },
+    ],
+  };
+
+  const navItems = NAV_ITEMS[user?.role] || NAV_ITEMS.participant;
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
@@ -94,10 +96,10 @@ export default function Sidebar() {
         {user?.role === 'super_admin' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.5rem', marginBottom: '0.5rem' }}>
             <Shield size={12} color="var(--accent)" />
-            <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Admin Panel</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('nav_admin_panel')}</span>
           </div>
         )}
-        {navItems.map(({ icon: Icon, label, to }) => (
+        {navItems.map(({ icon: Icon, key, to }) => (
           <NavLink key={to} to={to} end={to === '/'}
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -109,20 +111,36 @@ export default function Sidebar() {
               boxShadow: isActive ? '0 2px 12px var(--primary-glow)' : 'none',
             })}>
             <Icon size={18} />
-            <span style={{ flex: 1 }}>{label}</span>
+            <span style={{ flex: 1 }}>{t(key)}</span>
             <ChevronRight size={14} style={{ opacity: 0.4 }} />
           </NavLink>
         ))}
       </nav>
 
-      {/* Logout & Version */}
-      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <button onClick={handleLogout} className="btn btn-ghost w-full" style={{ justifyContent: 'flex-start' }}>
-          <LogOut size={16} /> Sign Out
+      {/* Language + Logout + Version */}
+      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {/* Compact language toggle in sidebar */}
+        <button
+          onClick={toggleLang}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
+            background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+            borderRadius: 'var(--radius-sm)', padding: '0.45rem', cursor: 'pointer',
+            color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600, width: '100%',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+        >
+          <span style={{ fontSize: '1rem' }}>{lang === 'en' ? '🇬🇧' : '🇮🇩'}</span>
+          <span>{lang === 'en' ? 'English' : 'Indonesia'}</span>
+          <span style={{ marginLeft: 'auto', opacity: 0.5, fontSize: '0.7rem' }}>↕</span>
         </button>
-        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-          v{pkg.version}
-        </div>
+
+        <button onClick={handleLogout} className="btn btn-ghost w-full" style={{ justifyContent: 'flex-start' }}>
+          <LogOut size={16} /> {t('nav_sign_out')}
+        </button>
+        <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)' }}>v{pkg.version}</div>
       </div>
     </aside>
   );

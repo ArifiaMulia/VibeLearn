@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { BookOpen, Play, CheckCircle, Lock, Clock, Zap, ArrowLeft, Users, Trophy, Star } from 'lucide-react';
 
 const TYPE_ICONS = { text: BookOpen, video: Play, quiz: Zap, lab: Lock };
@@ -21,6 +22,7 @@ export default function CourseDetailPage() {
   const { id } = useParams();
   const { authFetch, user } = useAuth();
   const { success, error } = useAlert();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
@@ -46,7 +48,7 @@ export default function CourseDetailPage() {
     try {
       await authFetch(`/courses/${id}/enroll`, { method: 'POST' });
       setEnrolled(true);
-      success('Enrolled successfully! 🎉 Start your first lesson');
+      success(`${t('enroll_now')} 🎉 Start your first lesson`);
     } catch (e) { error(e.message); }
     setEnrolling(false);
   };
@@ -62,7 +64,7 @@ export default function CourseDetailPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <button className="btn btn-ghost btn-sm" onClick={() => navigate('/courses')} style={{ width: 'fit-content' }}>
-        <ArrowLeft size={15} /> Back to Courses
+        <ArrowLeft size={15} /> {t('back_to_courses')}
       </button>
 
       {/* Course Completion Banner */}
@@ -75,11 +77,11 @@ export default function CourseDetailPage() {
         }}>
           <Trophy size={32} color="var(--success)" />
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--success)' }}>🏅 Course Complete!</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>You've finished all lessons in this course. Outstanding work!</div>
+            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--success)' }}>{t('course_complete_title')}</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('course_complete_body')}</div>
           </div>
           <button className="btn btn-success" onClick={() => window.print()} style={{ background: 'var(--success)', color: 'white' }}>
-            🎓 Get Certificate
+            {t('get_certificate')}
           </button>
         </div>
       )}
@@ -105,7 +107,7 @@ export default function CourseDetailPage() {
             {enrolled ? (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: 8 }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{completedIds.size}/{course.lessons?.length} completed</span>
+                            <div style={{ fontWeight: 700, marginBottom: '0.3rem' }}>{completedIds.size}/{course.lessons?.length} {t('completed')}</div>
                   <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{pct}%</span>
                 </div>
                 <div className="progress-track" style={{ height: 10, marginBottom: '1rem' }}>
@@ -114,7 +116,7 @@ export default function CourseDetailPage() {
               </div>
             ) : (
               <button className="btn btn-primary btn-lg" onClick={handleEnroll} disabled={enrolling}>
-                {enrolling ? 'Enrolling...' : 'Enroll Now — Free'} {!enrolling && <Zap size={18} />}
+                              {enrolling ? t('processing') : <>{t('enroll_now')} <Zap size={18} /></>}
               </button>
             )}
           </div>
@@ -124,7 +126,7 @@ export default function CourseDetailPage() {
       {/* Visual Learning Path */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <h3 style={{ margin: 0 }}>Learning Path — {course.lessons?.length} Lessons</h3>
+                    <h3 style={{ margin: 0 }}>{t('learning_path')} — {course.lessons?.length} {t('lessons')}</h3>
           {enrolled && (
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               {completedIds.size} of {course.lessons?.length} done · {totalXP} XP available
@@ -183,8 +185,8 @@ export default function CourseDetailPage() {
                           <span style={{ fontSize: '0.7rem', color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             {i + 1}. {TYPE_LABELS[lesson.type] || 'Lesson'}
                           </span>
-                          {isActive && <span style={{ fontSize: '0.65rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>▶ UP NEXT</span>}
-                          {done && <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>✓ DONE</span>}
+                                                    {isActive && <span style={{ fontSize: '0.65rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('up_next')}</span>}
+                          {done && <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('done')}</span>}
                         </div>
                         <div style={{ fontWeight: 600, fontSize: '0.88rem', color: done ? 'var(--success)' : 'var(--text-primary)' }}>{lesson.title}</div>
                       </div>

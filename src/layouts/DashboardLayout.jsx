@@ -3,21 +3,24 @@ import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import OnboardingModal from '../components/OnboardingModal';
 import GuidedTour from '../components/GuidedTour';
-
-const PAGE_TITLES = {
-  '/': { title: 'Dashboard', subtitle: 'Welcome back! Keep learning.' },
-  '/courses': { title: 'Courses', subtitle: 'Browse and continue your learning journey' },
-  '/labs': { title: 'Labs', subtitle: 'Hands-on simulations and challenges' },
-  '/leaderboard': { title: 'Leaderboard', subtitle: 'Top vibe coders this month' },
-  '/profile': { title: 'My Profile', subtitle: 'Your learning stats and achievements' },
-  '/admin/users': { title: 'User Management', subtitle: 'Manage platform members' },
-  '/admin/courses': { title: 'Course Builder', subtitle: 'Create and manage course content' },
-  '/admin/analytics': { title: 'Analytics', subtitle: 'Platform usage and insights' },
-  '/admin/subscriptions': { title: 'Subscriptions', subtitle: 'Manage SaaS plans and billing' },
-};
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function DashboardLayout() {
   const location = useLocation();
+  const { t } = useLanguage();
+
+  const PAGE_TITLES = {
+    '/':                    { title: t('page_dashboard'),   subtitle: t('page_dashboard_sub') },
+    '/courses':             { title: t('page_courses'),     subtitle: t('page_courses_sub') },
+    '/labs':                { title: t('page_labs'),        subtitle: t('page_labs_sub') },
+    '/leaderboard':         { title: t('page_leaderboard'), subtitle: t('page_leaderboard_sub') },
+    '/profile':             { title: t('page_profile'),     subtitle: t('page_profile_sub') },
+    '/admin/users':         { title: t('page_users'),       subtitle: t('page_users_sub') },
+    '/admin/courses':       { title: t('page_builder'),     subtitle: t('page_builder_sub') },
+    '/admin/analytics':     { title: t('page_analytics'),   subtitle: t('page_analytics_sub') },
+    '/admin/subscriptions': { title: t('page_subs'),        subtitle: t('page_subs_sub') },
+  };
+
   const meta = PAGE_TITLES[location.pathname] || { title: 'VibeLearn', subtitle: '' };
 
   return (

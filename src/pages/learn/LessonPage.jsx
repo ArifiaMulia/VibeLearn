@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { ArrowLeft, ArrowRight, CheckCircle, Zap, Play, Trophy, ExternalLink } from 'lucide-react';
 import { XPPopup } from '../../components/XPBadge';
 import ReactMarkdown from 'react-markdown';
@@ -84,6 +85,7 @@ function estimateTime(type, content) {
 
 // Lesson Reaction widget
 function LessonReaction({ lessonId }) {
+  const { t } = useLanguage();
   const [picked, setPicked] = useState(() => localStorage.getItem(`vl_react_${lessonId}`));
   const options = [{ val: '1', emoji: '😕' }, { val: '2', emoji: '😐' }, { val: '3', emoji: '😊' }, { val: '4', emoji: '🤩' }];
   const pick = (val) => { setPicked(val); localStorage.setItem(`vl_react_${lessonId}`, val); };
@@ -91,7 +93,7 @@ function LessonReaction({ lessonId }) {
   return (
     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', textAlign: 'center' }}>
       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-        {picked ? '✅ Thanks for your feedback!' : 'How was this lesson?'}
+        {picked ? t('thanks_feedback') : t('how_was_lesson')}
       </div>
       {!picked && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
@@ -118,7 +120,9 @@ export default function LessonPage() {
 
   const { authFetch, user } = useAuth();
   const { success, error } = useAlert();
+  const { t } = useLanguage();
   const navigate = useNavigate();
+
 
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -199,7 +203,7 @@ export default function LessonPage() {
       <XPPopup visible={showXP} amount={xpEarned} />
 
       <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/courses/${lesson.course_id}`)} style={{ width: 'fit-content' }}>
-        <ArrowLeft size={15} /> Back to Course
+        <ArrowLeft size={15} /> {t('back_to_course')}
       </button>
 
       {/* Header */}
@@ -214,7 +218,7 @@ export default function LessonPage() {
         <h1 style={{ marginBottom: '0.35rem' }}>{lesson.title}</h1>
         {lesson.lesson_number && lesson.total_lessons && (
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>Lesson {lesson.lesson_number} of {lesson.total_lessons}</span>
+            <span>{t('lesson_label')} {lesson.lesson_number} {t('of')} {lesson.total_lessons}</span>
             <span style={{ color: 'var(--border-light)' }}>·</span>
             <div style={{ flex: 1, maxWidth: 100, height: 4, background: 'var(--border-light)', borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ height: '100%', background: 'var(--primary)', width: `${Math.round((lesson.lesson_number / lesson.total_lessons) * 100)}%` }} />
@@ -231,7 +235,7 @@ export default function LessonPage() {
         }}>
           <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>🎯</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>What you'll explore in this lesson</div>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>{t('what_youll_learn')}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 20, padding: '0.2rem 0.7rem', border: '1px solid var(--border-light)' }}>
                 ⏱ {estimateTime(lesson.type, lesson.content)}
@@ -329,7 +333,7 @@ export default function LessonPage() {
         <div>
           {lesson.prev_lesson_id && (
             <button className="btn btn-secondary" onClick={handlePrev}>
-              <ArrowLeft size={16} /> Previous
+              <ArrowLeft size={16} /> {t('previous')}
             </button>
           )}
         </div>
@@ -341,20 +345,20 @@ export default function LessonPage() {
             disabled={completing}
             style={{ minWidth: 200, display: 'flex', justifyContent: 'center' }}
           >
-            {completing ? 'Processing...' : <><Trophy size={18} /> Complete Lesson</>}
+            {completing ? t('processing') : <><Trophy size={18} /> {t('complete_lesson')}</>}
           </button>
         )}
 
         {isCompleted && (
           <span className="badge badge-success" style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
-            <CheckCircle size={16} /> Completed
+            <CheckCircle size={16} /> {t('already_completed')}
           </span>
         )}
 
         <div>
           {lesson.next_lesson_id && (
             <button className="btn btn-primary" onClick={handleNext} disabled={completing}>
-              Next <ArrowRight size={16} />
+              {t('next')} <ArrowRight size={16} />
             </button>
           )}
         </div>
