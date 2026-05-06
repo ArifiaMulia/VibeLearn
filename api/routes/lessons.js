@@ -18,6 +18,8 @@ router.get('/:id', auth, async (req, res) => {
     const currentIndex = courseLessons.rows.findIndex(l => l.id === lesson.id);
     lesson.prev_lesson_id = currentIndex > 0 ? courseLessons.rows[currentIndex - 1].id : null;
     lesson.next_lesson_id = currentIndex < courseLessons.rows.length - 1 ? courseLessons.rows[currentIndex + 1].id : null;
+    lesson.lesson_number = currentIndex + 1;
+    lesson.total_lessons = courseLessons.rows.length;
 
     // Get quiz questions if quiz type
     if (lesson.type === 'quiz') {

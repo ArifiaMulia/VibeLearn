@@ -211,7 +211,16 @@ export default function LessonPage() {
           </span>
           {isCompleted && <span className="badge badge-success"><CheckCircle size={12} /> Completed</span>}
         </div>
-        <h1 style={{ marginBottom: '0.5rem' }}>{lesson.title}</h1>
+        <h1 style={{ marginBottom: '0.35rem' }}>{lesson.title}</h1>
+        {lesson.lesson_number && lesson.total_lessons && (
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>Lesson {lesson.lesson_number} of {lesson.total_lessons}</span>
+            <span style={{ color: 'var(--border-light)' }}>·</span>
+            <div style={{ flex: 1, maxWidth: 100, height: 4, background: 'var(--border-light)', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: 'var(--primary)', width: `${Math.round((lesson.lesson_number / lesson.total_lessons) * 100)}%` }} />
+            </div>
+          </div>
+        )}
       </div>
       {/* What You'll Learn intro card */}
       {!isCompleted && (
