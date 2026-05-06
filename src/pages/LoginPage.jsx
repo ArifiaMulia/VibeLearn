@@ -137,6 +137,31 @@ export default function LoginPage() {
               Free plan includes 1 course and 2 labs. <Link to="/landing" style={{ color: 'var(--accent)' }}>See all plans →</Link>
             </p>
           )}
+
+          {/* Powered-by footer */}
+          <div style={{
+            marginTop: '2.5rem', paddingTop: '1.25rem',
+            borderTop: '1px solid var(--border-light)',
+            textAlign: 'center',
+          }}>
+            <a
+              href="https://virtuenet.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: '0.73rem', color: 'var(--text-muted)',
+                textDecoration: 'none', lineHeight: 1.6,
+                transition: 'color 0.2s',
+              }}
+              onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
+              onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+            >
+              <span style={{ display: 'block', fontWeight: 600 }}>
+                🌐 Virtuenet.id
+              </span>
+              <span style={{ opacity: 0.7 }}>powered by Prasetia Dwidharma</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

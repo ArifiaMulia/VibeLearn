@@ -4,10 +4,13 @@ import TopBar from '../components/TopBar';
 import OnboardingModal from '../components/OnboardingModal';
 import GuidedTour from '../components/GuidedTour';
 import { useLanguage } from '../contexts/LanguageContext';
+import { SidebarProvider, useSidebar } from '../contexts/SidebarContext';
 
-export default function DashboardLayout() {
+// Inner layout reads sidebar state
+function InnerLayout() {
   const location = useLocation();
   const { t } = useLanguage();
+  const { collapsed } = useSidebar();
 
   const PAGE_TITLES = {
     '/':                    { title: t('page_dashboard'),   subtitle: t('page_dashboard_sub') },
@@ -21,19 +24,34 @@ export default function DashboardLayout() {
     '/admin/subscriptions': { title: t('page_subs'),        subtitle: t('page_subs_sub') },
   };
 
-  const meta = PAGE_TITLES[location.pathname] || { title: 'VibeLearn', subtitle: '' };
+  const meta = PAGE_TITLES[location.pathname] || { title: 'Promptara', subtitle: '' };
+  const sidebarWidth = collapsed ? 72 : 260;
 
   return (
     <div className="app-layout">
       <OnboardingModal />
       <GuidedTour />
       <Sidebar />
-      <div className="main-content">
+      <div
+        className="main-content"
+        style={{
+          marginLeft: sidebarWidth,
+          transition: 'margin-left 0.25s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
         <TopBar title={meta.title} subtitle={meta.subtitle} />
         <div className="page-container">
           <Outlet />
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout() {
+  return (
+    <SidebarProvider>
+      <InnerLayout />
+    </SidebarProvider>
   );
 }
