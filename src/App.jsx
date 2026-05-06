@@ -27,11 +27,11 @@ export default function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/landing" element={<LandingPage />} />
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<DashboardLayout />}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/courses" element={<CoursesPage />} />
                   <Route path="/courses/:id" element={<CourseDetailPage />} />
                   <Route path="/lessons/:id" element={<LessonPage />} />

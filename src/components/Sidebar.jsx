@@ -18,7 +18,7 @@ export default function Sidebar() {
 
   const NAV_ITEMS = {
     super_admin: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
       { icon: BookOpen,         key: 'nav_courses',        to: '/courses' },
       { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
       { icon: Users,            key: 'nav_users',          to: '/admin/users' },
@@ -27,7 +27,7 @@ export default function Sidebar() {
       { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
     ],
     master: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
       { icon: BookOpen,         key: 'nav_courses',        to: '/courses' },
       { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
       { icon: Users,            key: 'nav_students',       to: '/admin/users' },
@@ -35,7 +35,7 @@ export default function Sidebar() {
       { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
     ],
     participant: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
       { icon: BookOpen,         key: 'nav_my_courses',     to: '/courses' },
       { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
       { icon: BarChart3,        key: 'nav_leaderboard',    to: '/leaderboard' },

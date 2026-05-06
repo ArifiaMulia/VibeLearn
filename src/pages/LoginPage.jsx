@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (user) navigate('/'); }, [user]);
+  useEffect(() => { if (user) navigate('/dashboard'); }, [user]);
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -30,7 +30,7 @@ export default function LoginPage() {
         await register(form.name, form.email, form.password);
         success('Account created! Welcome to Promptara 🚀');
       }
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       showError(err.message);
     } finally {

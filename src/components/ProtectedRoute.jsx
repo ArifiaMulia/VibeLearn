@@ -12,6 +12,6 @@ export default function ProtectedRoute({ allowedRoles = [] }) {
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }

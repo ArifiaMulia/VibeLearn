@@ -14,7 +14,100 @@ import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 
 // Resolves any video URL to an embeddable format, with external link fallback
-function VideoPlayer({ url, title }) {
+// Sub-component: animated caption display below video
+function SubtitleBar({ transcript, transcript_id, lang }) {
+  const [lineIdx, setLineIdx] = useState(0);
+  const [visible, setVisible] = useState(true);
+  const [showSubs, setShowSubs] = useState(true);
+
+  // Pick preferred language
+  const rawText = (lang === 'id' && transcript_id) ? transcript_id : (transcript || transcript_id || '');
+  // Split into sentences for timed display
+  const lines = rawText
+    .split(/(?<=[.!?।])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 10)
+    .slice(0, 60);
+
+  useEffect(() => {
+    if (!showSubs || lines.length === 0) return;
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setLineIdx(i => (i + 1) % lines.length);
+        setVisible(true);
+      }, 300);
+    }, 5000); // advance every 5s
+    return () => clearInterval(interval);
+  }, [showSubs, lines.length]);
+
+  // Reset to first line when lang changes
+  useEffect(() => { setLineIdx(0); setVisible(true); }, [lang]);
+
+  if (!rawText) return null;
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Caption bar */}
+      {showSubs && lines.length > 0 && (
+        <div style={{
+          background: 'rgba(0,0,0,0.85)', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
+          padding: '0.6rem 1rem', marginTop: -4,
+          minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderLeft: '1px solid var(--border-light)', borderRight: '1px solid var(--border-light)',
+          borderBottom: '1px solid var(--border-light)',
+        }}>
+          <p style={{
+            margin: 0, textAlign: 'center', fontSize: '0.88rem', lineHeight: 1.6,
+            color: 'white', fontWeight: 500,
+            opacity: visible ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+            maxWidth: 680,
+          }}>
+            {lines[lineIdx]}
+          </p>
+        </div>
+      )}
+
+      {/* Controls row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => setShowSubs(v => !v)}
+            style={{
+              fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem',
+              borderRadius: 20, cursor: 'pointer', transition: 'all 0.2s',
+              background: showSubs ? 'rgba(124,58,237,0.15)' : 'var(--bg-card)',
+              border: `1px solid ${showSubs ? 'rgba(124,58,237,0.4)' : 'var(--border-light)'}`,
+              color: showSubs ? 'var(--primary)' : 'var(--text-muted)',
+            }}
+          >
+            {lang === 'id' ? (showSubs ? '✓ Subtittel Aktif' : '⊗ Subtitel') : (showSubs ? '✓ Subtitles ON' : '⊗ Subtitles')}
+          </button>
+          {showSubs && (
+            <span style={{
+              fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: 10,
+              background: lang === 'id' && transcript_id
+                ? 'rgba(6,182,212,0.12)' : 'rgba(124,58,237,0.1)',
+              border: `1px solid ${lang === 'id' && transcript_id ? 'rgba(6,182,212,0.3)' : 'rgba(124,58,237,0.25)'}`,
+              color: lang === 'id' && transcript_id ? 'var(--accent)' : 'var(--primary)',
+              fontWeight: 700,
+            }}>
+              {lang === 'id' && transcript_id ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English'}
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '0.25rem' }}>
+          {transcript && <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.3rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: lang === 'en' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 700 }}>EN</span>}
+          {transcript_id && <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.3rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: lang === 'id' ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 700 }}>ID</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Resolves any video URL to an embeddable format, with external link fallback
+function VideoPlayer({ url, title, transcript, transcript_id, lang }) {
   if (!url) return null;
 
   let embedUrl = url;
@@ -23,7 +116,6 @@ function VideoPlayer({ url, title }) {
 
   if (url.includes('archive.org')) {
     platform = 'Internet Archive';
-    // Already an embed URL?
     if (!url.includes('/embed/')) {
       const match = url.match(/archive\.org\/details\/([^/?]+)/);
       if (match) embedUrl = `https://archive.org/embed/${match[1]}`;
@@ -54,7 +146,7 @@ function VideoPlayer({ url, title }) {
 
   return (
     <div>
-      <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+      <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: (transcript || transcript_id) ? 'var(--radius-lg) var(--radius-lg) 0 0' : 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)', borderBottom: (transcript || transcript_id) ? 'none' : '1px solid var(--border-light)' }}>
         <iframe
           src={embedUrl}
           width="100%"
@@ -65,7 +157,10 @@ function VideoPlayer({ url, title }) {
           title={title}
         />
       </div>
-      <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
+      {(transcript || transcript_id) && (
+        <SubtitleBar transcript={transcript} transcript_id={transcript_id} lang={lang} />
+      )}
+      <div style={{ textAlign: 'right', marginTop: '0.4rem' }}>
         <a href={externalUrl} target="_blank" rel="noopener noreferrer"
           style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none' }}
           onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
@@ -558,7 +653,13 @@ export default function LessonPage() {
       )}
 
       {lesson.type === 'video' && lesson.video_url && (
-        <VideoPlayer url={lesson.video_url} title={lesson.title} />
+        <VideoPlayer
+          url={lesson.video_url}
+          title={lesson.title}
+          transcript={lesson.transcript}
+          transcript_id={lesson.transcript_id}
+          lang={lang}
+        />
       )}
 
       {/* Video Transcript Panel — language switches reactively with toggle */}

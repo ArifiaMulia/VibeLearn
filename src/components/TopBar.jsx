@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell, Search, Zap, Sun, Moon, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSidebar } from '../contexts/SidebarContext';
 
 function NotificationPanel({ onClose, t }) {
   const { authFetch } = useAuth();
@@ -74,10 +75,13 @@ function NotificationPanel({ onClose, t }) {
 export default function TopBar({ title, subtitle }) {
   const { user, realUser, previewRole, previewAs } = useAuth();
   const { lang, toggleLang, t } = useLanguage();
+  const { collapsed } = useSidebar();
   const [xp, setXp] = useState(0);
   const [search, setSearch] = useState('');
   const [theme, setTheme] = useState(localStorage.getItem('vl_theme') || 'dark');
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const sidebarWidth = collapsed ? 72 : 260;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -96,11 +100,14 @@ export default function TopBar({ title, subtitle }) {
 
   return (
     <header style={{
-      position: 'fixed', top: 0, left: 'var(--sidebar-width)', right: 0,
+      position: 'fixed', top: 0,
+      left: sidebarWidth,
+      right: 0,
       height: 'var(--topbar-height)', background: 'var(--bg-topbar)',
       backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border-light)',
       display: 'flex', alignItems: 'center', padding: '0 1.5rem',
       zIndex: 99, gap: '1rem',
+      transition: 'left 0.25s cubic-bezier(0.4,0,0.2,1)',
     }}>
       {previewRole && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--warning), var(--primary))' }} />

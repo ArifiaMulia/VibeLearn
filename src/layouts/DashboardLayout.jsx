@@ -13,7 +13,7 @@ function InnerLayout() {
   const { collapsed } = useSidebar();
 
   const PAGE_TITLES = {
-    '/':                    { title: t('page_dashboard'),   subtitle: t('page_dashboard_sub') },
+    '/dashboard':           { title: t('page_dashboard'),   subtitle: t('page_dashboard_sub') },
     '/courses':             { title: t('page_courses'),     subtitle: t('page_courses_sub') },
     '/labs':                { title: t('page_labs'),        subtitle: t('page_labs_sub') },
     '/leaderboard':         { title: t('page_leaderboard'), subtitle: t('page_leaderboard_sub') },
