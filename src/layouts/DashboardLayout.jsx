@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
+import OnboardingModal from '../components/OnboardingModal';
 
 const PAGE_TITLES = {
   '/': { title: 'Dashboard', subtitle: 'Welcome back! Keep learning.' },
@@ -20,6 +21,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="app-layout">
+      <OnboardingModal />
       <Sidebar />
       <div className="main-content">
         <TopBar title={meta.title} subtitle={meta.subtitle} />

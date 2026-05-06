@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
@@ -74,8 +74,48 @@ function VideoPlayer({ url, title }) {
   );
 }
 
+// Estimate reading time
+function estimateTime(type, content) {
+  if (type === 'video') return '~10 min';
+  if (type === 'quiz') return '~5 min';
+  const words = (content || '').split(/\s+/).length;
+  return `~${Math.max(2, Math.ceil(words / 200))} min`;
+}
+
+// Lesson Reaction widget
+function LessonReaction({ lessonId }) {
+  const [picked, setPicked] = useState(() => localStorage.getItem(`vl_react_${lessonId}`));
+  const options = [{ val: '1', emoji: '😕' }, { val: '2', emoji: '😐' }, { val: '3', emoji: '😊' }, { val: '4', emoji: '🤩' }];
+  const pick = (val) => { setPicked(val); localStorage.setItem(`vl_react_${lessonId}`, val); };
+
+  return (
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', textAlign: 'center' }}>
+      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+        {picked ? '✅ Thanks for your feedback!' : 'How was this lesson?'}
+      </div>
+      {!picked && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+          {options.map(({ val, emoji }) => (
+            <button key={val} onClick={() => pick(val)} style={{
+              fontSize: '1.6rem', background: 'none', border: '2px solid var(--border-light)',
+              borderRadius: '50%', width: 48, height: 48, cursor: 'pointer', transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-card-hover)'; e.currentTarget.style.transform = 'scale(1.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.transform = 'scale(1)'; }}
+            >{emoji}</button>
+          ))}
+        </div>
+      )}
+      {picked && (
+        <div style={{ fontSize: '2rem' }}>{options.find(o => o.val === picked)?.emoji}</div>
+      )}
+    </div>
+  );
+}
+
 export default function LessonPage() {
   const { id } = useParams();
+
   const { authFetch, user } = useAuth();
   const { success, error } = useAlert();
   const navigate = useNavigate();
@@ -173,8 +213,31 @@ export default function LessonPage() {
         </div>
         <h1 style={{ marginBottom: '0.5rem' }}>{lesson.title}</h1>
       </div>
+      {/* What You'll Learn intro card */}
+      {!isCompleted && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(6,182,212,0.06))',
+          border: '1px solid rgba(124,58,237,0.2)', borderRadius: 'var(--radius-lg)',
+          padding: '1.25rem 1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start',
+        }}>
+          <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>🎯</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>What you'll explore in this lesson</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 20, padding: '0.2rem 0.7rem', border: '1px solid var(--border-light)' }}>
+                ⏱ {estimateTime(lesson.type, lesson.content)}
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 20, padding: '0.2rem 0.7rem', border: '1px solid var(--border-light)' }}>
+                📊 {lesson.type === 'quiz' ? 'Quiz — 80% to pass' : lesson.type === 'video' ? 'Watch & Read' : 'Read & Practice'}
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--primary)', background: 'rgba(124,58,237,0.1)', borderRadius: 20, padding: '0.2rem 0.7rem', border: '1px solid rgba(124,58,237,0.2)', fontWeight: 700 }}>
+                ⚡ +{lesson.xp_reward} XP on completion
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Video Content */}
       {lesson.type === 'video' && lesson.video_url && (
         <VideoPlayer url={lesson.video_url} title={lesson.title} />
       )}
@@ -248,6 +311,9 @@ export default function LessonPage() {
           ))}
         </div>
       )}
+
+      {/* Lesson Reaction */}
+      {isCompleted && <LessonReaction lessonId={id} />}
 
       {/* Navigation & Completion */}
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', paddingBottom: '2rem' }}>
