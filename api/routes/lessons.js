@@ -81,40 +81,98 @@ router.delete('/:id', auth, requireRole('super_admin', 'master'), async (req, re
   }
 });
 
+
 // POST /api/lessons/:id/complete
 router.post('/:id/complete', auth, async (req, res) => {
   const { score } = req.body;
+  const lessonId = parseInt(req.params.id);
+  const userId = req.user.id;
+
   try {
-    const lesson = await pool.query('SELECT * FROM lessons WHERE id = $1', [req.params.id]);
-    if (!lesson.rows.length) return res.status(404).json({ error: 'Lesson not found' });
-    const xp = lesson.rows[0].xp_reward || 50;
+    const lessonResult = await pool.query(
+      'SELECT id, title, xp_reward, course_id FROM lessons WHERE id = $1', [lessonId]
+    );
+    if (!lessonResult.rows.length) return res.status(404).json({ error: 'Lesson not found' });
+    const lesson = lessonResult.rows[0];
+    const xp = lesson.xp_reward || 50;
 
+    // Upsert progress — preserve best score, only set completed_at on first completion
     await pool.query(
-      `INSERT INTO progress (user_id, lesson_id, status, score, completed_at) VALUES ($1,$2,'completed',$3,NOW())
-       ON CONFLICT (user_id, lesson_id) DO UPDATE SET status='completed', score=$3, completed_at=NOW()`,
-      [req.user.id, req.params.id, score || 100]
+      `INSERT INTO progress (user_id, lesson_id, status, score, completed_at)
+       VALUES ($1,$2,'completed',$3,NOW())
+       ON CONFLICT (user_id, lesson_id) DO UPDATE
+         SET status='completed',
+             score=GREATEST(progress.score, $3),
+             completed_at=COALESCE(progress.completed_at, NOW())`,
+      [userId, lessonId, score || 100]
     );
-    // Award XP
-    await pool.query(`INSERT INTO xp_log (user_id, amount, reason) VALUES ($1,$2,$3)`, [req.user.id, xp, `Completed lesson: ${lesson.rows[0].title}`]);
-    await pool.query('INSERT INTO usage_logs (user_id, action, resource_type, resource_id) VALUES ($1,$2,$3,$4)', [req.user.id, 'complete_lesson', 'lesson', req.params.id]);
 
-    // Check course completion
-    const courseId = lesson.rows[0].course_id;
-    const totalLessons = await pool.query('SELECT COUNT(*) FROM lessons WHERE course_id=$1', [courseId]);
-    const completedLessons = await pool.query(
-      `SELECT COUNT(*) FROM progress p JOIN lessons l ON p.lesson_id = l.id WHERE p.user_id=$1 AND l.course_id=$2 AND p.status='completed'`,
-      [req.user.id, courseId]
+    // Award XP only once per lesson per user
+    const alreadyAwarded = await pool.query(
+      `SELECT id FROM xp_log WHERE user_id=$1 AND reason=$2 LIMIT 1`,
+      [userId, `lesson:${lessonId}`]
     );
-    const isCourseDone = parseInt(completedLessons.rows[0].count) >= parseInt(totalLessons.rows[0].count);
-    if (isCourseDone) {
-      await pool.query(`UPDATE enrollments SET completed_at=NOW() WHERE user_id=$1 AND course_id=$2 AND completed_at IS NULL`, [req.user.id, courseId]);
-      await pool.query(`INSERT INTO achievements (user_id, badge_name) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [req.user.id, `course_complete_${courseId}`]);
-      await pool.query(`INSERT INTO xp_log (user_id, amount, reason) VALUES ($1,$2,$3)`, [req.user.id, 200, 'Course completed!']);
+    let xpEarned = 0;
+    if (!alreadyAwarded.rows.length) {
+      await pool.query(
+        `INSERT INTO xp_log (user_id, amount, reason) VALUES ($1,$2,$3)`,
+        [userId, xp, `lesson:${lessonId}`]
+      );
+      xpEarned = xp;
+      await pool.query(
+        'INSERT INTO usage_logs (user_id, action, resource_type, resource_id) VALUES ($1,$2,$3,$4)',
+        [userId, 'complete_lesson', 'lesson', lessonId]
+      ).catch(() => {});
     }
-    res.json({ xp_earned: xp, course_completed: isCourseDone });
+
+    // Check course completion — wrapped so it never breaks the main response
+    let isCourseDone = false;
+    try {
+      const courseId = lesson.course_id;
+      const [totalResult, completedResult] = await Promise.all([
+        pool.query('SELECT COUNT(*) FROM lessons WHERE course_id=$1', [courseId]),
+        pool.query(
+          `SELECT COUNT(*) FROM progress p
+           JOIN lessons l ON p.lesson_id = l.id
+           WHERE p.user_id=$1 AND l.course_id=$2 AND p.status='completed'`,
+          [userId, courseId]
+        ),
+      ]);
+      isCourseDone = parseInt(completedResult.rows[0].count) >= parseInt(totalResult.rows[0].count);
+
+      if (isCourseDone) {
+        await pool.query(
+          `UPDATE enrollments SET completed_at=NOW()
+           WHERE user_id=$1 AND course_id=$2 AND completed_at IS NULL`,
+          [userId, courseId]
+        ).catch(() => {});
+
+        await pool.query(
+          `INSERT INTO achievements (user_id, badge_name) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+          [userId, `course_complete_${courseId}`]
+        ).catch(() => {});
+
+        const courseXpKey = `course_complete:${courseId}`;
+        const courseXpAlready = await pool.query(
+          `SELECT id FROM xp_log WHERE user_id=$1 AND reason=$2 LIMIT 1`,
+          [userId, courseXpKey]
+        );
+        if (!courseXpAlready.rows.length) {
+          await pool.query(
+            `INSERT INTO xp_log (user_id, amount, reason) VALUES ($1,$2,$3)`,
+            [userId, 200, courseXpKey]
+          ).catch(() => {});
+        }
+      }
+    } catch (courseErr) {
+      console.error('[complete] course check failed (non-fatal):', courseErr.message);
+    }
+
+    return res.json({ xp_earned: xpEarned, course_completed: isCourseDone });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[POST /lessons/:id/complete] ERROR:', err.message, err.stack);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 

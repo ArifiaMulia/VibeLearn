@@ -8,11 +8,47 @@ module.exports = {
       xp_reward: 50,
       order_index: 1,
       challenge_text: 'Open your favorite AI tool (ChatGPT, Claude, or Gemini) and try this: Ask it to "write a function that greets a user by name". Then refine your prompt by adding constraints like "in Python" and "with error handling for empty strings". Notice how specificity changes the output!',
+      challenge_text_id: 'Buka AI favoritmu (ChatGPT, Claude, atau Gemini) dan coba ini: Minta untuk "tulis fungsi yang menyapa pengguna berdasarkan namanya". Kemudian perjelas promptmu dengan menambahkan batasan seperti "dalam Python" dan "dengan penanganan error untuk nama kosong". Perhatikan bagaimana kejelasan prompt mengubah hasilnya!',
       resources: [
         { type: 'article', label: 'What is Vibe Coding? (GitHub Blog)', url: 'https://github.blog/ai-and-ml/generative-ai/what-is-vibe-coding/' },
         { type: 'docs', label: 'GitHub Copilot Documentation', url: 'https://docs.github.com/en/copilot' },
         { type: 'repo', label: 'Awesome AI Dev Tools', url: 'https://github.com/e2b-dev/awesome-ai-agents' },
       ],
+      transcript: `Welcome to Introduction to Vibe Coding.
+
+In this lesson, we will explore a completely new way of thinking about software development. Vibe coding is not just about using AI tools — it's a fundamental shift in how you approach problem-solving as a developer.
+
+Traditionally, programmers had to memorize syntax, write every line manually, and spend hours on boilerplate code. In the era of vibe coding, your role evolves. You become the Director and Architect, while the AI acts as the Typist and Implementer.
+
+The key insight is this: your value as a developer is no longer in how fast you can type code. It's in how clearly you can think about systems, communicate requirements, and validate the output.
+
+The four pillars of vibe coding are:
+First — Understanding the business requirement deeply before touching any code.
+Second — Breaking down that requirement into modular architectural pieces.
+Third — Communicating the context and constraints to an AI model clearly.
+Fourth — Reviewing every line of generated code for correctness and security.
+
+In the workflow diagram shown, notice how the human is always in the loop. The AI generates, but the human validates. This is critical — AI models can hallucinate, use deprecated APIs, or introduce subtle bugs. Your job is to catch these issues.
+
+Watch the full video to see this workflow demonstrated with a real project example. Then try the challenge at the bottom of the page to put this into practice.`,
+
+      transcript_id: `Selamat datang di pelajaran Pengenalan Vibe Coding.
+
+Dalam pelajaran ini, kita akan mengeksplorasi cara berpikir yang sepenuhnya baru tentang pengembangan perangkat lunak. Vibe coding bukan hanya tentang menggunakan alat AI — ini adalah pergeseran mendasar dalam cara kamu mendekati pemecahan masalah sebagai pengembang.
+
+Secara tradisional, programmer harus menghafal sintaks, menulis setiap baris secara manual, dan menghabiskan berjam-jam untuk kode boilerplate. Di era vibe coding, peranmu berevolusi. Kamu menjadi Direktur dan Arsitek, sementara AI bertindak sebagai Pengetik dan Pelaksana.
+
+Insight kuncinya adalah ini: nilaimu sebagai pengembang bukan lagi pada seberapa cepat kamu bisa mengetik kode. Melainkan pada seberapa jelas kamu bisa berpikir tentang sistem, mengkomunikasikan kebutuhan, dan memvalidasi hasilnya.
+
+Empat pilar vibe coding adalah:
+Pertama — Memahami kebutuhan bisnis secara mendalam sebelum menyentuh kode apapun.
+Kedua — Memecah kebutuhan tersebut menjadi komponen arsitektur yang modular.
+Ketiga — Mengkomunikasikan konteks dan batasan kepada model AI dengan jelas.
+Keempat — Meninjau setiap baris kode yang dihasilkan untuk kebenaran dan keamanan.
+
+Dalam diagram alur yang ditampilkan, perhatikan bagaimana manusia selalu terlibat dalam prosesnya. AI menghasilkan, tetapi manusia yang memvalidasi. Ini sangat penting — model AI bisa berhalusinasi, menggunakan API yang sudah tidak dipakai, atau memperkenalkan bug yang halus. Tugasmu adalah menangkap masalah-masalah ini.
+
+Tonton video lengkapnya untuk melihat alur kerja ini didemonstrasikan dengan contoh proyek nyata. Kemudian coba tantangan di bagian bawah halaman untuk mempraktikkannya.`,
       content: `# What is Vibe Coding?
 
 Vibe coding is a completely new paradigm of software engineering. It is not just "using AI to help you code." It is the process of acting as the **Director** and **Architect** while the AI acts as the **Typist** and **Implementer**. 

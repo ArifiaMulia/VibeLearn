@@ -179,6 +179,8 @@ const initDb = async (retries = 10, delay = 3000) => {
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS challenge_text TEXT DEFAULT '';`,
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS content_id TEXT DEFAULT NULL;`,
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS challenge_text_id TEXT DEFAULT NULL;`,
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS transcript TEXT DEFAULT NULL;`,
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS transcript_id TEXT DEFAULT NULL;`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS format VARCHAR(50) DEFAULT 'multiple_choice';`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS code_lines JSONB DEFAULT '[]';`,
       ];
@@ -235,10 +237,12 @@ const initDb = async (retries = 10, delay = 3000) => {
           
           for (const l of lessonSeeds) {
             const lessonRes = await pool.query(
-              `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+              `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, content_id, challenge_text_id, transcript, transcript_id)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
               [courseId, l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index,
-               l.difficulty || 'beginner', JSON.stringify(l.resources || []), l.challenge_text || '']
+               l.difficulty || 'beginner', JSON.stringify(l.resources || []), l.challenge_text || '',
+               l.content_id || null, l.challenge_text_id || null,
+               l.transcript || null, l.transcript_id || null]
             );
             // Add quiz questions for quiz lessons
             if (l.type === 'quiz' && l.quizzes) {

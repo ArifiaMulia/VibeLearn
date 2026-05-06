@@ -78,6 +78,83 @@ function VideoPlayer({ url, title }) {
   );
 }
 
+// Collapsible video transcript
+function TranscriptPanel({ text, isId, lang }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  if (!text) return null;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div style={{
+      border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)',
+      overflow: 'hidden', background: 'var(--bg-surface)',
+    }}>
+      {/* Header toggle */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem',
+          padding: '0.85rem 1.1rem', background: 'none', border: 'none',
+          cursor: 'pointer', color: 'var(--text-primary)', textAlign: 'left',
+          borderBottom: open ? '1px solid var(--border-light)' : 'none',
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>📄</span>
+        <span style={{ fontWeight: 700, fontSize: '0.88rem', flex: 1 }}>
+          {lang === 'id' ? 'Transkrip Video' : 'Video Transcript'}
+        </span>
+        {isId && (
+          <span style={{
+            fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.45rem',
+            borderRadius: 20, background: 'rgba(6,182,212,0.15)',
+            color: 'var(--accent)', border: '1px solid rgba(6,182,212,0.3)',
+          }}>🇮🇩 Bahasa Indonesia</span>
+        )}
+        <span style={{
+          fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.3rem',
+          transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.2s',
+          display: 'inline-block',
+        }}>▼</span>
+      </button>
+
+      {/* Transcript body */}
+      {open && (
+        <div style={{ padding: '1rem 1.1rem' }}>
+          <div style={{
+            maxHeight: 320, overflowY: 'auto', fontSize: '0.85rem',
+            lineHeight: 1.8, color: 'var(--text-secondary)',
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            paddingRight: '0.5rem',
+          }}>
+            {text}
+          </div>
+          <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={handleCopy}
+              style={{
+                fontSize: '0.75rem', padding: '0.3rem 0.8rem',
+                background: copied ? 'var(--success)' : 'var(--bg-card)',
+                border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)',
+                color: copied ? 'white' : 'var(--text-muted)',
+                cursor: 'pointer', transition: '0.2s',
+              }}
+            >
+              {copied ? '✓ Copied!' : '📋 Copy Transcript'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Estimate reading time
 function estimateTime(type, content) {
   if (type === 'video') return '~10 min';
@@ -256,19 +333,31 @@ export default function LessonPage() {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showXP, setShowXP] = useState(false);
   const [xpEarned, setXPEarned] = useState(0);
+  // Track pending navigation timeouts so we can cancel them on unmount
+  const navTimerRef = useRef(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    return () => {
+      mountedRef.current = false;
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
+    // Reset all local state on lesson change
     setLesson(null);
     setLoading(true);
     setQuizAnswers({});
+    setCompleting(false);  // <-- critical: reset stuck state on navigation
+    setShowXP(false);
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
     authFetch(`/lessons/${id}`)
-      .then(setLesson)
-      .catch(err => { error(err.message); navigate('/courses'); })
-      .finally(() => setLoading(false));
+      .then(data => { if (mountedRef.current) setLesson(data); })
+      .catch(err => { if (mountedRef.current) { error(err.message); navigate('/courses'); } })
+      .finally(() => { if (mountedRef.current) setLoading(false); });
   }, [id]);
 
   useEffect(() => {
@@ -280,6 +369,8 @@ export default function LessonPage() {
   }, [lesson]);
 
   const handleComplete = async (andNavigateNext = false) => {
+    if (completing) return; // guard against double-click
+
     if (lesson.type === 'quiz') {
       if (Object.keys(quizAnswers).length < (lesson.quizzes?.length || 0)) {
         return error('Please answer all questions before completing.');
@@ -290,9 +381,15 @@ export default function LessonPage() {
       if (score < 80) return error(`You scored ${score}%. You need 80% to pass.`);
     }
 
-    // If already completed and user just wants to navigate next
-    if (isCompleted && andNavigateNext && lesson.next_lesson_id) {
-      navigate(`/lessons/${lesson.next_lesson_id}`);
+    // If already completed, just navigate to next — no API call needed
+    const isAlreadyDone = lesson.user_progress?.status === 'completed';
+    if (isAlreadyDone && andNavigateNext) {
+      if (lesson.next_lesson_id) navigate(`/lessons/${lesson.next_lesson_id}`);
+      else navigate(`/courses/${lesson.course_id}`);
+      return;
+    }
+    if (isAlreadyDone && !andNavigateNext) {
+      navigate(`/courses/${lesson.course_id}`);
       return;
     }
 
@@ -301,19 +398,32 @@ export default function LessonPage() {
       const res = await authFetch(`/lessons/${id}/complete`, {
         method: 'POST', body: JSON.stringify({ score: 100 })
       });
-      setXPEarned(res.xp_earned || lesson.xp_reward);
-      setShowXP(true);
+      if (!mountedRef.current) return;
+
+      const earned = res.xp_earned || 0;
+      if (earned > 0) {
+        setXPEarned(earned);
+        setShowXP(true);
+      }
       success('Lesson completed! 🎉');
 
-      if (andNavigateNext && lesson.next_lesson_id) {
-        setTimeout(() => navigate(`/lessons/${lesson.next_lesson_id}`), 1200);
-      } else {
-        setTimeout(() => navigate(`/courses/${lesson.course_id}`), 2200);
-      }
+      const delay = andNavigateNext ? 900 : 1800;
+      navTimerRef.current = setTimeout(() => {
+        if (!mountedRef.current) return;
+        if (andNavigateNext && lesson.next_lesson_id) {
+          navigate(`/lessons/${lesson.next_lesson_id}`);
+        } else {
+          navigate(`/courses/${lesson.course_id}`);
+        }
+      }, delay);
+
     } catch (err) {
-      error(err.message);
-      setCompleting(false);
+      if (mountedRef.current) {
+        error(err.message);
+        setCompleting(false); // only reset on error so button becomes clickable again
+      }
     }
+    // Note: no finally setCompleting(false) — on success we navigate away which unmounts
   };
 
   const handleNext = () => handleComplete(true);
@@ -380,6 +490,23 @@ export default function LessonPage() {
       {lesson.type === 'video' && lesson.video_url && (
         <VideoPlayer url={lesson.video_url} title={lesson.title} />
       )}
+
+      {/* Video Transcript Panel */}
+      {lesson.type === 'video' && (lesson.transcript || lesson.transcript_id) && (() => {
+        const transcriptText = lang === 'id' && lesson.transcript_id
+          ? lesson.transcript_id
+          : lesson.transcript_id
+            ? lesson.transcript_id   // prefer ID transcript if exists regardless of lang for ID lessons
+            : lesson.transcript;
+        const isIdTranscript = !!(lesson.transcript_id);
+        return (
+          <TranscriptPanel
+            text={transcriptText}
+            isId={isIdTranscript}
+            lang={lang}
+          />
+        );
+      })()}
 
       {/* Text / Video Markdown Content */}
       {(lesson.type === 'text' || lesson.type === 'video') && lesson.content && (() => {
