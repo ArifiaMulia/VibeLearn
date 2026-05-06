@@ -3,8 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ArrowLeft, ArrowRight, CheckCircle, Zap, Play, Trophy, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Zap, Play, Trophy, ExternalLink, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { XPPopup } from '../../components/XPBadge';
+import ResourcesPanel from '../../components/ResourcesPanel';
+import AskInstructor from '../../components/AskInstructor';
+import CodeOrderExercise from '../../components/CodeOrderExercise';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -110,6 +113,129 @@ function LessonReaction({ lessonId }) {
       )}
       {picked && (
         <div style={{ fontSize: '2rem' }}>{options.find(o => o.val === picked)?.emoji}</div>
+      )}
+    </div>
+  );
+}
+
+// ── QuizCard — supports multiple_choice, true_false, fill_blank, code_order ──
+function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
+  const { lang } = useLanguage();
+  const [fillText, setFillText] = useState('');
+  const [fillSubmitted, setFillSubmitted] = useState(false);
+  const fmt = q.format || 'multiple_choice';
+
+  // TRUE/FALSE format
+  if (fmt === 'true_false') {
+    const options = [
+      { label: lang === 'id' ? '✅ Benar' : '✅ True',  val: 0 },
+      { label: lang === 'id' ? '❌ Salah' : '❌ False', val: 1 },
+    ];
+    return (
+      <div className="card">
+        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          {options.map(({ label, val }) => {
+            const sel = answer === val;
+            return (
+              <button key={val} onClick={() => onAnswer(val)} disabled={isCompleted}
+                style={{
+                  flex: 1, padding: '1rem 0.5rem', borderRadius: 'var(--radius-sm)',
+                  fontWeight: 700, fontSize: '0.95rem', cursor: isCompleted ? 'default' : 'pointer',
+                  background: sel ? (val === q.correct_answer ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.1)') : 'var(--bg-surface)',
+                  border: `2px solid ${sel ? (val === q.correct_answer ? 'var(--success)' : 'var(--danger,#ef4444)') : 'var(--border-light)'}`,
+                  color: sel ? (val === q.correct_answer ? 'var(--success)' : '#ef4444') : 'var(--text-primary)',
+                  transition: 'all 0.15s',
+                }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {isCompleted && q.explanation && (
+          <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--success)', background: 'rgba(16,185,129,0.08)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--success)' }}>
+            💡 {q.explanation}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // FILL IN THE BLANK format
+  if (fmt === 'fill_blank') {
+    const correct = q.options?.[q.correct_answer] || '';
+    const check = () => {
+      setFillSubmitted(true);
+      onAnswer(fillText.trim().toLowerCase() === correct.toLowerCase() ? q.correct_answer : -1);
+    };
+    return (
+      <div className="card">
+        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            value={fillText} onChange={e => setFillText(e.target.value)}
+            disabled={isCompleted || fillSubmitted}
+            placeholder={lang === 'id' ? 'Ketik jawabanmu...' : 'Type your answer...'}
+            onKeyDown={e => e.key === 'Enter' && check()}
+            style={{
+              flex: 1, background: 'var(--bg-surface)', border: `1px solid ${fillSubmitted ? (answer === q.correct_answer ? 'var(--success)' : '#ef4444') : 'var(--border-light)'}`,
+              borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.9rem', color: 'var(--text-primary)', fontSize: '0.9rem',
+            }}
+          />
+          {!fillSubmitted && !isCompleted && (
+            <button onClick={check} className="btn btn-primary btn-sm">
+              {lang === 'id' ? 'Cek' : 'Check'}
+            </button>
+          )}
+        </div>
+        {fillSubmitted && (
+          <div style={{ marginTop: '0.6rem', fontSize: '0.82rem', padding: '0.6rem 0.85rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid', background: answer === q.correct_answer ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.06)', borderLeftColor: answer === q.correct_answer ? 'var(--success)' : '#ef4444', color: answer === q.correct_answer ? 'var(--success)' : '#ef4444' }}>
+            {answer === q.correct_answer
+              ? `✅ ${lang === 'id' ? 'Benar!' : 'Correct!'}`
+              : `❌ ${lang === 'id' ? `Jawaban yang benar: ${correct}` : `Correct answer: ${correct}`}`}
+            {q.explanation && <div style={{ marginTop: '0.25rem', color: 'var(--text-muted)' }}>💡 {q.explanation}</div>}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // CODE ORDER format
+  if (fmt === 'code_order') {
+    const lines = q.code_lines || q.options || [];
+    return (
+      <div className="card">
+        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
+        <CodeOrderExercise lines={lines} onComplete={() => onAnswer(q.correct_answer)} />
+      </div>
+    );
+  }
+
+  // DEFAULT: MULTIPLE CHOICE
+  return (
+    <div className="card">
+      <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {q.options.map((opt, optIdx) => (
+          <button key={optIdx}
+            onClick={() => onAnswer(optIdx)}
+            disabled={isCompleted}
+            style={{
+              textAlign: 'left', padding: '1rem', borderRadius: 'var(--radius-sm)',
+              background: answer === optIdx ? 'rgba(124,58,237,0.15)' : 'var(--bg-surface)',
+              border: `1px solid ${answer === optIdx ? 'var(--primary)' : 'var(--border-light)'}`,
+              color: 'var(--text-primary)', cursor: isCompleted ? 'default' : 'pointer', transition: 'var(--transition)',
+              opacity: isCompleted && answer !== optIdx ? 0.6 : 1,
+            }}>
+            <span style={{ marginRight: '0.75rem', opacity: 0.5, fontSize: '0.8rem' }}>{String.fromCharCode(65 + optIdx)}.</span>
+            {opt}
+          </button>
+        ))}
+      </div>
+      {isCompleted && q.explanation && (
+        <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--success)', background: 'rgba(16,185,129,0.08)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--success)' }}>
+          💡 {q.explanation}
+        </p>
       )}
     </div>
   );
@@ -297,36 +423,39 @@ export default function LessonPage() {
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{lesson.content}</ReactMarkdown>
           </div>
           {lesson.quizzes?.map((q, i) => (
-            <div key={q.id} className="card">
-              <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {q.options.map((opt, optIdx) => (
-                  <button key={optIdx}
-                    onClick={() => !isCompleted && setQuizAnswers(prev => ({ ...prev, [q.id]: optIdx }))}
-                    disabled={isCompleted}
-                    style={{
-                      textAlign: 'left', padding: '1rem', borderRadius: 'var(--radius-sm)',
-                      background: quizAnswers[q.id] === optIdx ? 'rgba(124,58,237,0.15)' : 'var(--bg-surface)',
-                      border: `1px solid ${quizAnswers[q.id] === optIdx ? 'var(--primary)' : 'var(--border-light)'}`,
-                      color: 'var(--text-primary)', cursor: isCompleted ? 'default' : 'pointer', transition: 'var(--transition)',
-                      opacity: isCompleted && quizAnswers[q.id] !== optIdx ? 0.6 : 1,
-                    }}>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-              {isCompleted && q.explanation && (
-                <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--success)', background: 'rgba(16,185,129,0.08)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--success)' }}>
-                  💡 {q.explanation}
-                </p>
-              )}
-            </div>
+            <QuizCard key={q.id} q={q} i={i} isCompleted={isCompleted}
+              answer={quizAnswers[q.id]} onAnswer={(val) => !isCompleted && setQuizAnswers(prev => ({ ...prev, [q.id]: val }))} t={t} />
           ))}
+        </div>
+      )}
+
+      {/* Challenge Text — Your Turn block */}
+      {lesson.challenge_text && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(6,182,212,0.05))',
+          border: '1px solid rgba(245,158,11,0.25)', borderRadius: 'var(--radius-md)',
+          padding: '1.1rem 1.25rem', display: 'flex', gap: '0.85rem',
+        }}>
+          <div style={{ fontSize: '1.4rem', flexShrink: 0 }}>🎯</div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--warning)', marginBottom: '0.35rem' }}>
+              {t('lang') === 'id' ? 'Giliran Kamu!' : 'Your Turn!'}
+            </div>
+            <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              {lesson.challenge_text}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Lesson Reaction */}
       {isCompleted && <LessonReaction lessonId={id} />}
+
+      {/* Resources Panel */}
+      <ResourcesPanel resources={lesson.resources || []} lessonType={lesson.type} />
+
+      {/* Ask AI Instructor */}
+      <AskInstructor lessonId={id} lessonTitle={lesson.title} lessonType={lesson.type} />
 
       {/* Navigation & Completion */}
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', paddingBottom: '2rem' }}>

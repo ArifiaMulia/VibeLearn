@@ -3,9 +3,16 @@ module.exports = {
     {
       title: 'Introduction to Vibe Coding',
       type: 'video',
+      difficulty: 'beginner',
       video_url: 'https://archive.org/embed/youtube-Tn8dfgGyMEA',
       xp_reward: 50,
       order_index: 1,
+      challenge_text: 'Open your favorite AI tool (ChatGPT, Claude, or Gemini) and try this: Ask it to "write a function that greets a user by name". Then refine your prompt by adding constraints like "in Python" and "with error handling for empty strings". Notice how specificity changes the output!',
+      resources: [
+        { type: 'article', label: 'What is Vibe Coding? (GitHub Blog)', url: 'https://github.blog/ai-and-ml/generative-ai/what-is-vibe-coding/' },
+        { type: 'docs', label: 'GitHub Copilot Documentation', url: 'https://docs.github.com/en/copilot' },
+        { type: 'repo', label: 'Awesome AI Dev Tools', url: 'https://github.com/e2b-dev/awesome-ai-agents' },
+      ],
       content: `# What is Vibe Coding?
 
 Vibe coding is a completely new paradigm of software engineering. It is not just "using AI to help you code." It is the process of acting as the **Director** and **Architect** while the AI acts as the **Typist** and **Implementer**. 
@@ -39,8 +46,15 @@ Watch the video above for a deeper dive into the mental models required to succe
     {
       title: 'The AI Collaboration Workflow',
       type: 'text',
+      difficulty: 'beginner',
       xp_reward: 100,
       order_index: 2,
+      challenge_text: 'Try the 3-phase workflow on a real task: (1) Write a context block describing your tech stack, (2) Ask the AI to generate only the data schema first, (3) Then ask it to generate the API endpoint using that schema. Compare the quality vs. asking for everything at once!',
+      resources: [
+        { type: 'article', label: 'Cursor AI — Context Best Practices', url: 'https://cursor.sh/blog' },
+        { type: 'cheatsheet', label: 'AI Workflow Cheatsheet', url: '#' },
+        { type: 'docs', label: 'Anthropic Claude Prompting Guide', url: 'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview' },
+      ],
       content: `# The AI Collaboration Workflow
 
 To succeed in Vibe Coding, you need a disciplined workflow. Haphazardly asking AI to "build a website" will result in unmaintainable spaghetti code. You must guide the AI step-by-step.
@@ -95,21 +109,41 @@ sequenceDiagram
     {
       title: 'Vibe Coding 101 Quiz',
       type: 'quiz',
+      difficulty: 'beginner',
       xp_reward: 150,
       order_index: 3,
+      resources: [
+        { type: 'article', label: 'Review: Vibe Coding Overview', url: '#' },
+      ],
       content: '### Final Module Assessment\n\nTest your understanding of the mental models and workflows of Vibe Coding. Take your time and think critically.',
       quizzes: [
         {
           question: 'In the Vibe Coding paradigm, what is the primary role of the human developer?',
           options: ['Writing boilerplate code manually', 'Memorizing syntax', 'Acting as the Director and Architect', 'Replacing the compiler'],
           correct_answer: 2,
+          format: 'multiple_choice',
           explanation: 'The human transitions from being the typist to being the architect, focusing on system design and validation.'
         },
         {
-          question: 'Why is "Context Loading" critical when working with AI?',
-          options: ['It makes the AI run faster', 'The AI does not inherently know your project structure or constraints', 'It prevents syntax errors in JavaScript', 'It allows the AI to bypass security limits'],
+          question: 'AI models have perfect memory of your codebase once you start a conversation.',
+          options: ['True', 'False'],
           correct_answer: 1,
-          explanation: 'AI models are stateless by default and have no knowledge of your specific business logic or technical constraints unless explicitly told.'
+          format: 'true_false',
+          explanation: 'AI models are stateless. You must load context explicitly in every session or conversation.'
+        },
+        {
+          question: 'Arrange these Vibe Coding workflow steps in the correct order:',
+          format: 'code_order',
+          options: [],
+          correct_answer: 0,
+          code_lines: [
+            'Step 1: Define the goal and scope of the feature',
+            'Step 2: Load context — describe tech stack and constraints',
+            'Step 3: Write a specific, scoped prompt to the AI',
+            'Step 4: Review every line of the AI-generated code',
+            'Step 5: Commit the working code to Git',
+          ],
+          explanation: 'The correct order ensures the AI has all context before generating, and you verify before shipping.'
         }
       ]
     }

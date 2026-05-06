@@ -17,6 +17,7 @@ app.use('/api/labs', require('./routes/labs'));
 app.use('/api/progress', require('./routes/progress'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/ai', require('./routes/ai'));
 
 // Health check
 app.get('/api/health', async (req, res) => {
@@ -71,6 +72,9 @@ const initDb = async (retries = 10, delay = 3000) => {
           type VARCHAR(50) DEFAULT 'text',
           xp_reward INTEGER DEFAULT 50,
           order_index INTEGER DEFAULT 0,
+          difficulty VARCHAR(50) DEFAULT 'beginner',
+          resources JSONB DEFAULT '[]',
+          challenge_text TEXT DEFAULT '',
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -81,6 +85,8 @@ const initDb = async (retries = 10, delay = 3000) => {
           options JSONB NOT NULL,
           correct_answer INTEGER NOT NULL,
           explanation TEXT DEFAULT '',
+          format VARCHAR(50) DEFAULT 'multiple_choice',
+          code_lines JSONB DEFAULT '[]',
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(lesson_id, question)
         );
@@ -164,8 +170,18 @@ const initDb = async (retries = 10, delay = 3000) => {
       try {
         await pool.query(`ALTER TABLE lessons ADD COLUMN lab_id INTEGER REFERENCES labs(id) ON DELETE SET NULL;`);
         console.log('✅ Added lab_id to lessons table.');
-      } catch (e) {
-        // Ignore if column already exists
+      } catch (e) { /* Ignore if column already exists */ }
+
+      // v1.5 migrations
+      const migrations = [
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS difficulty VARCHAR(50) DEFAULT 'beginner';`,
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS resources JSONB DEFAULT '[]';`,
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS challenge_text TEXT DEFAULT '';`,
+        `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS format VARCHAR(50) DEFAULT 'multiple_choice';`,
+        `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS code_lines JSONB DEFAULT '[]';`,
+      ];
+      for (const sql of migrations) {
+        try { await pool.query(sql); } catch (e) { /* ignore */ }
       }
 
       // ─── SEED: Super Admin ───
@@ -217,15 +233,19 @@ const initDb = async (retries = 10, delay = 3000) => {
           
           for (const l of lessonSeeds) {
             const lessonRes = await pool.query(
-              `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-              [courseId, l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index]
+              `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+              [courseId, l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index,
+               l.difficulty || 'beginner', JSON.stringify(l.resources || []), l.challenge_text || '']
             );
             // Add quiz questions for quiz lessons
             if (l.type === 'quiz' && l.quizzes) {
               for (const q of l.quizzes) {
                 await pool.query(
-                  `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
-                  [lessonRes.rows[0].id, q.question, JSON.stringify(q.options), q.correct_answer, q.explanation]
+                  `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation, format, code_lines)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING`,
+                  [lessonRes.rows[0].id, q.question, JSON.stringify(q.options), q.correct_answer,
+                   q.explanation, q.format || 'multiple_choice', JSON.stringify(q.code_lines || [])]
                 );
               }
             }
