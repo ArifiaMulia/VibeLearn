@@ -9,18 +9,24 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 
-// Always show a watchable fallback link below the video
+// Resolves any video URL to an embeddable format, with external link fallback
 function VideoPlayer({ url, title }) {
   if (!url) return null;
 
-  // Determine embed URL and external watch URL
   let embedUrl = url;
   let externalUrl = url;
   let platform = 'Video';
 
-  if (url.includes('vimeo.com')) {
+  if (url.includes('archive.org')) {
+    platform = 'Internet Archive';
+    // Already an embed URL?
+    if (!url.includes('/embed/')) {
+      const match = url.match(/archive\.org\/details\/([^/?]+)/);
+      if (match) embedUrl = `https://archive.org/embed/${match[1]}`;
+    }
+    externalUrl = embedUrl.replace('/embed/', '/details/');
+  } else if (url.includes('vimeo.com')) {
     platform = 'Vimeo';
-    // Already a player URL?
     if (!url.includes('player.vimeo.com')) {
       const match = url.match(/vimeo\.com\/(\d+)/);
       if (match) embedUrl = `https://player.vimeo.com/video/${match[1]}`;
@@ -36,14 +42,14 @@ function VideoPlayer({ url, title }) {
     }
   } else if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
     return (
-      <video controls style={{ width: '100%', height: '100%', objectFit: 'contain' }}>
+      <video controls style={{ width: '100%', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
         <source src={url} />
       </video>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div>
       <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
         <iframe
           src={embedUrl}
@@ -55,7 +61,6 @@ function VideoPlayer({ url, title }) {
           title={title}
         />
       </div>
-      {/* Always show external watch link as backup */}
       <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
         <a href={externalUrl} target="_blank" rel="noopener noreferrer"
           style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none' }}

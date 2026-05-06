@@ -3,7 +3,7 @@ module.exports = {
     {
       title: 'Introduction to Vibe Coding',
       type: 'video',
-      video_url: 'https://player.vimeo.com/video/336812660',
+      video_url: 'https://archive.org/embed/youtube-Tn8dfgGyMEA',
       xp_reward: 50,
       order_index: 1,
       content: `# What is Vibe Coding?
@@ -118,7 +118,7 @@ sequenceDiagram
     {
       title: 'Zero-Shot vs Few-Shot Prompting',
       type: 'video',
-      video_url: 'https://player.vimeo.com/video/499688311',
+      video_url: 'https://archive.org/embed/effective-prompt-engineering-for-python-programmers',
       xp_reward: 50,
       order_index: 1,
       content: `# The Core Mechanics of Prompting
@@ -218,7 +218,7 @@ If you are using tools like Cursor or GitHub Copilot Workspace, you are using Re
     {
       title: 'Scaffolding the MVP',
       type: 'video',
-      video_url: 'https://player.vimeo.com/video/362912072',
+      video_url: 'https://archive.org/embed/youtube-HaL81be3elg',
       xp_reward: 50,
       order_index: 1,
       content: `# From Idea to MVP
@@ -311,7 +311,7 @@ If the AI introduces a breaking change that ruins the app, you need a way to \`g
     {
       title: 'Spotting AI Hallucinations',
       type: 'video',
-      video_url: 'https://player.vimeo.com/video/567855540',
+      video_url: 'https://archive.org/embed/youtube-34dd6DS6GPo',
       xp_reward: 50,
       order_index: 1,
       content: `# The Dangers of Generated Code
@@ -398,7 +398,7 @@ Always use tools like ESLint, TypeScript, and SonarQube in your Vibe Coding work
     {
       title: 'Prompt Injection & Data Leaks',
       type: 'video',
-      video_url: 'https://player.vimeo.com/video/491022718',
+      video_url: 'https://archive.org/embed/youtube-r6d5XSCBiX8',
       xp_reward: 50,
       order_index: 1,
       content: `# The Dark Side of AI
