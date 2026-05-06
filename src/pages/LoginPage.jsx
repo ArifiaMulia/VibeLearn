@@ -28,7 +28,7 @@ export default function LoginPage() {
       } else {
         if (!form.name) { showError('Name is required'); setLoading(false); return; }
         await register(form.name, form.email, form.password);
-        success('Account created! Welcome to VibeLearn 🚀');
+        success('Account created! Welcome to Promptara 🚀');
       }
       navigate('/');
     } catch (err) {
@@ -59,11 +59,9 @@ export default function LoginPage() {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 440 }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px var(--primary-glow)' }}>
-              <Zap size={26} color="white" />
-            </div>
+            <img src="/logo.png" alt="Promptara" style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover', boxShadow: '0 0 30px var(--primary-glow)' }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>VibeLearn</div>
+              <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>Promptara</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>AI Coding Academy</div>
             </div>
           </div>
@@ -102,7 +100,7 @@ export default function LoginPage() {
 
           <h2 style={{ marginBottom: '0.5rem' }}>{mode === 'login' ? 'Welcome back' : 'Create account'}</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-            {mode === 'login' ? 'Sign in to continue your learning journey' : 'Join VibeLearn and start building with AI'}
+            {mode === 'login' ? 'Sign in to continue your learning journey' : 'Join Promptara and start building with AI'}
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>

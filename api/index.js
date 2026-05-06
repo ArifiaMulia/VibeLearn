@@ -177,6 +177,8 @@ const initDb = async (retries = 10, delay = 3000) => {
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS difficulty VARCHAR(50) DEFAULT 'beginner';`,
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS resources JSONB DEFAULT '[]';`,
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS challenge_text TEXT DEFAULT '';`,
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS content_id TEXT DEFAULT NULL;`,
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS challenge_text_id TEXT DEFAULT NULL;`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS format VARCHAR(50) DEFAULT 'multiple_choice';`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS code_lines JSONB DEFAULT '[]';`,
       ];

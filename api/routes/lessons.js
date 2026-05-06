@@ -39,11 +39,14 @@ router.get('/:id', auth, async (req, res) => {
 
 // POST /api/lessons — master/admin
 router.post('/', auth, requireRole('super_admin', 'master'), async (req, res) => {
-  const { course_id, title, content, video_url, type, xp_reward, order_index } = req.body;
+  const { course_id, title, content, content_id, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, challenge_text_id } = req.body;
   try {
     const result = await pool.query(
-      `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [course_id, title, content || '', video_url || null, type || 'text', xp_reward || 50, order_index || 0]
+      `INSERT INTO lessons (course_id, title, content, content_id, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, challenge_text_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [course_id, title, content || '', content_id || null, video_url || null, type || 'text',
+       xp_reward || 50, order_index || 0, difficulty || 'beginner',
+       JSON.stringify(resources || []), challenge_text || '', challenge_text_id || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -53,11 +56,13 @@ router.post('/', auth, requireRole('super_admin', 'master'), async (req, res) =>
 
 // PUT /api/lessons/:id
 router.put('/:id', auth, requireRole('super_admin', 'master'), async (req, res) => {
-  const { title, content, video_url, type, xp_reward, order_index } = req.body;
+  const { title, content, content_id, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, challenge_text_id } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE lessons SET title=$1, content=$2, video_url=$3, type=$4, xp_reward=$5, order_index=$6 WHERE id=$7 RETURNING *`,
-      [title, content, video_url, type, xp_reward, order_index, req.params.id]
+      `UPDATE lessons SET title=$1, content=$2, content_id=$3, video_url=$4, type=$5, xp_reward=$6, order_index=$7,
+       difficulty=$8, resources=$9, challenge_text=$10, challenge_text_id=$11 WHERE id=$12 RETURNING *`,
+      [title, content, content_id || null, video_url, type, xp_reward, order_index,
+       difficulty || 'beginner', JSON.stringify(resources || []), challenge_text || '', challenge_text_id || null, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Lesson not found' });
     res.json(result.rows[0]);

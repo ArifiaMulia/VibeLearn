@@ -246,7 +246,7 @@ export default function LessonPage() {
 
   const { authFetch, user } = useAuth();
   const { success, error } = useAlert();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const navigate = useNavigate();
 
 
@@ -382,39 +382,56 @@ export default function LessonPage() {
       )}
 
       {/* Text / Video Markdown Content */}
-      {(lesson.type === 'text' || lesson.type === 'video') && lesson.content && (
-        <div className="card markdown-content" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
-            components={{
-              h1: ({node, ...props}) => <h1 style={{ marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-primary)' }} {...props} />,
-              h2: ({node, ...props}) => <h2 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }} {...props} />,
-              h3: ({node, ...props}) => <h3 style={{ marginTop: '1.25rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }} {...props} />,
-              p: ({node, ...props}) => <p style={{ marginBottom: '1rem' }} {...props} />,
-              ul: ({node, ...props}) => <ul style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'disc' }} {...props} />,
-              ol: ({node, ...props}) => <ol style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'decimal' }} {...props} />,
-              li: ({node, ...props}) => <li style={{ marginBottom: '0.5rem' }} {...props} />,
-              blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid var(--primary)', color: 'var(--text-muted)', margin: '1rem 0', background: 'rgba(124,58,237,0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)' }} {...props} />,
-              code: ({node, inline, className, children, ...props}) => {
-                const match = /language-(\w+)/.exec(className || '');
-                if (!inline && match && match[1] === 'mermaid') {
-                  return <div className="mermaid" style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0', padding: '1rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>{String(children).replace(/\n$/, '')}</div>;
-                }
-                return !inline ? (
-                  <pre style={{ background: '#1e1e2e', padding: '1rem', borderRadius: 'var(--radius-md)', overflowX: 'auto', marginBottom: '1rem', border: '1px solid var(--border-light)' }}>
-                    <code style={{ color: '#cdd6f4', fontFamily: 'monospace' }} {...props}>{children}</code>
-                  </pre>
-                ) : (
-                  <code style={{ background: 'rgba(124,58,237,0.15)', padding: '0.2rem 0.4rem', borderRadius: '4px', color: 'var(--primary)', fontFamily: 'monospace', fontSize: '0.9em' }} {...props}>{children}</code>
-                );
-              }
-            }}
-          >
-            {lesson.content}
-          </ReactMarkdown>
-        </div>
-      )}
+      {(lesson.type === 'text' || lesson.type === 'video') && lesson.content && (() => {
+        // Bilingual: prefer content_id (Indonesian) when lang=id
+        const displayContent = lang === 'id' && lesson.content_id ? lesson.content_id : lesson.content;
+        const showTranslationBanner = lang === 'id' && !lesson.content_id;
+        return (
+          <>
+            {showTranslationBanner && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.65rem',
+                background: 'rgba(6,182,212,0.07)', border: '1px solid rgba(6,182,212,0.2)',
+                borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.9rem', fontSize: '0.8rem', color: 'var(--text-muted)',
+              }}>
+                <span style={{ fontSize: '1rem' }}>🇮🇩</span>
+                <span>Terjemahan Bahasa Indonesia <strong>segera hadir</strong>. Menampilkan versi Bahasa Inggris.</span>
+              </div>
+            )}
+            <div className="card markdown-content" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  h1: ({node, ...props}) => <h1 style={{ marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-primary)' }} {...props} />,
+                  h2: ({node, ...props}) => <h2 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }} {...props} />,
+                  h3: ({node, ...props}) => <h3 style={{ marginTop: '1.25rem', marginBottom: '0.75rem', color: 'var(--text-primary)' }} {...props} />,
+                  p: ({node, ...props}) => <p style={{ marginBottom: '1rem' }} {...props} />,
+                  ul: ({node, ...props}) => <ul style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'disc' }} {...props} />,
+                  ol: ({node, ...props}) => <ol style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'decimal' }} {...props} />,
+                  li: ({node, ...props}) => <li style={{ marginBottom: '0.5rem' }} {...props} />,
+                  blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid var(--primary)', color: 'var(--text-muted)', margin: '1rem 0', background: 'rgba(124,58,237,0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)' }} {...props} />,
+                  code: ({node, inline, className, children, ...props}) => {
+                    const match = /language-(\w+)/.exec(className || '');
+                    if (!inline && match && match[1] === 'mermaid') {
+                      return <div className="mermaid" style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0', padding: '1rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>{String(children).replace(/\n$/, '')}</div>;
+                    }
+                    return !inline ? (
+                      <pre style={{ background: '#1e1e2e', padding: '1rem', borderRadius: 'var(--radius-md)', overflowX: 'auto', marginBottom: '1rem', border: '1px solid var(--border-light)' }}>
+                        <code style={{ color: '#cdd6f4', fontFamily: 'monospace' }} {...props}>{children}</code>
+                      </pre>
+                    ) : (
+                      <code style={{ background: 'rgba(124,58,237,0.15)', padding: '0.2rem 0.4rem', borderRadius: '4px', color: 'var(--primary)', fontFamily: 'monospace', fontSize: '0.9em' }} {...props}>{children}</code>
+                    );
+                  }
+                }}
+              >
+                {displayContent}
+              </ReactMarkdown>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Quiz Content */}
       {lesson.type === 'quiz' && (
@@ -429,24 +446,28 @@ export default function LessonPage() {
         </div>
       )}
 
-      {/* Challenge Text — Your Turn block */}
-      {lesson.challenge_text && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(6,182,212,0.05))',
-          border: '1px solid rgba(245,158,11,0.25)', borderRadius: 'var(--radius-md)',
-          padding: '1.1rem 1.25rem', display: 'flex', gap: '0.85rem',
-        }}>
-          <div style={{ fontSize: '1.4rem', flexShrink: 0 }}>🎯</div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--warning)', marginBottom: '0.35rem' }}>
-              {t('lang') === 'id' ? 'Giliran Kamu!' : 'Your Turn!'}
-            </div>
-            <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-              {lesson.challenge_text}
+      {/* Challenge Text — Your Turn block (bilingual) */}
+      {(lesson.challenge_text || lesson.challenge_text_id) && (() => {
+        const text = lang === 'id' && lesson.challenge_text_id ? lesson.challenge_text_id : lesson.challenge_text;
+        if (!text) return null;
+        return (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(6,182,212,0.05))',
+            border: '1px solid rgba(245,158,11,0.25)', borderRadius: 'var(--radius-md)',
+            padding: '1.1rem 1.25rem', display: 'flex', gap: '0.85rem',
+          }}>
+            <div style={{ fontSize: '1.4rem', flexShrink: 0 }}>🎯</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--warning)', marginBottom: '0.35rem' }}>
+                {lang === 'id' ? 'Giliran Kamu!' : 'Your Turn!'}
+              </div>
+              <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                {text}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Lesson Reaction */}
       {isCompleted && <LessonReaction lessonId={id} />}

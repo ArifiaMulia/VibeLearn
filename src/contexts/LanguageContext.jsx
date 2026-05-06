@@ -21,7 +21,7 @@ export const TRANSLATIONS = {
     nav_admin_panel: 'Admin Panel',
 
     // TopBar & common
-    search_placeholder: 'Search courses, labs...',
+    search_placeholder: 'Search courses, labs, and topics...',
     preview_admin: '👤 My View (Admin)',
     preview_master: '📋 Preview as Master',
     preview_participant: '🎓 Preview as Participant',
@@ -69,7 +69,7 @@ export const TRANSLATIONS = {
     running: 'Running…',
 
     // Onboarding
-    onboard_title_1: 'Welcome to VibeLearn!',
+    onboard_title_1: 'Welcome to Promptara!',
     onboard_sub_1: 'Your AI Coding Academy',
     onboard_title_2: 'How It Works',
     onboard_sub_2: 'Learn in 4 simple steps',
@@ -183,7 +183,7 @@ export const TRANSLATIONS = {
     running: 'Menjalankan…',
 
     // Onboarding
-    onboard_title_1: 'Selamat datang di VibeLearn!',
+    onboard_title_1: 'Selamat datang di Promptara!',
     onboard_sub_1: 'Akademi Coding AI-mu',
     onboard_title_2: 'Cara Kerja',
     onboard_sub_2: 'Belajar dalam 4 langkah mudah',

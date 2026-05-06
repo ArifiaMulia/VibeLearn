@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
   LayoutDashboard, BookOpen, FlaskConical, Users, BarChart3,
-  CreditCard, Settings, LogOut, Zap, ChevronRight, Shield
+  CreditCard, Settings, LogOut, ChevronRight, Shield
 } from 'lucide-react';
 import pkg from '../../package.json';
 
@@ -11,34 +11,33 @@ const PLAN_COLORS = { free: 'var(--text-muted)', pro: 'var(--warning)', enterpri
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
-  const { lang, toggleLang, t } = useLanguage();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
-  // Nav items defined as keys mapped to translations + route
   const NAV_ITEMS = {
     super_admin: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/' },
-      { icon: BookOpen,         key: 'nav_courses',       to: '/courses' },
-      { icon: FlaskConical,     key: 'nav_labs',          to: '/labs' },
-      { icon: Users,            key: 'nav_users',         to: '/admin/users' },
-      { icon: BarChart3,        key: 'nav_analytics',     to: '/admin/analytics' },
-      { icon: CreditCard,       key: 'nav_subscriptions', to: '/admin/subscriptions' },
-      { icon: Settings,         key: 'nav_course_builder',to: '/admin/courses' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/' },
+      { icon: BookOpen,         key: 'nav_courses',        to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
+      { icon: Users,            key: 'nav_users',          to: '/admin/users' },
+      { icon: BarChart3,        key: 'nav_analytics',      to: '/admin/analytics' },
+      { icon: CreditCard,       key: 'nav_subscriptions',  to: '/admin/subscriptions' },
+      { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
     ],
     master: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/' },
-      { icon: BookOpen,         key: 'nav_courses',       to: '/courses' },
-      { icon: FlaskConical,     key: 'nav_labs',          to: '/labs' },
-      { icon: Users,            key: 'nav_students',      to: '/admin/users' },
-      { icon: BarChart3,        key: 'nav_analytics',     to: '/admin/analytics' },
-      { icon: Settings,         key: 'nav_course_builder',to: '/admin/courses' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/' },
+      { icon: BookOpen,         key: 'nav_courses',        to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
+      { icon: Users,            key: 'nav_students',       to: '/admin/users' },
+      { icon: BarChart3,        key: 'nav_analytics',      to: '/admin/analytics' },
+      { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
     ],
     participant: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/' },
-      { icon: BookOpen,         key: 'nav_my_courses',    to: '/courses' },
-      { icon: FlaskConical,     key: 'nav_labs',          to: '/labs' },
-      { icon: BarChart3,        key: 'nav_leaderboard',   to: '/leaderboard' },
-      { icon: Settings,         key: 'nav_profile',       to: '/profile' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/' },
+      { icon: BookOpen,         key: 'nav_my_courses',     to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
+      { icon: BarChart3,        key: 'nav_leaderboard',    to: '/leaderboard' },
+      { icon: Settings,         key: 'nav_profile',        to: '/profile' },
     ],
   };
 
@@ -55,16 +54,30 @@ export default function Sidebar() {
       {/* Logo */}
       <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid var(--border-light)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Promptara logo image */}
+          <img
+            src="/logo.png"
+            alt="Promptara"
+            style={{
+              width: 40, height: 40, borderRadius: 10,
+              objectFit: 'cover',
+              boxShadow: '0 0 16px var(--primary-glow)',
+            }}
+            onError={e => {
+              // Fallback to gradient box if image fails
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          {/* Fallback box */}
           <div style={{
-            width: 40, height: 40, borderRadius: 12,
-            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px var(--primary-glow)',
-          }}>
-            <Zap size={22} color="white" />
-          </div>
+            width: 40, height: 40, borderRadius: 10, display: 'none',
+            background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+            alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 16px var(--primary-glow)', fontWeight: 800, color: 'white', fontSize: '1.1rem',
+          }}>P</div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em' }}>VibeLearn</div>
+            <div style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em' }}>Promptara</div>
             <div style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600 }}>AI Coding Academy</div>
           </div>
         </div>
@@ -117,26 +130,8 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Language + Logout + Version */}
+      {/* Logout + Version — NO language toggle here, it's in TopBar */}
       <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-        {/* Compact language toggle in sidebar */}
-        <button
-          onClick={toggleLang}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
-            background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-            borderRadius: 'var(--radius-sm)', padding: '0.45rem', cursor: 'pointer',
-            color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600, width: '100%',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-        >
-          <span style={{ fontSize: '1rem' }}>{lang === 'en' ? '🇬🇧' : '🇮🇩'}</span>
-          <span>{lang === 'en' ? 'English' : 'Indonesia'}</span>
-          <span style={{ marginLeft: 'auto', opacity: 0.5, fontSize: '0.7rem' }}>↕</span>
-        </button>
-
         <button onClick={handleLogout} className="btn btn-ghost w-full" style={{ justifyContent: 'flex-start' }}>
           <LogOut size={16} /> {t('nav_sign_out')}
         </button>

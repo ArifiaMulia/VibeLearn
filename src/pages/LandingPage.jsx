@@ -9,10 +9,8 @@ export default function LandingPage() {
       {/* Nav */}
       <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 5%', borderBottom: '1px solid var(--border-light)', background: 'rgba(7,7,26,0.8)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={18} color="white" />
-          </div>
-          <span style={{ fontWeight: 800, fontSize: '1.25rem' }}>VibeLearn</span>
+          <img src="/logo.png" alt="Promptara" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover' }} />
+          <span style={{ fontWeight: 800, fontSize: '1.25rem' }}>Promptara</span>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-ghost" onClick={() => navigate('/login')}>Sign In</button>
@@ -44,7 +42,7 @@ export default function LandingPage() {
       <section style={{ padding: '5rem 5%', background: 'var(--bg-surface)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Why VibeLearn?</h2>
+            <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Why Promptara?</h2>
             <p style={{ color: 'var(--text-muted)' }}>Everything you need to master AI coding tools and techniques.</p>
           </div>
           

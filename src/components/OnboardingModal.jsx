@@ -5,9 +5,9 @@ import { BookOpen, Zap, Trophy, ArrowRight, X, Star, CheckCircle } from 'lucide-
 const STEPS = [
   {
     icon: '🎉',
-    title: 'Welcome to VibeLearn!',
+    title: 'Welcome to Promptara!',,
     subtitle: 'Your AI Coding Academy',
-    body: 'VibeLearn is where you learn to build real software using AI as your coding partner. No prior experience needed — just curiosity and a willingness to vibe!',
+    body: 'Promptara is where you learn to build real software using AI as your coding partner. No prior experience needed — just curiosity and a willingness to vibe!',
     visual: (
       <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         {['🤖 AI Tools', '⚡ Prompt Mastery', '🛡️ Secure Coding', '🚀 Ship Apps'].map(t => (

@@ -20,8 +20,8 @@ function generateResponse(question, lessonTitle, lang) {
 
   if (isAboutXP) {
     return isId
-      ? `XP (Experience Points) adalah cara VibeLearn mengukur kemajuan belajarmu! Kamu mendapatkan XP dengan:\n• Menyelesaikan pelajaran (+50 XP)\n• Lulus kuis (+100 XP)\n• Menyelesaikan lab (+150 XP)\n• Menyelesaikan kursus penuh (+500 XP)\n\nKumpulkan 500 XP untuk naik level! 🚀`
-      : `XP (Experience Points) is how VibeLearn measures your progress! You earn XP by:\n• Completing lessons (+50 XP)\n• Passing quizzes (+100 XP)\n• Finishing labs (+150 XP)\n• Completing full courses (+500 XP)\n\nCollect 500 XP to level up! 🚀`;
+      ? `XP (Experience Points) adalah cara Promptara mengukur kemajuan belajarmu! Kamu mendapatkan XP dengan:\n• Menyelesaikan pelajaran (+50 XP)\n• Lulus kuis (+100 XP)\n• Menyelesaikan lab (+150 XP)\n• Menyelesaikan kursus penuh (+500 XP)\n\nKumpulkan 500 XP untuk naik level! 🚀`
+      : `XP (Experience Points) is how Promptara measures your progress! You earn XP by:\n• Completing lessons (+50 XP)\n• Passing quizzes (+100 XP)\n• Finishing labs (+150 XP)\n• Completing full courses (+500 XP)\n\nCollect 500 XP to level up! 🚀`;
   }
 
   if (isAboutPrompt) {

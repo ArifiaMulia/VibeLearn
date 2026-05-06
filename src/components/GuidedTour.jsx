@@ -8,7 +8,7 @@ const TOURS = {
     id: 'dashboard',
     title: 'Dashboard Tour',
     steps: [
-      { icon: '👋', title: 'Welcome to your Dashboard!', body: 'This is your home base. You can see your progress, recent activity, and quick links to everything on VibeLearn.' },
+      { icon: '👋', title: 'Welcome to your Dashboard!', body: 'This is your home base. You can see your progress, recent activity, and quick links to everything on Promptara.' },
       { icon: '📚', title: 'Sidebar Navigation', body: 'Use the left sidebar to navigate between Courses, Labs, Leaderboard, and your Profile. Admins also see management panels.' },
       { icon: '⚡', title: 'Your XP Counter', body: 'Your XP (Experience Points) live in the top bar. Every lesson or lab you complete earns you XP and helps you level up!' },
       { icon: '🔔', title: 'Notifications Bell', body: 'Click the bell icon in the top bar to see your recent lesson completions and activity.' },
