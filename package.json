@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "validate": "npm run build && node --check api/index.js && docker compose config",
+    "prepare": "git config core.hooksPath .githooks || true",
     "push:main": "npm version patch --no-git-tag-version && git add . && node -e \"require('child_process').execSync('git commit -m \\\"Version bump to ' + require('./package.json').version + '\\\"')\" && git push origin main"
   },
   "keywords": [],
