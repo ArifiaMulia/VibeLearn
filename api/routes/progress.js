@@ -73,12 +73,12 @@ router.get('/course/:courseId', auth, async (req, res) => {
 router.get('/recent', auth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT p.completed_at, p.created_at, p.xp_earned, l.title AS lesson_title, c.title AS course_title
+      `SELECT p.completed_at, p.score AS xp_earned, l.title AS lesson_title, c.title AS course_title
        FROM progress p
        JOIN lessons l ON p.lesson_id = l.id
        JOIN courses c ON l.course_id = c.id
        WHERE p.user_id = $1 AND p.status = 'completed'
-       ORDER BY COALESCE(p.completed_at, p.created_at) DESC LIMIT 10`,
+       ORDER BY p.completed_at DESC NULLS LAST LIMIT 10`,
       [req.user.id]
     );
     res.json(result.rows);

@@ -30,6 +30,8 @@ services:
         condition: service_healthy
     networks:
       - coolify
+    volumes:
+      - api_uploads:/usr/src/app/uploads
     environment:
       DATABASE_URL: postgres://vibelearn_user:vibelearn_pass@db:5432/vibelearn_db
       JWT_SECRET: ${JWT_SECRET:-vibelearn_super_secret_key_change_in_prod}
@@ -76,3 +78,4 @@ networks:
 
 volumes:
   pgdata:
+  api_uploads:

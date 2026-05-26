@@ -82,13 +82,20 @@ export function AuthProvider({ children }) {
     setPreviewRole(role); // null = exit preview mode
   };
 
+  const upgradePlanClientSide = (newPlan) => {
+    if (!user) return;
+    const updatedUser = { ...user, plan: newPlan };
+    localStorage.setItem('vl_user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   // The "effective" user role — previewRole overrides for UI, but token stays the same
   const effectiveUser = previewRole ? { ...user, role: previewRole, _isPreview: true } : user;
 
   const isRole = (...roles) => roles.includes(effectiveUser?.role);
 
   return (
-    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, logout, authFetch, isRole, ROLES, previewRole, previewAs }}>
+    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, logout, authFetch, isRole, ROLES, previewRole, previewAs, upgradePlanClientSide }}>
       {children}
     </AuthContext.Provider>
   );

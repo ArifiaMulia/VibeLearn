@@ -8,6 +8,8 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+const path = require('path');
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
@@ -18,10 +20,14 @@ app.use('/api/progress', require('./routes/progress'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/upload', require('./routes/upload'));
+
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/health', async (req, res) => {
-  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '1.0.0', timestamp: new Date().toISOString() };
+  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '2.1.0', timestamp: new Date().toISOString() };
   try {
     await pool.query('SELECT 1');
     checks.database = 'ok';
@@ -164,7 +170,32 @@ const initDb = async (retries = 10, delay = 3000) => {
           resource_id INTEGER,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS subscription_plans (
+          id VARCHAR(50) PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          price_usd INTEGER NOT NULL,
+          price_idr INTEGER NOT NULL,
+          features JSONB DEFAULT '[]'
+        );
       `);
+
+      // Seed subscription_plans
+      try {
+        const existingPlans = await pool.query('SELECT id FROM subscription_plans LIMIT 1');
+        if (!existingPlans.rows.length) {
+          await pool.query(`
+            INSERT INTO subscription_plans (id, name, price_usd, price_idr, features) VALUES 
+            ('free', 'free', 0, 0, '["1 Introductory Course", "2 Beginner Labs", "Community Forum Access", "XP Tracking"]'),
+            ('pro', 'pro', 29, 450000, '["All 5 Courses", "Unlimited Lab Access", "AI Code Review Scenarios", "Security Audit Labs", "Priority Support", "Verified Completion Badges"]'),
+            ('enterprise', 'enterprise', 199, 3000000, '["Everything in Pro", "Custom Course Builder", "Team Management", "Dedicated Analytics Dashboard", "SLA Support", "White-label Options"]')
+            ON CONFLICT (id) DO NOTHING
+          `);
+          console.log('✅ Seeded subscription_plans.');
+        }
+      } catch (err) {
+        console.error('Error seeding subscription plans:', err);
+      }
 
       // Add lab_id to lessons if it doesn't exist (migration)
       try {
@@ -181,11 +212,24 @@ const initDb = async (retries = 10, delay = 3000) => {
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS challenge_text_id TEXT DEFAULT NULL;`,
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS transcript TEXT DEFAULT NULL;`,
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS transcript_id TEXT DEFAULT NULL;`,
+        `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS title_id TEXT DEFAULT NULL;`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS format VARCHAR(50) DEFAULT 'multiple_choice';`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS code_lines JSONB DEFAULT '[]';`,
       ];
       for (const sql of migrations) {
         try { await pool.query(sql); } catch (e) { /* ignore */ }
+      }
+
+      // Populate translated title_id and content_id for Vibe Coding 101 if missing
+      try {
+        await pool.query(`
+          UPDATE lessons 
+          SET title_id = 'Pengenalan Vibe Coding', 
+              content_id = '# Apa itu Vibe Coding?\n\nVibe coding adalah paradigma baru yang sepenuhnya berbeda dalam rekayasa perangkat lunak. Ini bukan sekadar "menggunakan AI untuk membantu Anda menulis kode." Ini adalah proses bertindak sebagai **Direktur** dan **Arsitek** sementara AI bertindak sebagai **Pengetik** dan **Pelaksana**.\n\nDi era AI, mengetik boilerplate standar, mengingat sintaks API yang tidak jelas, dan menulis perulangan standar secara manual adalah penggunaan modal manusia yang buruk. Nilai Anda sekarang berasal dari:\n1. Memahami kebutuhan bisnis.\n2. Memecah kebutuhan tersebut menjadi bagian-bagian arsitektur yang modular.\n3. Mengomunikasikan batasan, konteks, dan tujuan kepada AI (seperti Claude, GPT-4, atau Copilot).\n4. Meninjau kode yang dihasilkan untuk keamanan, kinerja, dan kebenaran.\n\n## Pergeseran Mental\nPemrograman tradisional mengajarkan Anda untuk berpikir linier tentang baris kode. Vibe coding mengajarkan Anda untuk berpikir abstrak tentang **sistem dan mesin status (state machines)**.\n\n\`\`\`mermaid\ngraph TD\n  A[Manusia: Tentukan Tujuan & Cakupan] --> B[Manusia: Arsitektur Model Data]\n  B --> C[Manusia: Tulis Prompt Kaya Konteks]\n  C --> D[AI: Hasilkan Kode & Pengujian]\n  D --> E{Manusia: Tinjau & Validasi}\n  E -- Ditemukan Masalah --> F[Manusia: Berikan Konteks Debug Spesifik]\n  F --> D\n  E -- Terlihat Bagus --> G[Manusia: Setujui & Gabungkan]\n  style A fill:#3b82f6,color:#fff\n  style D fill:#8b5cf6,color:#fff\n  style G fill:#10b981,color:#fff\n\`\`\`\n\nTonton video di atas untuk mendalami lebih jauh tentang model mental yang diperlukan untuk berhasil di era rekayasa yang baru ini.'
+          WHERE title = 'Introduction to Vibe Coding' AND content_id IS NULL;
+        `);
+      } catch (e) {
+        console.error('Error migrating content_id:', e);
       }
 
       // ─── SEED: Super Admin ───
@@ -214,6 +258,7 @@ const initDb = async (retries = 10, delay = 3000) => {
 
       // ─── SEED: Courses ───
       const courseSeeds = [
+        { title: 'IT Basics for AI Coding', description: 'Beginner-friendly IT concepts explained using simple analogies. Learn about Prompts, Deployment, and Git without the jargon.', level: 'beginner', category: 'fundamentals', order_index: 0 },
         { title: 'Vibe Coding 101', description: 'Learn the mindset and fundamentals of AI-powered coding. Understand how to collaborate with AI to build anything fast.', level: 'beginner', category: 'fundamentals', order_index: 1 },
         { title: 'Prompt Engineering Mastery', description: 'Master the art of crafting perfect AI prompts for code generation. Learn patterns, formulas, and advanced techniques.', level: 'beginner', category: 'prompting', order_index: 2 },
         { title: 'Build Your First App in 4 Hours', description: 'A hands-on guide to building and deploying a full web application from scratch using only AI assistance.', level: 'intermediate', category: 'project', order_index: 3 },
@@ -237,12 +282,12 @@ const initDb = async (retries = 10, delay = 3000) => {
           
           for (const l of lessonSeeds) {
             const lessonRes = await pool.query(
-              `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, content_id, challenge_text_id, transcript, transcript_id)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+              `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, content_id, challenge_text_id, transcript, transcript_id, title_id)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
               [courseId, l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index,
                l.difficulty || 'beginner', JSON.stringify(l.resources || []), l.challenge_text || '',
                l.content_id || null, l.challenge_text_id || null,
-               l.transcript || null, l.transcript_id || null]
+               l.transcript || null, l.transcript_id || null, l.title_id || null]
             );
             // Add quiz questions for quiz lessons
             if (l.type === 'quiz' && l.quizzes) {

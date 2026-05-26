@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { FlaskConical, Play, Shield, Terminal, Zap, Clock } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { FlaskConical, Play, Shield, Terminal, Zap, Clock, ArrowUpDown } from 'lucide-react';
 
 const LAB_ICONS = {
   prompt: Terminal,
@@ -11,17 +12,27 @@ const LAB_ICONS = {
   speedrun: Clock
 };
 
+const DIFF_ORDER = { beginner: 1, intermediate: 2, advanced: 3 };
+
 export default function LabsPage() {
   const { authFetch, user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [labs, setLabs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('default');
 
   useEffect(() => {
     authFetch('/labs').then(setLabs).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="grid-3">{[...Array(6)].map((_, i) => <div key={i} className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-lg)' }} />)}</div>;
+
+  const sortedLabs = [...labs].sort((a, b) => {
+    if (sortBy === 'diff-asc') return (DIFF_ORDER[a.difficulty] || 0) - (DIFF_ORDER[b.difficulty] || 0);
+    if (sortBy === 'diff-desc') return (DIFF_ORDER[b.difficulty] || 0) - (DIFF_ORDER[a.difficulty] || 0);
+    return 0;
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -34,8 +45,31 @@ export default function LabsPage() {
         </p>
       </div>
 
+      {/* Sorting Controls */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginTop: '-0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+          <ArrowUpDown size={14} /> {t('sort_by_level')}
+        </div>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          {[
+            { key: 'default', label: t('sort_default') },
+            { key: 'diff-asc', label: t('sort_beginner_first') },
+            { key: 'diff-desc', label: t('sort_advanced_first') }
+          ].map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setSortBy(opt.key)}
+              className={`btn btn-sm ${sortBy === opt.key ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid-3">
-        {labs.map(lab => {
+        {sortedLabs.map(lab => {
           const Icon = LAB_ICONS[lab.type] || FlaskConical;
           const isLocked = user?.plan === 'free' && lab.difficulty !== 'beginner';
           

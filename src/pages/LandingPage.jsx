@@ -1,165 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Code2, Rocket, Play, Shield, CheckCircle, X, Building2, Users, Star, ArrowRight, Globe, Lock, Cpu } from 'lucide-react';
-
-// ── Upgrade Modal ──────────────────────────────────────────────────────────
-function UpgradeModal({ plan, onClose }) {
-  const [step, setStep] = useState(1); // 1=biodata, 2=billing, 3=success
-  const [form, setForm] = useState({ name:'', email:'', phone:'', company:'', role:'', team:'',
-    card:'', expiry:'', cvv:'', billing_name:'', billing_address:'', billing_city:'', billing_zip:'', billing_country:'Indonesia' });
-  const [loading, setLoading] = useState(false);
-  const set = k => e => setForm(f => ({...f, [k]: e.target.value}));
-
-  const prices = { pro: 'Rp 450.000', enterprise: 'Custom' };
-  const planLabel = plan === 'pro' ? 'Pro Plan' : 'Enterprise Plan';
-  const isEnterprise = plan === 'enterprise';
-
-  const handleNext = e => { e.preventDefault(); setStep(2); };
-  const handlePay = e => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => { setLoading(false); setStep(3); }, 1800);
-  };
-
-  const inputStyle = {
-    width:'100%', background:'var(--bg-card)', border:'1px solid var(--border-light)',
-    borderRadius:'var(--radius-sm)', padding:'0.6rem 0.9rem',
-    color:'var(--text-primary)', fontSize:'0.88rem', boxSizing:'border-box',
-  };
-  const labelStyle = { fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:'0.3rem', display:'block', fontWeight:600 };
-  const rowStyle = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' };
-
-  return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem', backdropFilter:'blur(4px)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background:'var(--bg-surface)', borderRadius:'var(--radius-lg)', width:'100%', maxWidth:560,
-        border:'1px solid var(--border-light)', boxShadow:'0 24px 64px rgba(0,0,0,0.5)', maxHeight:'90vh', overflow:'auto' }}>
-
-        {/* Header */}
-        <div style={{ padding:'1.5rem', borderBottom:'1px solid var(--border-light)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <div>
-            <div style={{ fontWeight:800, fontSize:'1.1rem' }}>Upgrade to {planLabel}</div>
-            <div style={{ fontSize:'0.8rem', color:'var(--text-muted)', marginTop:'0.2rem' }}>
-              {step === 1 ? 'Step 1/2 — Your Information' : step === 2 ? 'Step 2/2 — Payment Details' : 'You\'re all set!'}
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}><X size={20}/></button>
-        </div>
-
-        {/* Progress bar */}
-        {step < 3 && (
-          <div style={{ height:3, background:'var(--border-light)' }}>
-            <div style={{ height:'100%', width: step === 1 ? '50%' : '100%', background:'linear-gradient(90deg, var(--primary), var(--accent))', transition:'width 0.4s' }}/>
-          </div>
-        )}
-
-        <div style={{ padding:'1.75rem' }}>
-          {/* Step 1: Biodata */}
-          {step === 1 && (
-            <form onSubmit={handleNext} style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
-              <div style={rowStyle}>
-                <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} required value={form.name} onChange={set('name')} placeholder="John Doe"/></div>
-                <div><label style={labelStyle}>Email *</label><input style={inputStyle} type="email" required value={form.email} onChange={set('email')} placeholder="you@company.com"/></div>
-              </div>
-              <div style={rowStyle}>
-                <div><label style={labelStyle}>Phone Number</label><input style={inputStyle} value={form.phone} onChange={set('phone')} placeholder="+62 812 3456 7890"/></div>
-                <div><label style={labelStyle}>Company / Organization</label><input style={inputStyle} value={form.company} onChange={set('company')} placeholder="PT Example"/></div>
-              </div>
-              <div style={rowStyle}>
-                <div>
-                  <label style={labelStyle}>Your Role</label>
-                  <select style={inputStyle} value={form.role} onChange={set('role')}>
-                    <option value="">Select role</option>
-                    {['Developer','Team Lead','Engineering Manager','CTO','Founder','HR/L&D','Student','Other'].map(r => <option key={r}>{r}</option>)}
-                  </select>
-                </div>
-                {isEnterprise && (
-                  <div><label style={labelStyle}>Team Size</label>
-                    <select style={inputStyle} value={form.team} onChange={set('team')}>
-                      <option value="">Select size</option>
-                      {['5–10','11–25','26–50','51–100','100+'].map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
-                )}
-              </div>
-              {isEnterprise && (
-                <div style={{ background:'rgba(6,182,212,0.07)', border:'1px solid rgba(6,182,212,0.2)', borderRadius:'var(--radius-sm)', padding:'1rem', fontSize:'0.83rem', color:'var(--text-muted)' }}>
-                  🏢 Enterprise pricing is custom. After submission our team will contact you within 24 hours with a tailored quote.
-                </div>
-              )}
-              <button type="submit" className="btn btn-primary btn-lg w-full" style={{ marginTop:'0.5rem' }}>
-                {isEnterprise ? 'Request Enterprise Quote' : 'Continue to Payment'} <ArrowRight size={16}/>
-              </button>
-            </form>
-          )}
-
-          {/* Step 2: Billing */}
-          {step === 2 && !isEnterprise && (
-            <form onSubmit={handlePay} style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
-              {/* Plan summary */}
-              <div style={{ background:'rgba(124,58,237,0.08)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:'var(--radius-sm)', padding:'0.9rem 1rem', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontWeight:700 }}>{planLabel}</span>
-                <span style={{ fontWeight:800, color:'var(--primary)', fontSize:'1.1rem' }}>{prices[plan]}<span style={{ fontSize:'0.78rem', fontWeight:400, color:'var(--text-muted)' }}>/bulan</span></span>
-              </div>
-              <div style={{ fontWeight:700, fontSize:'0.85rem', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em' }}>Card Information</div>
-              <div>
-                <label style={labelStyle}>Card Number *</label>
-                <input style={inputStyle} required maxLength={19} value={form.card} onChange={e => set('card')({target:{value:e.target.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim()}})} placeholder="1234 5678 9012 3456"/>
-              </div>
-              <div style={rowStyle}>
-                <div><label style={labelStyle}>Expiry (MM/YY) *</label><input style={inputStyle} required maxLength={5} value={form.expiry} onChange={set('expiry')} placeholder="12/27"/></div>
-                <div><label style={labelStyle}>CVV *</label><input style={inputStyle} required maxLength={4} type="password" value={form.cvv} onChange={set('cvv')} placeholder="•••"/></div>
-              </div>
-              <div style={{ fontWeight:700, fontSize:'0.85rem', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', marginTop:'0.25rem' }}>Billing Address</div>
-              <div><label style={labelStyle}>Name on Card *</label><input style={inputStyle} required value={form.billing_name} onChange={set('billing_name')} placeholder="John Doe"/></div>
-              <div><label style={labelStyle}>Address *</label><input style={inputStyle} required value={form.billing_address} onChange={set('billing_address')} placeholder="Jl. Sudirman No. 1"/></div>
-              <div style={rowStyle}>
-                <div><label style={labelStyle}>City *</label><input style={inputStyle} required value={form.billing_city} onChange={set('billing_city')} placeholder="Jakarta"/></div>
-                <div><label style={labelStyle}>ZIP Code</label><input style={inputStyle} value={form.billing_zip} onChange={set('billing_zip')} placeholder="12345"/></div>
-              </div>
-              <div>
-                <label style={labelStyle}>Country *</label>
-                <select style={inputStyle} value={form.billing_country} onChange={set('billing_country')}>
-                  {['Indonesia','Singapore','Malaysia','Philippines','Thailand','Vietnam','Other'].map(c => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-              <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.75rem', color:'var(--text-muted)', marginTop:'0.25rem' }}>
-                <Lock size={13}/> Payments are secured with 256-bit SSL encryption
-              </div>
-              <div style={{ display:'flex', gap:'0.75rem', marginTop:'0.5rem' }}>
-                <button type="button" className="btn btn-ghost" style={{ flex:1 }} onClick={() => setStep(1)}>← Back</button>
-                <button type="submit" className="btn btn-primary" style={{ flex:2 }} disabled={loading}>
-                  {loading ? <span className="animate-spin" style={{ width:18, height:18, border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'white', borderRadius:'50%', display:'inline-block' }}/> : <>Pay {prices[plan]} <ArrowRight size={16}/></>}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Step 3: Success */}
-          {step === 3 && (
-            <div style={{ textAlign:'center', padding:'2rem 1rem' }}>
-              <div style={{ fontSize:'4rem', marginBottom:'1rem' }}>{isEnterprise ? '📋' : '🎉'}</div>
-              <h2 style={{ marginBottom:'0.75rem' }}>{isEnterprise ? 'Request Received!' : 'Welcome to Pro!'}</h2>
-              <p style={{ color:'var(--text-muted)', lineHeight:1.7, marginBottom:'2rem' }}>
-                {isEnterprise
-                  ? `Thank you ${form.name}! Our enterprise team will reach out to ${form.email} within 24 hours with a custom quote.`
-                  : `Your ${planLabel} is now active. Check your email at ${form.email} for the receipt.`}
-              </p>
-              <button className="btn btn-primary btn-lg w-full" onClick={onClose}>
-                {isEnterprise ? 'Got it!' : 'Start Learning →'}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+import UpgradeModal from '../components/UpgradeModal';
 
 // ── Main Landing Page ──────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
   const [modal, setModal] = useState(null); // null | 'pro' | 'enterprise'
+  const [apiPlans, setApiPlans] = useState([]);
+  const [currency, setCurrency] = useState('IDR');
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/subscriptions/plans`)
+      .then(res => res.json())
+      .then(setApiPlans)
+      .catch(err => console.error('Failed to load plans:', err));
+  }, []);
 
   const features = [
     { icon: Code2, title: 'Interactive Labs', desc: 'Stop watching — start coding in real AI-assisted environments with guided challenges.' },
@@ -170,26 +26,30 @@ export default function LandingPage() {
     { icon: Users, title: 'Community', desc: 'Ask instructors, discuss challenges, and share your builds with fellow vibe coders.' },
   ];
 
-  const plans = [
-    {
-      id: 'free', label: 'Free', price: 'Rp 0', period: '', badge: null,
-      color: 'var(--border-light)', highlight: false,
-      features: ['1 Introductory Course', '2 Interactive Labs', 'Community Access', 'Bilingual Transcripts', 'XP & Leaderboard'],
-      cta: 'Get Started', ctaAction: () => navigate('/login'),
-    },
-    {
-      id: 'pro', label: 'Pro', price: 'Rp 450.000', period: '/mo', badge: 'Most Popular',
-      color: 'var(--primary)', highlight: true,
-      features: ['All 5 Premium Courses', 'Unlimited Lab Access', 'Security Scenarios', 'Priority AI Mentorship', 'Verified Certificates', 'Advanced Prompt Labs'],
-      cta: 'Upgrade to Pro', ctaAction: () => setModal('pro'),
-    },
-    {
-      id: 'enterprise', label: 'Enterprise', price: 'Custom', period: '', badge: 'For Teams',
-      color: 'var(--accent)', highlight: false,
-      features: ['Everything in Pro', 'Team Management Dashboard', 'Custom Course Builder', 'SSO / SAML Integration', 'SLA & Dedicated Support', 'Volume Pricing'],
-      cta: 'Contact Sales', ctaAction: () => setModal('enterprise'),
-    },
-  ];
+  // Base plans structure with UI config
+  const uiPlansConfig = {
+    free: { label: 'Free', badge: null, color: 'var(--border-light)', highlight: false, cta: 'Get Started', ctaAction: () => navigate('/login') },
+    pro: { label: 'Pro', badge: 'Most Popular', color: 'var(--primary)', highlight: true, cta: 'Upgrade to Pro', ctaAction: () => setModal('pro') },
+    enterprise: { label: 'Enterprise', badge: 'For Teams', color: 'var(--accent)', highlight: false, cta: 'Contact Sales', ctaAction: () => setModal('enterprise') }
+  };
+
+  const plans = apiPlans.map(p => {
+    const config = uiPlansConfig[p.id] || uiPlansConfig.free;
+    const priceStr = currency === 'IDR' ? (p.price_idr === 0 ? 'Rp 0' : `Rp ${p.price_idr.toLocaleString('id-ID')}`) : (p.price_usd === 0 ? '$0' : `$${p.price_usd}`);
+    const periodStr = p.id === 'free' || p.id === 'enterprise' ? '' : '/mo';
+    return {
+      id: p.id,
+      label: config.label,
+      price: priceStr,
+      period: periodStr,
+      badge: config.badge,
+      color: config.color,
+      highlight: config.highlight,
+      features: p.features || [],
+      cta: config.cta,
+      ctaAction: config.ctaAction
+    };
+  });
 
   const stats = [
     { value: '5+', label: 'Courses' }, { value: '20+', label: 'Labs' },
@@ -198,7 +58,7 @@ export default function LandingPage() {
 
   return (
     <div style={{ background:'var(--bg-base)', minHeight:'100vh', color:'var(--text-primary)', fontFamily:'var(--font-sans, system-ui)' }}>
-      {modal && <UpgradeModal plan={modal} onClose={() => setModal(null)} />}
+      {modal && <UpgradeModal planId={modal} plansData={plans} onClose={() => setModal(null)} />}
 
       {/* Nav */}
       <nav style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1.25rem 5%', borderBottom:'1px solid var(--border-light)', background:'rgba(7,7,26,0.85)', backdropFilter:'blur(20px)', position:'sticky', top:0, zIndex:100 }}>
@@ -280,7 +140,22 @@ export default function LandingPage() {
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:'3.5rem' }}>
             <h2 style={{ fontSize:'2.5rem', marginBottom:'0.75rem' }}>Simple, Transparent Pricing</h2>
-            <p style={{ color:'var(--text-muted)' }}>Start for free. Scale when your team is ready.</p>
+            <p style={{ color:'var(--text-muted)', marginBottom: '1.5rem' }}>Start for free. Scale when your team is ready.</p>
+            
+            <div style={{ display: 'inline-flex', background: 'var(--bg-card)', padding: '0.25rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-light)' }}>
+              <button 
+                onClick={() => setCurrency('IDR')}
+                style={{ padding: '0.5rem 1.5rem', borderRadius: 'var(--radius-full)', border: 'none', background: currency === 'IDR' ? 'var(--primary)' : 'transparent', color: currency === 'IDR' ? '#fff' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                IDR
+              </button>
+              <button 
+                onClick={() => setCurrency('USD')}
+                style={{ padding: '0.5rem 1.5rem', borderRadius: 'var(--radius-full)', border: 'none', background: currency === 'USD' ? 'var(--primary)' : 'transparent', color: currency === 'USD' ? '#fff' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                USD
+              </button>
+            </div>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1.5rem', alignItems:'center' }}>
             {plans.map(p => (

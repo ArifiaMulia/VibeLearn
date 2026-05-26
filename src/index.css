@@ -493,3 +493,96 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
   100% { background-position: 200% 0; }
 }
 
+/* ── Glossary Tooltips ── */
+.glossary-term {
+  border-bottom: 1.5px dotted var(--primary);
+  cursor: help;
+  position: relative;
+  display: inline;
+  color: var(--primary-light);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.glossary-term:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background-color: rgba(124, 58, 237, 0.08);
+}
+
+.glossary-term::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  width: 240px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1000;
+  line-height: 1.4;
+  font-family: var(--font-sans);
+  text-transform: none;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+}
+
+.glossary-term:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  pointer-events: auto;
+}
+
+/* ── Certificate Print styles ── */
+@media print {
+  /* Hide sidebar, topbar, scrollbars, buttons, and other modal surrounds */
+  aside, header, button, .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: #0d0d26 !important;
+    color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  #root, .main-content, .page-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+  }
+  
+  /* Make the certificate take up the whole page */
+  .certificate-card {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    border: 20px double #d4af37 !important;
+    margin: 0 !important;
+    padding: 4rem 3rem !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: #0d0d26 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

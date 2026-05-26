@@ -1,4 +1,84 @@
 module.exports = {
+  "IT Basics for AI Coding": [
+    {
+      title: 'The AI Chef (Prompts & MCP)',
+      title_id: 'Koki AI (Prompt & MCP)',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 50,
+      order_index: 1,
+      content: `# Prompts & MCP
+
+Imagine you are at a high-end restaurant. You don't cook the food yourself; you give instructions to the **Chef** (the AI).
+
+- **Prompt**: This is your order ticket. If you just say "make me a burger," you might get something you don't like. If you say "make me a medium-rare wagyu burger with no pickles and extra sauce," you get exactly what you want. A good prompt is just a clear, detailed instruction.
+- **Java / Code**: This is the specific language the kitchen uses. You don't need to speak it fluently, but knowing the basic ingredients helps you order better.
+- **MCP (Model Context Protocol)**: Imagine the Chef normally only has access to their own memory. MCP is like giving the Chef a live phone line to the farmer's market, the weather station, or your own personal pantry. It allows the AI to fetch real-time data from outside to help cook your meal!`,
+      content_id: `# Prompt & MCP
+
+Bayangkan Anda berada di restoran mewah. Anda tidak memasak makanannya sendiri; Anda memberikan instruksi kepada **Koki** (AI).
+
+- **Prompt**: Ini adalah tiket pesanan Anda. Jika Anda hanya mengatakan "buatkan saya burger," Anda mungkin mendapatkan sesuatu yang tidak Anda sukai. Jika Anda mengatakan "buatkan saya burger wagyu medium-rare tanpa acar dan saus ekstra," Anda mendapatkan apa yang Anda inginkan. Prompt yang baik hanyalah instruksi yang jelas dan terperinci.
+- **Java / Kode**: Ini adalah bahasa spesifik yang digunakan dapur. Anda tidak perlu fasih, tetapi mengetahui bahan dasar membantu Anda memesan dengan lebih baik.
+- **MCP (Model Context Protocol)**: Bayangkan Koki biasanya hanya memiliki akses ke ingatannya sendiri. MCP itu seperti memberi Koki saluran telepon langsung ke pasar petani, stasiun cuaca, atau dapur pribadi Anda. Ini memungkinkan AI mengambil data waktu-nyata dari luar untuk membantu memasak makanan Anda!`
+    },
+    {
+      title: 'The Coffee Shop (Rate Limits vs Usage Limits)',
+      title_id: 'Kedai Kopi (Batas Kecepatan vs Batas Penggunaan)',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 50,
+      order_index: 2,
+      content: `# API Limits Explained
+
+When working with AI, you are communicating with servers over the internet. To prevent the servers from crashing, providers like OpenAI or Anthropic use limits.
+
+![Rate vs Usage Limit](/images/rate_vs_usage.jpg)
+
+### 1. Rate Limit
+Think of a Rate Limit like a coffee shop line. Even if you have a loyalty card for 100 coffees, the barista can only serve 5 customers per minute. If everyone rushes the counter at once, they will say "Please Wait!" (Error 429).
+![Rate Limit](/images/rate_limit.jpg)
+
+### 2. Usage Limit
+Think of a Usage Limit like your monthly coffee subscription. You are allowed 10 coffees per month. Once you drink 10, you can't get any more until next month, even if there is no line at the shop!
+![Usage Limit](/images/usage_limit.jpg)`,
+      content_id: `# Penjelasan Batasan API
+
+Saat bekerja dengan AI, Anda berkomunikasi dengan server melalui internet. Untuk mencegah server mogok, penyedia seperti OpenAI atau Anthropic menggunakan batasan.
+
+![Batas Kecepatan vs Penggunaan](/images/rate_vs_usage.jpg)
+
+### 1. Batas Kecepatan (Rate Limit)
+Anggap Batas Kecepatan seperti antrean kedai kopi. Sekalipun Anda memiliki kartu loyalitas untuk 100 kopi, barista hanya dapat melayani 5 pelanggan per menit. Jika semua orang menyerbu meja sekaligus, mereka akan berkata "Harap Tunggu!" (Kesalahan 429).
+![Rate Limit](/images/rate_limit.jpg)
+
+### 2. Batas Penggunaan (Usage Limit)
+Anggap Batas Penggunaan seperti langganan kopi bulanan Anda. Anda diizinkan mendapat 10 kopi per bulan. Setelah Anda minum 10, Anda tidak bisa mendapatkan lagi sampai bulan depan, bahkan jika tidak ada antrean di kedai!
+![Usage Limit](/images/usage_limit.jpg)`
+    },
+    {
+      title: 'The Restaurant Building (VPS & Deployment)',
+      title_id: 'Bangunan Restoran (VPS & Deployment)',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 50,
+      order_index: 3,
+      content: `# Hosting & Deployment
+
+Once your AI Chef makes a great app, you need a place to serve it to the public!
+
+- **VPS (Virtual Private Server)**: This is like renting an empty plot of land and a building. You have total control, but you have to buy your own tables, hire the security guard, and fix the plumbing yourself. It's cheap but requires work.
+- **PaaS (Platform as a Service) / Deployment Panel**: Examples include Vercel, Coolify, or Heroku. This is like renting a fully-furnished restaurant in a mall. The mall handles the security, the plumbing, and the cleaning. You just bring your recipes (code) and start serving customers instantly!
+- **Repository (Git/GitHub)**: This is your master recipe book. Every time you change a recipe, you save a new version. If you accidentally add too much salt, you can easily open the recipe book and flip back to yesterday's perfect recipe.`,
+      content_id: `# Hosting & Deployment
+
+Setelah Koki AI Anda membuat aplikasi yang bagus, Anda memerlukan tempat untuk menyajikannya kepada publik!
+
+- **VPS (Virtual Private Server)**: Ini seperti menyewa sebidang tanah kosong dan bangunan. Anda memiliki kendali total, tetapi Anda harus membeli meja sendiri, menyewa penjaga keamanan, dan memperbaiki pipa ledeng sendiri. Ini murah tetapi membutuhkan usaha.
+- **PaaS (Platform as a Service) / Panel Deployment**: Contohnya Vercel, Coolify, atau Heroku. Ini seperti menyewa restoran dengan perabotan lengkap di mal. Pihak mal menangani keamanan, pipa ledeng, dan kebersihan. Anda hanya membawa resep (kode) dan mulai melayani pelanggan secara instan!
+- **Repositori (Git/GitHub)**: Ini adalah buku resep utama Anda. Setiap kali Anda mengubah resep, Anda menyimpan versi baru. Jika Anda tidak sengaja menambahkan terlalu banyak garam, Anda dapat dengan mudah membuka buku resep dan kembali ke resep sempurna kemarin.`
+    }
+  ],
   "Vibe Coding 101": [
     {
       title: 'Introduction to Vibe Coding',

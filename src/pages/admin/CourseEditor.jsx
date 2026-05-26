@@ -67,6 +67,44 @@ export default function CourseEditor() {
     }
   };
 
+  const handleFileUpload = async (e, lessonIndex) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await authFetch('/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {} // Need to let browser set Content-Type for FormData
+      }, true); // if authFetch supports skipping headers
+
+      // In case authFetch overrides Content-Type to application/json, we need a custom fetch
+      // Let's use standard fetch with token:
+      const token = localStorage.getItem('vl_token');
+      const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      const data = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(data.error || 'Upload failed');
+
+      const newLessons = [...lessons];
+      newLessons[lessonIndex].video_url = data.url;
+      setLessons(newLessons);
+      success('Video uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      error('Failed to upload video');
+    }
+  };
+
   const addLesson = () => {
     const newLesson = {
       id: 'temp-' + Date.now(),
@@ -227,17 +265,33 @@ export default function CourseEditor() {
                   {lesson.type === 'video' && (
                     <div className="form-group mb-3">
                       <label className="form-label">Video URL</label>
-                      <input 
-                        type="url"
-                        className="form-input" 
-                        value={lesson.video_url || ''} 
-                        placeholder="https://youtube.com/..."
-                        onChange={e => {
-                          const newLessons = [...lessons];
-                          newLessons[index].video_url = e.target.value;
-                          setLessons(newLessons);
-                        }}
-                      />
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input 
+                          type="url"
+                          className="form-input" 
+                          style={{ flex: 1 }}
+                          value={lesson.video_url || ''} 
+                          placeholder="https://youtube.com/... or /uploads/videos/..."
+                          onChange={e => {
+                            const newLessons = [...lessons];
+                            newLessons[index].video_url = e.target.value;
+                            setLessons(newLessons);
+                          }}
+                        />
+                        <input 
+                          type="file" 
+                          accept="video/*" 
+                          id={`upload-${index}`} 
+                          style={{ display: 'none' }} 
+                          onChange={(e) => handleFileUpload(e, index)}
+                        />
+                        <button 
+                          className="btn btn-ghost" 
+                          onClick={() => document.getElementById(`upload-${index}`).click()}
+                        >
+                          Upload Local Video
+                        </button>
+                      </div>
                     </div>
                   )}
 

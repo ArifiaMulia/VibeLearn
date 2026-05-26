@@ -30,6 +30,7 @@ export default function CourseDetailPage() {
   const [enrolled, setEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showCert, setShowCert] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -80,7 +81,7 @@ export default function CourseDetailPage() {
             <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--success)' }}>{t('course_complete_title')}</div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('course_complete_body')}</div>
           </div>
-          <button className="btn btn-success" onClick={() => window.print()} style={{ background: 'var(--success)', color: 'white' }}>
+          <button className="btn btn-success" onClick={() => setShowCert(true)} style={{ background: 'var(--success)', color: 'white' }}>
             {t('get_certificate')}
           </button>
         </div>
@@ -202,6 +203,108 @@ export default function CourseDetailPage() {
           })}
         </div>
       </div>
+
+      {/* Digital Builder Certificate Modal */}
+      {showCert && (
+        <div className="no-print" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}
+          onClick={() => setShowCert(false)}>
+          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '800px', border: '1px solid var(--border-light)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}
+            onClick={e => e.stopPropagation()}>
+            
+            {/* Modal Controls */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Certificate Viewer</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowCert(false)} style={{ minWidth: 'auto', padding: '0.25rem' }}>✕</button>
+            </div>
+
+            {/* Certificate Card Container */}
+            <div className="certificate-card" style={{
+              background: '#0d0d26',
+              color: 'white',
+              border: '10px double #d4af37',
+              padding: '3rem 2rem',
+              textAlign: 'center',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1.5rem',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ position: 'absolute', top: -50, left: -50, width: 150, height: 150, borderRadius: '50%', background: 'rgba(212,175,55,0.06)', filter: 'blur(30px)' }} />
+              <div style={{ position: 'absolute', bottom: -50, right: -50, width: 150, height: 150, borderRadius: '50%', background: 'rgba(124,58,237,0.1)', filter: 'blur(30px)' }} />
+
+              {/* Header */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #f3e5ab)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(212,175,55,0.4)' }}>
+                  <Trophy size={30} color="#0d0d26" />
+                </div>
+                <h2 style={{ fontFamily: "'Georgia', serif", fontSize: '1.4rem', letterSpacing: '0.12em', color: '#d4af37', margin: '0.5rem 0 0', fontWeight: 800 }}>
+                  {t('certificate_modal_title')}
+                </h2>
+                <div style={{ height: '2px', width: '80px', background: 'linear-gradient(90deg, transparent, #d4af37, transparent)', marginTop: '0.25rem' }} />
+              </div>
+
+              {/* Presented To */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
+                  {t('certificate_presented_to')}
+                </span>
+                <h1 style={{ fontFamily: "'Georgia', serif", fontSize: '2.5rem', color: '#ffffff', textShadow: '0 2px 10px rgba(255,255,255,0.1)', margin: '0.5rem 0', fontWeight: 700 }}>
+                  {user?.name}
+                </h1>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '480px', lineHeight: 1.5 }}>
+                  {t('certificate_course_completed')}
+                </span>
+                <h3 style={{ fontSize: '1.25rem', color: 'var(--accent)', margin: '0.25rem 0', fontWeight: 700 }}>
+                  {course?.title}
+                </h3>
+              </div>
+
+              {/* Role Badge */}
+              <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: '30px', padding: '0.4rem 1.2rem', fontSize: '0.82rem', color: '#d4af37', fontWeight: 700, letterSpacing: '0.05em' }}>
+                🛡️ {t('certificate_role')}
+              </div>
+
+              {/* Footer details */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', width: '100%', marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('certificate_date')}</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('certificate_id')}</span>
+                  <span style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', color: '#d4af37', fontWeight: 600 }}>{`VL-CERT-${course.id}-${user?.id || 99}-${Math.abs((course.id * 183 + (user?.id || 99) * 761) % 100000).toString().padStart(5, '0')}`}</span>
+                </div>
+              </div>
+
+              {/* Signatures */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', width: '100%', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic', color: '#d4af37', fontSize: '1rem' }}>Arifia Mulia</span>
+                  <div style={{ width: '120px', height: '1px', background: 'rgba(255,255,255,0.2)', margin: '0.25rem 0' }} />
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Academy Director</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic', color: '#d4af37', fontSize: '1rem' }}>AI Validator</span>
+                  <div style={{ width: '120px', height: '1px', background: 'rgba(255,255,255,0.2)', margin: '0.25rem 0' }} />
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Automated Reviewer</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Print Action */}
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" onClick={() => setShowCert(false)}>Close</button>
+              <button className="btn btn-primary" onClick={() => window.print()}>
+                🖨️ {t('certificate_print')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

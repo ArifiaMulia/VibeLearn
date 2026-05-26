@@ -46,6 +46,21 @@ export default function Sidebar() {
   const navItems = NAV_ITEMS[user?.role] || NAV_ITEMS.participant;
   const handleLogout = () => { logout(); navigate('/login'); };
 
+  // Sub-label map for each nav item (beginner-friendly context)
+  const NAV_SUBS = {
+    nav_dashboard:      t('nav_dashboard_sub'),
+    nav_courses:        t('nav_courses_sub'),
+    nav_my_courses:     t('nav_courses_sub'),
+    nav_labs:           t('nav_labs_sub'),
+    nav_leaderboard:    t('nav_leaderboard_sub'),
+    nav_profile:        t('nav_profile_sub'),
+    nav_users:          null,
+    nav_students:       null,
+    nav_analytics:      null,
+    nav_subscriptions:  null,
+    nav_course_builder: null,
+  };
+
   const W = collapsed ? 72 : 260;
 
   return (
@@ -164,11 +179,16 @@ export default function Sidebar() {
             >
               <Icon size={18} style={{ flexShrink: 0 }} />
               {!collapsed && (
-                <>
-                  <span style={{ flex: 1, whiteSpace: 'nowrap' }}>{t(key)}</span>
-                  <ChevronRight size={14} style={{ opacity: 0.4, flexShrink: 0 }} />
-                </>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t(key)}</div>
+                  {NAV_SUBS[key] && (
+                    <div style={{ fontSize: '0.65rem', color: 'inherit', opacity: 0.6, marginTop: '0.1rem', fontWeight: 400 }}>
+                      {NAV_SUBS[key]}
+                    </div>
+                  )}
+                </div>
               )}
+              {!collapsed && <ChevronRight size={14} style={{ opacity: 0.4, flexShrink: 0 }} />}
             </NavLink>
           ))}
         </nav>

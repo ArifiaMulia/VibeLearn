@@ -7,13 +7,28 @@ const requireRole = (...roles) => (req, res, next) =>
   roles.includes(req.user.role) ? next() : res.status(403).json({ error: 'Insufficient permissions' });
 
 // GET /api/subscriptions/plans — must be before /:userId
-router.get('/plans', auth, async (req, res) => {
-  const PLANS = [
-    { id: 1, name: 'free', price: 0, features: ['1 Introductory Course', '2 Beginner Labs', 'Community Forum Access', 'XP Tracking'] },
-    { id: 2, name: 'pro', price: 29, features: ['All 5 Courses', 'Unlimited Lab Access', 'AI Code Review Scenarios', 'Security Audit Labs', 'Priority Support', 'Verified Completion Badges'] },
-    { id: 3, name: 'enterprise', price: 199, features: ['Everything in Pro', 'Custom Course Builder', 'Team Management', 'Dedicated Analytics Dashboard', 'SLA Support', 'White-label Options'] },
-  ];
-  res.json(PLANS);
+router.get('/plans', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM subscription_plans ORDER BY price_usd ASC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/subscriptions/plans/:id — admin updates plan pricing
+router.put('/plans/:id', auth, requireRole('super_admin', 'master'), async (req, res) => {
+  const { price_usd, price_idr } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE subscription_plans SET price_usd=$1, price_idr=$2 WHERE id=$3 RETURNING *`,
+      [price_usd, price_idr, req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Plan not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // GET /api/subscriptions — admin: all; user: own

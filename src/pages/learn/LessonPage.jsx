@@ -13,6 +13,47 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 
+const GLOSSARY_DEFS = {
+  en: {
+    API: "Application Programming Interface - A bridge that allows different software applications to talk to each other.",
+    VPS: "Virtual Private Server - A virtual machine sold as a service by an Internet hosting service.",
+    MCP: "Model Context Protocol - An open standard that enables developers to build secure connections between AI models and data.",
+    PaaS: "Platform as a Service - A cloud service for deploying apps without managing underlying servers.",
+    Token: "A basic unit of text (like a word or part of a word) that an AI model reads and generates.",
+    CLI: "Command Line Interface - A text-based interface used to run commands and interact with software.",
+    Repository: "A storage location where files of a project are tracked (usually on GitHub).",
+    Git: "A tool used to track changes in code and coordinate work among developers.",
+    Prompt: "The input text or instruction given to an AI model to guide its output."
+  },
+  id: {
+    API: "Application Programming Interface - Jembatan yang memungkinkan aplikasi perangkat lunak berbeda untuk saling berkomunikasi.",
+    VPS: "Virtual Private Server - Komputer virtual pribadi di cloud yang bisa disewa untuk menjalankan aplikasi.",
+    MCP: "Model Context Protocol - Standar terbuka untuk menghubungkan model AI dengan sumber data eksternal secara aman.",
+    PaaS: "Platform as a Service - Layanan cloud untuk mendeploy aplikasi tanpa harus pusing mengelola server.",
+    Token: "Unit dasar teks (seperti kata atau bagian kata) yang dibaca dan dihasilkan oleh model AI.",
+    CLI: "Command Line Interface - Antarmuka berbasis teks untuk menjalankan perintah di komputer.",
+    Repository: "Tempat penyimpanan digital di mana semua file proyek software disimpan dan dilacak riwayatnya.",
+    Git: "Sistem pelacak perubahan kode yang digunakan pengembang untuk berkolaborasi.",
+    Prompt: "Instruksi atau teks masukan yang diberikan ke model AI untuk memandu jawabannya."
+  }
+};
+
+function injectGlossaryTooltips(content, lang) {
+  if (!content) return content;
+  const defs = GLOSSARY_DEFS[lang] || GLOSSARY_DEFS.en;
+  const parts = content.split(/(```[\s\S]*?```|`[^`\n]*?`)/g);
+  const result = parts.map((part, index) => {
+    if (index % 2 === 1) return part;
+    let text = part;
+    Object.keys(defs).forEach(term => {
+      const regex = new RegExp(`\\b(\${term})\\b`, 'g');
+      text = text.replace(regex, `<span class="glossary-term" data-tooltip="\${defs[term]}">$1</span>`);
+    });
+    return text;
+  });
+  return result.join('');
+}
+
 // Resolves any video URL to an embeddable format, with external link fallback
 // Sub-component: animated caption display below video
 function SubtitleBar({ transcript, transcript_id, lang }) {
@@ -321,11 +362,11 @@ function TranscriptPanel({ transcript, transcript_id, lang }) {
 }
 
 // Estimate reading time
-function estimateTime(type, content) {
-  if (type === 'video') return '~10 min';
-  if (type === 'quiz') return '~5 min';
+function estimateTime(type, content, t) {
+  if (type === 'video') return `~10 ${t('time_min')}`;
+  if (type === 'quiz') return `~5 ${t('time_min')}`;
   const words = (content || '').split(/\s+/).length;
-  return `~${Math.max(2, Math.ceil(words / 200))} min`;
+  return `~${Math.max(2, Math.ceil(words / 200))} ${t('time_min')}`;
 }
 
 // Lesson Reaction widget
@@ -361,7 +402,7 @@ function LessonReaction({ lessonId }) {
 }
 
 // ── QuizCard — supports multiple_choice, true_false, fill_blank, code_order ──
-function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
+function QuizCard({ q, i, isCompleted, answer, onAnswer, t, totalCorrect, totalQuestions }) {
   const { lang } = useLanguage();
   const [fillText, setFillText] = useState('');
   const [fillSubmitted, setFillSubmitted] = useState(false);
@@ -370,12 +411,12 @@ function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
   // TRUE/FALSE format
   if (fmt === 'true_false') {
     const options = [
-      { label: lang === 'id' ? '✅ Benar' : '✅ True',  val: 0 },
-      { label: lang === 'id' ? '❌ Salah' : '❌ False', val: 1 },
+      { label: `✅ ${t('true_ans')}`,  val: 0 },
+      { label: `❌ ${t('false_ans')}`, val: 1 },
     ];
     return (
       <div className="card">
-        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
+        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {t(q.question)}</h4>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           {options.map(({ label, val }) => {
             const sel = answer === val;
@@ -396,7 +437,7 @@ function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
         </div>
         {isCompleted && q.explanation && (
           <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--success)', background: 'rgba(16,185,129,0.08)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--success)' }}>
-            💡 {q.explanation}
+            💡 {t(q.explanation)}
           </p>
         )}
       </div>
@@ -412,12 +453,12 @@ function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
     };
     return (
       <div className="card">
-        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
+        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {t(q.question)}</h4>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <input
             value={fillText} onChange={e => setFillText(e.target.value)}
             disabled={isCompleted || fillSubmitted}
-            placeholder={lang === 'id' ? 'Ketik jawabanmu...' : 'Type your answer...'}
+            placeholder={t('type_answer')}
             onKeyDown={e => e.key === 'Enter' && check()}
             style={{
               flex: 1, background: 'var(--bg-surface)', border: `1px solid ${fillSubmitted ? (answer === q.correct_answer ? 'var(--success)' : '#ef4444') : 'var(--border-light)'}`,
@@ -426,16 +467,16 @@ function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
           />
           {!fillSubmitted && !isCompleted && (
             <button onClick={check} className="btn btn-primary btn-sm">
-              {lang === 'id' ? 'Cek' : 'Check'}
+              {t('check')}
             </button>
           )}
         </div>
         {fillSubmitted && (
           <div style={{ marginTop: '0.6rem', fontSize: '0.82rem', padding: '0.6rem 0.85rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid', background: answer === q.correct_answer ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.06)', borderLeftColor: answer === q.correct_answer ? 'var(--success)' : '#ef4444', color: answer === q.correct_answer ? 'var(--success)' : '#ef4444' }}>
             {answer === q.correct_answer
-              ? `✅ ${lang === 'id' ? 'Benar!' : 'Correct!'}`
-              : `❌ ${lang === 'id' ? `Jawaban yang benar: ${correct}` : `Correct answer: ${correct}`}`}
-            {q.explanation && <div style={{ marginTop: '0.25rem', color: 'var(--text-muted)' }}>💡 {q.explanation}</div>}
+              ? `✅ ${t('correct')}`
+              : `❌ ${t('correct_answer')} ${t(correct)}`}
+            {q.explanation && <div style={{ marginTop: '0.25rem', color: 'var(--text-muted)' }}>💡 {t(q.explanation)}</div>}
           </div>
         )}
       </div>
@@ -445,10 +486,11 @@ function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
   // CODE ORDER format
   if (fmt === 'code_order') {
     const lines = q.code_lines || q.options || [];
+    const translatedLines = lines.map(line => t(line));
     return (
       <div className="card">
-        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
-        <CodeOrderExercise lines={lines} onComplete={() => onAnswer(q.correct_answer)} />
+        <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {t(q.question)}</h4>
+        <CodeOrderExercise lines={translatedLines} onComplete={() => onAnswer(q.correct_answer)} />
       </div>
     );
   }
@@ -456,7 +498,7 @@ function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
   // DEFAULT: MULTIPLE CHOICE
   return (
     <div className="card">
-      <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {q.question}</h4>
+      <h4 style={{ marginBottom: '1rem' }}>{i + 1}. {t(q.question)}</h4>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {q.options.map((opt, optIdx) => (
           <button key={optIdx}
@@ -470,13 +512,13 @@ function QuizCard({ q, i, isCompleted, answer, onAnswer, t }) {
               opacity: isCompleted && answer !== optIdx ? 0.6 : 1,
             }}>
             <span style={{ marginRight: '0.75rem', opacity: 0.5, fontSize: '0.8rem' }}>{String.fromCharCode(65 + optIdx)}.</span>
-            {opt}
+            {t(opt)}
           </button>
         ))}
       </div>
       {isCompleted && q.explanation && (
         <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--success)', background: 'rgba(16,185,129,0.08)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--success)' }}>
-          💡 {q.explanation}
+          💡 {t(q.explanation)}
         </p>
       )}
     </div>
@@ -498,6 +540,8 @@ export default function LessonPage() {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showXP, setShowXP] = useState(false);
   const [xpEarned, setXPEarned] = useState(0);
+  const [wrongQuestionIds, setWrongQuestionIds] = useState([]);
+  const [showReviewMode, setShowReviewMode] = useState(false);
   // Track pending navigation timeouts so we can cancel them on unmount
   const navTimerRef = useRef(null);
   const mountedRef = useRef(true);
@@ -518,6 +562,8 @@ export default function LessonPage() {
     setQuizAnswers({});
     setCompleting(false);  // <-- critical: reset stuck state on navigation
     setShowXP(false);
+    setWrongQuestionIds([]);
+    setShowReviewMode(false);
     if (navTimerRef.current) clearTimeout(navTimerRef.current);
     authFetch(`/lessons/${id}`)
       .then(data => { if (mountedRef.current) setLesson(data); })
@@ -538,12 +584,23 @@ export default function LessonPage() {
 
     if (lesson.type === 'quiz') {
       if (Object.keys(quizAnswers).length < (lesson.quizzes?.length || 0)) {
-        return error('Please answer all questions before completing.');
+        return error(lang === 'id' ? 'Silakan jawab semua pertanyaan sebelum menyelesaikan.' : 'Please answer all questions before completing.');
       }
       let correct = 0;
-      lesson.quizzes?.forEach(q => { if (quizAnswers[q.id] === q.correct_answer) correct++; });
+      const wrongIds = [];
+      lesson.quizzes?.forEach(q => {
+        if (quizAnswers[q.id] === q.correct_answer) {
+          correct++;
+        } else {
+          wrongIds.push(q.id);
+        }
+      });
       const score = Math.round((correct / lesson.quizzes.length) * 100);
-      if (score < 80) return error(`You scored ${score}%. You need 80% to pass.`);
+      if (score < 80) {
+        setWrongQuestionIds(wrongIds);
+        setShowReviewMode(true);
+        return error(lang === 'id' ? `Skor kamu ${score}%. Kamu butuh 80% untuk lulus.` : `You scored ${score}%. You need 80% to pass.`);
+      }
     }
 
     // If already completed, just navigate to next — no API call needed
@@ -593,6 +650,16 @@ export default function LessonPage() {
 
   const handleNext = () => handleComplete(true);
   const handlePrev = () => navigate(`/lessons/${lesson.prev_lesson_id}`);
+  
+  const handleRetryWrongQuizzes = () => {
+    setQuizAnswers(prev => {
+      const updated = { ...prev };
+      wrongQuestionIds.forEach(id => delete updated[id]);
+      return updated;
+    });
+    setShowReviewMode(false);
+    setWrongQuestionIds([]);
+  };
 
   if (loading) return <div className="skeleton" style={{ height: '70vh', borderRadius: 'var(--radius-lg)' }} />;
   if (!lesson) return null;
@@ -616,7 +683,7 @@ export default function LessonPage() {
           </span>
           {isCompleted && <span className="badge badge-success"><CheckCircle size={12} /> Completed</span>}
         </div>
-        <h1 style={{ marginBottom: '0.35rem' }}>{lesson.title}</h1>
+        <h1 style={{ marginBottom: '0.35rem' }}>{lang === 'id' && lesson.title_id ? lesson.title_id : lesson.title}</h1>
         {lesson.lesson_number && lesson.total_lessons && (
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>{t('lesson_label')} {lesson.lesson_number} {t('of')} {lesson.total_lessons}</span>
@@ -639,13 +706,13 @@ export default function LessonPage() {
             <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>{t('what_youll_learn')}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 20, padding: '0.2rem 0.7rem', border: '1px solid var(--border-light)' }}>
-                ⏱ {estimateTime(lesson.type, lesson.content)}
+                ⏱ {estimateTime(lesson.type, lesson.content, t)}
               </span>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 20, padding: '0.2rem 0.7rem', border: '1px solid var(--border-light)' }}>
-                📊 {lesson.type === 'quiz' ? 'Quiz — 80% to pass' : lesson.type === 'video' ? 'Watch & Read' : 'Read & Practice'}
+                📊 {lesson.type === 'quiz' ? t('quiz_req') : lesson.type === 'video' ? t('watch_read') : t('read_practice')}
               </span>
               <span style={{ fontSize: '0.78rem', color: 'var(--primary)', background: 'rgba(124,58,237,0.1)', borderRadius: 20, padding: '0.2rem 0.7rem', border: '1px solid rgba(124,58,237,0.2)', fontWeight: 700 }}>
-                ⚡ +{lesson.xp_reward} XP on completion
+                ⚡ +{lesson.xp_reward} {t('xp_on_completion')}
               </span>
             </div>
           </div>
@@ -674,7 +741,8 @@ export default function LessonPage() {
       {/* Text / Video Markdown Content */}
       {(lesson.type === 'text' || lesson.type === 'video') && lesson.content && (() => {
         // Bilingual: prefer content_id (Indonesian) when lang=id
-        const displayContent = lang === 'id' && lesson.content_id ? lesson.content_id : lesson.content;
+        const displayContentRaw = lang === 'id' && lesson.content_id ? lesson.content_id : lesson.content;
+        const displayContent = injectGlossaryTooltips(displayContentRaw, lang);
         const showTranslationBanner = lang === 'id' && !lesson.content_id;
         return (
           <>
@@ -724,17 +792,101 @@ export default function LessonPage() {
       })()}
 
       {/* Quiz Content */}
-      {lesson.type === 'quiz' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="markdown-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lesson.content}</ReactMarkdown>
+      {lesson.type === 'quiz' && (() => {
+        const totalQuestions = lesson.quizzes?.length || 0;
+        const totalCorrect = lesson.quizzes?.filter(q => quizAnswers[q.id] === q.correct_answer).length || 0;
+        const answeredCount = Object.keys(quizAnswers).length;
+        const needToPass = Math.ceil(totalQuestions * 0.8);
+        const isOnTrack = totalCorrect >= needToPass;
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="markdown-content">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {injectGlossaryTooltips(lesson.content, lang)}
+              </ReactMarkdown>
+            </div>
+
+            {/* Live Score Counter */}
+            {answeredCount > 0 && !isCompleted && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
+                background: isOnTrack ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
+                border: `1px solid ${isOnTrack ? 'rgba(16,185,129,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                borderRadius: 'var(--radius-md)', padding: '0.85rem 1.25rem',
+              }}>
+                {/* Score fraction */}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
+                  <span style={{ fontSize: '1.8rem', fontWeight: 800, color: isOnTrack ? 'var(--success)' : 'var(--warning)', lineHeight: 1 }}>{totalCorrect}</span>
+                  <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/ {totalQuestions}</span>
+                </div>
+                {/* Progress bar */}
+                <div style={{ flex: 1, minWidth: 120 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                    <span>{t('quiz_score_live')}</span>
+                    <span style={{ color: isOnTrack ? 'var(--success)' : 'var(--warning)', fontWeight: 600 }}>
+                      {isOnTrack
+                        ? (totalCorrect === totalQuestions ? t('quiz_all_correct') : t('quiz_ready_to_pass'))
+                        : `${needToPass - totalCorrect} ${t('quiz_need_more')}`}
+                    </span>
+                  </div>
+                  <div style={{ height: 6, background: 'var(--border-light)', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 99, transition: 'width 0.4s ease',
+                      width: `${(totalCorrect / totalQuestions) * 100}%`,
+                      background: isOnTrack ? 'var(--success)' : 'var(--warning)',
+                    }} />
+                  </div>
+                  {/* Pass threshold marker */}
+                  <div style={{ position: 'relative', height: 0 }}>
+                    <div style={{
+                      position: 'absolute',
+                      left: `${(needToPass / totalQuestions) * 100}%`,
+                      top: -6, transform: 'translateX(-50%)',
+                      width: 2, height: 6, background: 'var(--primary)', borderRadius: 1,
+                    }} />
+                  </div>
+                </div>
+                {/* Answered counter */}
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                  {answeredCount}/{totalQuestions} {lang === 'id' ? 'dijawab' : 'answered'}
+                </div>
+              </div>
+            )}
+
+            {showReviewMode ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{
+                  padding: '1.25rem', background: 'rgba(239,68,68,0.08)',
+                  border: '1.5px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-lg)',
+                  display: 'flex', flexDirection: 'column', gap: '0.4rem'
+                }}>
+                  <h4 style={{ color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+                    ⚠️ {t('quiz_review_title')}
+                  </h4>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+                    {t('quiz_review_subtitle')}
+                  </p>
+                </div>
+                {lesson.quizzes?.filter(q => wrongQuestionIds.includes(q.id)).map((q, i) => (
+                  <QuizCard key={q.id} q={q} i={i} isCompleted={true}
+                    totalCorrect={totalCorrect} totalQuestions={totalQuestions}
+                    answer={quizAnswers[q.id]} onAnswer={() => {}} t={t} />
+                ))}
+                <button className="btn btn-primary" onClick={handleRetryWrongQuizzes} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', alignSelf: 'flex-start', marginTop: '0.5rem' }}>
+                  🔄 {t('quiz_try_again')}
+                </button>
+              </div>
+            ) : (
+              lesson.quizzes?.map((q, i) => (
+                <QuizCard key={q.id} q={q} i={i} isCompleted={isCompleted}
+                  totalCorrect={totalCorrect} totalQuestions={totalQuestions}
+                  answer={quizAnswers[q.id]} onAnswer={(val) => !isCompleted && setQuizAnswers(prev => ({ ...prev, [q.id]: val }))} t={t} />
+              ))
+            )}
           </div>
-          {lesson.quizzes?.map((q, i) => (
-            <QuizCard key={q.id} q={q} i={i} isCompleted={isCompleted}
-              answer={quizAnswers[q.id]} onAnswer={(val) => !isCompleted && setQuizAnswers(prev => ({ ...prev, [q.id]: val }))} t={t} />
-          ))}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Challenge Text — Your Turn block (bilingual) */}
       {(lesson.challenge_text || lesson.challenge_text_id) && (() => {
@@ -749,7 +901,7 @@ export default function LessonPage() {
             <div style={{ fontSize: '1.4rem', flexShrink: 0 }}>🎯</div>
             <div>
               <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--warning)', marginBottom: '0.35rem' }}>
-                {lang === 'id' ? 'Giliran Kamu!' : 'Your Turn!'}
+                {t('your_turn')}
               </div>
               <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 {text}
@@ -783,9 +935,11 @@ export default function LessonPage() {
             className="btn btn-primary btn-lg"
             onClick={() => handleComplete(false)}
             disabled={completing}
-            style={{ minWidth: 200, display: 'flex', justifyContent: 'center' }}
+            style={{ minWidth: 220, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
           >
-            {completing ? t('processing') : <><Trophy size={18} /> {t('complete_lesson')}</>}
+            {completing
+              ? t('processing')
+              : <><Trophy size={18} /> {t('complete_lesson_cta')} <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 99, padding: '0.1rem 0.5rem', fontSize: '0.82rem', fontWeight: 700 }}>+{lesson.xp_reward} XP</span></>}
           </button>
         )}
 

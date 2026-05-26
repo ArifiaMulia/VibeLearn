@@ -27,7 +27,7 @@ const DEFAULT_RESOURCES = {
 };
 
 export default function ResourcesPanel({ resources, lessonType }) {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const items = (resources && resources.length > 0)
@@ -85,8 +85,8 @@ export default function ResourcesPanel({ resources, lessonType }) {
                   <Icon size={14} color={cfg.color} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{res.label}</div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{cfg.label}</div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{t(res.label)}</div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{t(cfg.label)}</div>
                 </div>
                 {isExternal && <ExternalLink size={12} color="var(--text-muted)" />}
               </a>
