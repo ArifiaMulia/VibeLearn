@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -e
+
+echo "Running pre-commit validation..."
+
+npm run build
+node --check api/index.js
+
+echo "Pre-commit validation passed."
