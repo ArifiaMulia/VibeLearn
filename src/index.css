@@ -98,6 +98,74 @@ body {
   overflow-x: hidden;
 }
 
+/* ── Image Baseline ── */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Markdown Content — Images, Tables, Figures ── */
+.markdown-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  object-fit: contain;
+}
+
+.markdown-content img:hover {
+  border-color: var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s ease;
+}
+
+/* Ensure markdown tables don't overflow */
+.markdown-content table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border-light);
+  text-align: left;
+}
+
+.markdown-content th {
+  background: var(--bg-surface);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.markdown-content td {
+  color: var(--text-secondary);
+}
+
+.markdown-content tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Prevent any element from breaking layout */
+.markdown-content > * {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-surface); }

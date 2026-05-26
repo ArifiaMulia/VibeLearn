@@ -756,7 +756,7 @@ export default function LessonPage() {
                 <span>Terjemahan Bahasa Indonesia <strong>segera hadir</strong>. Menampilkan versi Bahasa Inggris.</span>
               </div>
             )}
-            <div className="card markdown-content" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+            <div className="card markdown-content" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, overflow: 'hidden' }}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
@@ -769,6 +769,24 @@ export default function LessonPage() {
                   ol: ({node, ...props}) => <ol style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'decimal' }} {...props} />,
                   li: ({node, ...props}) => <li style={{ marginBottom: '0.5rem' }} {...props} />,
                   blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid var(--primary)', color: 'var(--text-muted)', margin: '1rem 0', background: 'rgba(124,58,237,0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)' }} {...props} />,
+                  img: ({node, src, alt, ...props}) => (
+                    <img
+                      src={src}
+                      alt={alt || 'Lesson illustration'}
+                      loading="lazy"
+                      style={{
+                        display: 'block',
+                        maxWidth: '100%',
+                        height: 'auto',
+                        margin: '1.5rem auto',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border-light)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                        objectFit: 'contain',
+                      }}
+                      {...props}
+                    />
+                  ),
                   code: ({node, inline, className, children, ...props}) => {
                     const match = /language-(\w+)/.exec(className || '');
                     if (!inline && match && match[1] === 'mermaid') {
