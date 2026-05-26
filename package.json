@@ -1,6 +1,6 @@
 {
   "name": "vibelearn",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "VibeLearn — Interactive Vibe Coding LMS SaaS",
   "main": "index.js",
   "scripts": {
