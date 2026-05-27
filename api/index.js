@@ -27,7 +27,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/health', async (req, res) => {
-  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '2.1.0', timestamp: new Date().toISOString() };
+  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '3.1.0', timestamp: new Date().toISOString() };
   try {
     await pool.query('SELECT 1');
     checks.database = 'ok';
@@ -267,20 +267,50 @@ const initDb = async (retries = 10, delay = 3000) => {
       ];
 
       for (const c of courseSeeds) {
+        let courseId;
         const existing = await pool.query(`SELECT id FROM courses WHERE title=$1`, [c.title]);
         if (!existing.rows.length) {
           const courseRes = await pool.query(
             `INSERT INTO courses (title, description, level, category, created_by, is_published, order_index) VALUES ($1,$2,$3,$4,$5,true,$6) RETURNING id`,
             [c.title, c.description, c.level, c.category, masterId, c.order_index]
           );
-          const courseId = courseRes.rows[0].id;
+          courseId = courseRes.rows[0].id;
+        } else {
+          courseId = existing.rows[0].id;
+          // Update course info in case description changed
+          await pool.query(
+            `UPDATE courses SET description=$1, level=$2, category=$3, order_index=$4 WHERE id=$5`,
+            [c.description, c.level, c.category, c.order_index, courseId]
+          );
+        }
 
-          // Seed 3 lessons per course
-          // Seed lessons uniquely per course using imported data
-          const seedData = require('./seedData.js');
-          const lessonSeeds = seedData[c.title] || [];
+        // Seed/Update lessons uniquely per course using imported data
+        const seedData = require('./seedData.js');
+        const lessonSeeds = seedData[c.title] || [];
+        
+        for (const l of lessonSeeds) {
+          const existingLesson = await pool.query(
+            `SELECT id FROM lessons WHERE course_id=$1 AND (title=$2 OR title_id=$3)`,
+            [courseId, l.title, l.title_id || null]
+          );
           
-          for (const l of lessonSeeds) {
+          let lessonId;
+          if (existingLesson.rows.length) {
+            lessonId = existingLesson.rows[0].id;
+            // Update existing lesson
+            await pool.query(
+              `UPDATE lessons 
+               SET title=$1, content=$2, video_url=$3, type=$4, xp_reward=$5, order_index=$6, difficulty=$7, 
+                   resources=$8, challenge_text=$9, content_id=$10, challenge_text_id=$11, 
+                   transcript=$12, transcript_id=$13, title_id=$14
+               WHERE id=$15`,
+              [l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index,
+               l.difficulty || 'beginner', JSON.stringify(l.resources || []), l.challenge_text || '',
+               l.content_id || null, l.challenge_text_id || null,
+               l.transcript || null, l.transcript_id || null, l.title_id || null, lessonId]
+            );
+          } else {
+            // Insert new lesson
             const lessonRes = await pool.query(
               `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, content_id, challenge_text_id, transcript, transcript_id, title_id)
                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
@@ -289,16 +319,20 @@ const initDb = async (retries = 10, delay = 3000) => {
                l.content_id || null, l.challenge_text_id || null,
                l.transcript || null, l.transcript_id || null, l.title_id || null]
             );
-            // Add quiz questions for quiz lessons
-            if (l.type === 'quiz' && l.quizzes) {
-              for (const q of l.quizzes) {
-                await pool.query(
-                  `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation, format, code_lines)
-                   VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING`,
-                  [lessonRes.rows[0].id, q.question, JSON.stringify(q.options), q.correct_answer,
-                   q.explanation, q.format || 'multiple_choice', JSON.stringify(q.code_lines || [])]
-                );
-              }
+            lessonId = lessonRes.rows[0].id;
+          }
+
+          // Add/Update quiz questions for quiz lessons
+          if (l.type === 'quiz' && l.quizzes) {
+            for (const q of l.quizzes) {
+              await pool.query(
+                `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation, format, code_lines)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7)
+                 ON CONFLICT (lesson_id, question) DO UPDATE
+                 SET options=EXCLUDED.options, correct_answer=EXCLUDED.correct_answer, explanation=EXCLUDED.explanation, format=EXCLUDED.format, code_lines=EXCLUDED.code_lines`,
+                [lessonId, q.question, JSON.stringify(q.options), q.correct_answer,
+                 q.explanation, q.format || 'multiple_choice', JSON.stringify(q.code_lines || [])]
+              );
             }
           }
         }
