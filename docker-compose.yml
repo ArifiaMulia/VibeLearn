@@ -12,7 +12,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
-      - coolify
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U vibelearn_user -d vibelearn_db"]
       interval: 10s
@@ -29,6 +29,7 @@ services:
       db:
         condition: service_healthy
     networks:
+      - internal
       - coolify
     volumes:
       - api_uploads:/usr/src/app/uploads
@@ -56,6 +57,7 @@ services:
     depends_on:
       - api
     networks:
+      - internal
       - coolify
     labels:
       - "traefik.enable=true"
@@ -73,6 +75,8 @@ services:
       - "traefik.http.middlewares.vibe-redirect-https.redirectscheme.scheme=https"
 
 networks:
+  internal:
+    driver: bridge
   coolify:
     external: true
 
