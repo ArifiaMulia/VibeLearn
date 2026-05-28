@@ -68,6 +68,17 @@ const initDb = async (retries = 10, delay = 3000) => {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS labs (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          description TEXT,
+          type VARCHAR(50) NOT NULL,
+          difficulty VARCHAR(50) DEFAULT 'beginner',
+          xp_reward INTEGER DEFAULT 100,
+          config JSONB DEFAULT '{}',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS lessons (
           id SERIAL PRIMARY KEY,
           course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
@@ -95,17 +106,6 @@ const initDb = async (retries = 10, delay = 3000) => {
           code_lines JSONB DEFAULT '[]',
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(lesson_id, question)
-        );
-
-        CREATE TABLE IF NOT EXISTS labs (
-          id SERIAL PRIMARY KEY,
-          title VARCHAR(255) NOT NULL,
-          description TEXT,
-          type VARCHAR(50) NOT NULL,
-          difficulty VARCHAR(50) DEFAULT 'beginner',
-          xp_reward INTEGER DEFAULT 100,
-          config JSONB DEFAULT '{}',
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS enrollments (
