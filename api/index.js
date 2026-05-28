@@ -27,7 +27,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/health', async (req, res) => {
-  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '3.1.1', timestamp: new Date().toISOString() };
+  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '3.1.2', timestamp: new Date().toISOString() };
   try {
     await pool.query('SELECT 1');
     checks.database = 'ok';
@@ -219,6 +219,18 @@ const initDb = async (retries = 10, delay = 3000) => {
       for (const sql of migrations) {
         try { await pool.query(sql); } catch (e) { /* ignore */ }
       }
+      
+      // Add UNIQUE constraint to quizzes if missing (migration)
+      try {
+        await pool.query(`
+          DELETE FROM quizzes a USING quizzes b 
+          WHERE a.id > b.id AND a.lesson_id = b.lesson_id AND a.question = b.question;
+        `);
+        await pool.query(`
+          ALTER TABLE quizzes ADD CONSTRAINT quizzes_lesson_id_question_key UNIQUE (lesson_id, question);
+        `);
+        console.log('✅ Added UNIQUE constraint to quizzes table.');
+      } catch (e) { /* ignore if already exists */ }
 
       // Populate translated title_id and content_id for Vibe Coding 101 if missing
       try {
