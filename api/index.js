@@ -178,6 +178,20 @@ const initDb = async (retries = 10, delay = 3000) => {
           price_idr INTEGER NOT NULL,
           features JSONB DEFAULT '[]'
         );
+
+        CREATE TABLE IF NOT EXISTS payment_verifications (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          plan VARCHAR(50) NOT NULL,
+          billing_term VARCHAR(20) DEFAULT 'monthly',
+          amount_idr INTEGER NOT NULL,
+          sender_name VARCHAR(100) NOT NULL,
+          bank_name VARCHAR(100) NOT NULL,
+          receipt_url VARCHAR(255) NOT NULL,
+          status VARCHAR(20) DEFAULT 'pending',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          resolved_at TIMESTAMP WITH TIME ZONE
+        );
       `);
 
       // Seed subscription_plans
