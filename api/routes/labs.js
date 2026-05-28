@@ -12,8 +12,10 @@ router.get('/', auth, async (req, res) => {
     const result = await pool.query(
       `SELECT l.*,
         (SELECT COUNT(*) FROM lab_sessions ls WHERE ls.lab_id = l.id) as total_attempts,
-        (SELECT AVG(score) FROM lab_sessions ls WHERE ls.lab_id = l.id AND ls.completed_at IS NOT NULL) as avg_score
-       FROM labs l ORDER BY l.difficulty ASC, l.id ASC`
+        (SELECT AVG(score) FROM lab_sessions ls WHERE ls.lab_id = l.id AND ls.completed_at IS NOT NULL) as avg_score,
+        EXISTS(SELECT 1 FROM lab_sessions ls WHERE ls.lab_id = l.id AND ls.user_id = $1 AND ls.completed_at IS NOT NULL) as completed
+       FROM labs l ORDER BY l.difficulty ASC, l.id ASC`,
+      [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {

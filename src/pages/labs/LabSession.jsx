@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { Play, Save, Terminal as TerminalIcon, Sparkles, CheckCircle2, MessageSquare, Lightbulb, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Play, Save, Terminal as TerminalIcon, Sparkles, CheckCircle2, MessageSquare, Lightbulb, ChevronDown, ChevronUp, RotateCcw, Wrench } from 'lucide-react';
 
 // Starter codes for each lab type
 const STARTER_CODES = {
@@ -388,6 +388,200 @@ function HintPanel({ hints = [] }) {
   );
 }
 
+// Prerequisites & Local Prep Guide Data
+const PREPARATION_DATA = {
+  en: {
+    title: "🔧 Prerequisites & Lab Preparation",
+    subtitle: "What you need to set up on your local machine to build this in the real world.",
+    prompt: {
+      prereqs: ["Understanding of AI prompting rules", "Knowledge of system vs user roles"],
+      setup: [
+        "LLM Provider API Key (OpenAI, Anthropic, or Gemini)",
+        "Node.js client SDK (e.g. npm install @google/generative-ai)"
+      ],
+      steps: [
+        "Set up an .env file containing your API secret key.",
+        "Use a local system prompt file to separate instruction logic from user input.",
+        "Always define validation regex or constraints on the LLM output to avoid parse failures."
+      ]
+    },
+    code: {
+      prereqs: ["JavaScript ES6 Syntax & Promises", "Understanding of Asynchronous Event Loop"],
+      setup: [
+        "Node.js (LTS version 18 or above)",
+        "Local testing library like Vitest or Jest (npm install --save-dev vitest)"
+      ],
+      steps: [
+        "Initialize a local project: npm init -y",
+        "Implement async functions using async/await keywords.",
+        "Always try-catch your fetches to prevent runtime page crashes."
+      ]
+    },
+    security: {
+      prereqs: ["Basic SQL structures", "Concept of server-side data sanitization"],
+      setup: [
+        "Local relational database (PostgreSQL, SQLite, or MySQL)",
+        "ORM like Prisma or pg package for parameterized querying (npm install pg)"
+      ],
+      steps: [
+        "Never interpolate variables directly into SQL queries.",
+        "Use SQL query parameters ($1, $2 or ?) to bind user variables.",
+        "Add input sanitization layers using packages like express-validator."
+      ]
+    },
+    build: {
+      prereqs: ["React functional components & useState", "Immutable state update patterns"],
+      setup: [
+        "Bootstrap React locally: npm create vite@latest local-app -- --template react",
+        "React DevTools browser extension"
+      ],
+      steps: [
+        "Run npm install && npm run dev to boot up your local dev server.",
+        "Implement CRUD states immutably: use setTodos(prev => [...prev, newTodo]) instead of array.push().",
+        "Ensure state is cleaned up when components unmount."
+      ]
+    },
+    speedrun: {
+      prereqs: ["CSS flexbox/grid layout design", "Prop validation and fallbacks"],
+      setup: [
+        "Bootstrap template in React/Vite",
+        "Icon packages like lucide-react (npm install lucide-react)"
+      ],
+      steps: [
+        "Always define default fallback values for your props (e.g. count || 0).",
+        "Keep components lightweight and modular for fast load speeds.",
+        "Verify styling response across device sizes in chrome inspector."
+      ]
+    }
+  },
+  id: {
+    title: "🔧 Prasyarat & Persiapan Lab",
+    subtitle: "Apa yang perlu Anda persiapkan di komputer lokal untuk membangun ini di dunia nyata.",
+    prompt: {
+      prereqs: ["Pemahaman tentang aturan penulisan prompt AI", "Pengetahuan tentang peran sistem vs pengguna"],
+      setup: [
+        "API Key LLM (OpenAI, Anthropic, atau Gemini)",
+        "Node.js client SDK (misal: npm install @google/generative-ai)"
+      ],
+      steps: [
+        "Buat file .env yang berisi kunci rahasia API Anda.",
+        "Gunakan file prompt sistem terpisah untuk memisahkan logika instruksi dari input pengguna.",
+        "Tentukan validasi regex pada output LLM untuk mencegah kegagalan parsing."
+      ]
+    },
+    code: {
+      prereqs: ["Sintaks JavaScript ES6 & Promise", "Pemahaman tentang Event Loop Asinkron"],
+      setup: [
+        "Node.js (Versi LTS 18 ke atas)",
+        "Pustaka pengujian lokal seperti Vitest atau Jest (npm install --save-dev vitest)"
+      ],
+      steps: [
+        "Inisialisasi proyek lokal: npm init -y",
+        "Terapkan fungsi asinkron menggunakan kata kunci async/await.",
+        "Gunakan try-catch pada fetch untuk mencegah aplikasi crash."
+      ]
+    },
+    security: {
+      prereqs: ["Struktur dasar query SQL", "Konsep sanitasi data di sisi server"],
+      setup: [
+        "Database relasional lokal (PostgreSQL, SQLite, atau MySQL)",
+        "ORM seperti Prisma atau modul pg untuk query berparameter (npm install pg)"
+      ],
+      steps: [
+        "Jangan pernah memasukkan variabel langsung ke string query SQL.",
+        "Gunakan parameter query ($1, $2, atau ?) untuk mengikat variabel pengguna secara aman.",
+        "Tambahkan lapisan sanitasi input menggunakan paket seperti express-validator."
+      ]
+    },
+    build: {
+      prereqs: ["React functional component & useState", "Pola pembaruan state secara imutabel"],
+      setup: [
+        "Bootstrap React lokal: npm create vite@latest local-app -- --template react",
+        "Ekstensi browser React DevTools"
+      ],
+      steps: [
+        "Jalankan npm install && npm run dev untuk memulai server dev lokal.",
+        "Perbarui state secara imutabel: gunakan setTodos(prev => [...prev, newTodo]) alih-alih array.push().",
+        "Pastikan state dibersihkan saat komponen di-unmount."
+      ]
+    },
+    speedrun: {
+      prereqs: ["Desain tata letak CSS flexbox/grid", "Validasi prop dan fallback data"],
+      setup: [
+        "Bootstrap template di React/Vite",
+        "Paket ikon seperti lucide-react (npm install lucide-react)"
+      ],
+      steps: [
+        "Selalu tentukan nilai fallback default untuk properti (misal: count || 0).",
+        "Jaga agar komponen tetap ringan dan modular untuk kecepatan pemuatan.",
+        "Verifikasi responsivitas tampilan menggunakan inspector chrome."
+      ]
+    }
+  }
+};
+
+function PreparationPanel({ labType, lang }) {
+  const [open, setOpen] = useState(false);
+  const data = PREPARATION_DATA[lang]?.[labType] || PREPARATION_DATA.en?.[labType];
+  const common = PREPARATION_DATA[lang] || PREPARATION_DATA.en;
+
+  if (!data) return null;
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.08), rgba(124,58,237,0.05))', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+          padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
+          color: 'var(--text-primary)',
+        }}
+      >
+        <Wrench size={16} color="var(--accent)" />
+        <span style={{ fontWeight: 700, fontSize: '0.85rem', flex: 1, textAlign: 'left' }}>
+          {common.title}
+        </span>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
+
+      {open && (
+        <div style={{ padding: '0 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '1px solid var(--border-light)', paddingTop: '1rem' }}>
+          <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+            {common.subtitle}
+          </p>
+          
+          <div>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+              🎯 {lang === 'id' ? 'Prasyarat Konsep' : 'Conceptual Prerequisites'}
+            </span>
+            <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {data.prereqs.map((p, i) => <li key={i}>{p}</li>)}
+            </ul>
+          </div>
+
+          <div>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--primary-light)', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+              📦 {lang === 'id' ? 'Kebutuhan Software & Library' : 'Software & SDK Setup'}
+            </span>
+            <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {data.setup.map((s, i) => <li key={i} style={{ fontFamily: s.includes('npm ') ? 'var(--font-mono)' : 'inherit', fontSize: s.includes('npm ') ? '0.72rem' : '0.78rem' }}>{s}</li>)}
+            </ul>
+          </div>
+
+          <div>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--warning)', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
+              🚀 {lang === 'id' ? 'Langkah Praktik Terbaik' : 'Best Practice Steps'}
+            </span>
+            <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              {data.steps.map((st, i) => <li key={i}>{st}</li>)}
+            </ol>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LabSession() {
   const { id } = useParams();
   const { authFetch } = useAuth();
@@ -649,6 +843,9 @@ export default function LabSession() {
 
           {/* Progressive Hints */}
           <HintPanel hints={lab.hints || []} />
+
+          {/* Prerequisites & Lab Preparation */}
+          <PreparationPanel labType={lab.type} lang={lang} />
         </div>
       </div>
 

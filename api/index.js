@@ -373,11 +373,33 @@ const initDb = async (retries = 10, delay = 3000) => {
         { title: 'Speed Run — 15 Min Challenge', description: 'Build a working React component in under 15 minutes using AI. Race against the clock and compete on the leaderboard.', type: 'speedrun', difficulty: 'beginner', xp_reward: 125, config: { time_limit: 900, component: 'Dashboard card with stats' } },
       ];
 
+      // Clean duplicate labs first
+      try {
+        await pool.query(`
+          DELETE FROM labs a USING labs b 
+          WHERE a.id > b.id AND a.title = b.title;
+        `);
+      } catch (err) {
+        console.error('Error cleaning duplicate labs:', err);
+      }
+
       for (const lab of labSeeds) {
-        await pool.query(
-          `INSERT INTO labs (title, description, type, difficulty, xp_reward, config) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING`,
-          [lab.title, lab.description, lab.type, lab.difficulty, lab.xp_reward, JSON.stringify(lab.config)]
-        ).catch(() => {});
+        try {
+          const existing = await pool.query('SELECT id FROM labs WHERE title = $1', [lab.title]);
+          if (!existing.rows.length) {
+            await pool.query(
+              `INSERT INTO labs (title, description, type, difficulty, xp_reward, config) VALUES ($1,$2,$3,$4,$5,$6)`,
+              [lab.title, lab.description, lab.type, lab.difficulty, lab.xp_reward, JSON.stringify(lab.config)]
+            );
+          } else {
+            await pool.query(
+              `UPDATE labs SET description=$1, type=$2, difficulty=$3, xp_reward=$4, config=$5 WHERE id=$6`,
+              [lab.description, lab.type, lab.difficulty, lab.xp_reward, JSON.stringify(lab.config), existing.rows[0].id]
+            );
+          }
+        } catch (err) {
+          console.error(`Error seeding lab "${lab.title}":`, err);
+        }
       }
 
       console.log('✅ Database initialized and seeded.');

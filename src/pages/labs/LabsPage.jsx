@@ -20,7 +20,13 @@ export default function LabsPage() {
   const { t } = useLanguage();
   const [labs, setLabs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('default');
+  const [sortBy, setSortBy] = useState(() => {
+    return localStorage.getItem('vl_labs_sort') || 'default';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('vl_labs_sort', sortBy);
+  }, [sortBy]);
 
   useEffect(() => {
     authFetch('/labs').then(setLabs).finally(() => setLoading(false));
@@ -80,6 +86,7 @@ export default function LabsPage() {
                   <Icon size={24} color={isLocked ? 'var(--text-muted)' : 'var(--accent)'} />
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {lab.completed && <span className="badge badge-success">✓ Completed</span>}
                   <span className={`badge diff-${lab.difficulty}`}>{lab.difficulty}</span>
                   <span className="badge badge-accent"><Zap size={10} /> {lab.xp_reward}</span>
                 </div>
@@ -92,13 +99,40 @@ export default function LabsPage() {
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   {lab.total_attempts} attempts • Avg {Math.round(lab.avg_score || 0)}%
                 </div>
-                <button 
-                  className={`btn btn-sm ${isLocked ? 'btn-ghost' : 'btn-accent'}`} 
-                  disabled={isLocked}
-                  onClick={() => navigate(`/labs/${lab.id}`)}
-                >
-                  {isLocked ? 'Pro Only' : <><Play size={14} /> Start Lab</>}
-                </button>
+                {isLocked ? (
+                  <button className="btn btn-sm btn-ghost" disabled>Pro Only</button>
+                ) : lab.completed ? (
+                  <button 
+                    className="btn btn-sm btn-ghost" 
+                    onClick={() => navigate(`/labs/${lab.id}`)}
+                    style={{
+                      borderColor: 'var(--success)',
+                      color: 'var(--success)',
+                      background: 'rgba(16,185,129,0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = 'var(--success)';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = 'rgba(16,185,129,0.05)';
+                      e.currentTarget.style.color = 'var(--success)';
+                    }}
+                  >
+                    ✓ Completed
+                  </button>
+                ) : (
+                  <button 
+                    className="btn btn-sm btn-accent" 
+                    onClick={() => navigate(`/labs/${lab.id}`)}
+                  >
+                    <Play size={14} /> Start Lab
+                  </button>
+                )}
               </div>
             </div>
           );

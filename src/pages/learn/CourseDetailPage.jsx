@@ -429,7 +429,7 @@ export default function CourseDetailPage() {
           {course.lessons?.map((lesson, i) => {
             const done = completedIds.has(lesson.id);
             const isActive = !done && enrolled && [...course.lessons].slice(0, i).every(l => completedIds.has(l.id));
-            const isLocked = !enrolled;
+            const isLocked = !enrolled || (!done && !isActive);
             const TypeIcon = TYPE_ICONS[lesson.type] || BookOpen;
             const color = TYPE_COLORS[lesson.type] || 'var(--primary)';
 

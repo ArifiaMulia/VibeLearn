@@ -84,7 +84,7 @@ export default function CourseCard({ course, index = 0, progress = null, enrolle
         {!isLocked && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: '0.5rem' }}>
             <span style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600 }}>
-              {enrolled ? (pct > 0 ? 'Continue' : 'Start') : 'Enroll Now'}
+              {enrolled ? (pct === 100 ? 'Review' : pct > 0 ? 'Continue' : 'Start') : 'Enroll Now'}
             </span>
             <ChevronRight size={16} color="var(--primary)" />
           </div>
