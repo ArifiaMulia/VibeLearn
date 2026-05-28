@@ -18,11 +18,301 @@ function estimateTime(type, content) {
   return `~${mins} min`;
 }
 
+// ── Certificate Modal ────────────────────────────────────────────────────────
+function CertificateModal({ course, user, lang, t, onClose }) {
+  const certId = `VL-${course.id.toString().padStart(3,'0')}-${(user?.id||99).toString().padStart(4,'0')}-${Math.abs((course.id*183+(user?.id||99)*761)%100000).toString().padStart(5,'0')}`;
+  const dateStr = new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const totalXP = course?.lessons?.reduce((s, l) => s + (l.xp_reward || 0), 0) || 0;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div
+      className="no-print"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 2000,
+        background: 'rgba(0,0,0,0.92)',
+        backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '1rem',
+        overflowY: 'auto',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{ width: '100%', maxWidth: 860, display: 'flex', flexDirection: 'column', gap: '1rem' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Controls */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            🎓 Certificate of Completion
+          </span>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+              onClick={handlePrint}
+              style={{
+                padding: '0.5rem 1.25rem', borderRadius: 8, border: '1px solid rgba(212,175,55,0.4)',
+                background: 'rgba(212,175,55,0.1)', color: '#d4af37', fontWeight: 700,
+                fontSize: '0.82rem', cursor: 'pointer', letterSpacing: '0.05em',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.1)'; }}
+            >
+              ⬇ Save as PDF
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)',
+                cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >✕</button>
+          </div>
+        </div>
+
+        {/* ── THE CERTIFICATE CARD ── */}
+        <div
+          className="certificate-card"
+          style={{
+            position: 'relative',
+            background: 'linear-gradient(145deg, #07071a 0%, #0d0d2b 40%, #0a1628 70%, #070718 100%)',
+            borderRadius: 16,
+            overflow: 'hidden',
+            padding: '3rem 3.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1.5rem',
+            minHeight: 520,
+          }}
+        >
+          {/* Outer golden border frame */}
+          <div style={{
+            position: 'absolute', inset: 8,
+            border: '2px solid rgba(212,175,55,0.35)',
+            borderRadius: 10,
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 12,
+            border: '1px solid rgba(212,175,55,0.12)',
+            borderRadius: 8,
+            pointerEvents: 'none',
+          }} />
+
+          {/* Corner ornaments */}
+          {[
+            { top: 18, left: 18 },
+            { top: 18, right: 18 },
+            { bottom: 18, left: 18 },
+            { bottom: 18, right: 18 },
+          ].map((pos, i) => (
+            <svg key={i} width="28" height="28" viewBox="0 0 28 28" style={{ position: 'absolute', ...pos, opacity: 0.6 }}>
+              <path d="M0 14 L0 0 L14 0" fill="none" stroke="#d4af37" strokeWidth="1.5"
+                transform={i === 1 ? 'scale(-1,1) translate(-28,0)' : i === 2 ? 'scale(1,-1) translate(0,-28)' : i === 3 ? 'scale(-1,-1) translate(-28,-28)' : ''} />
+              <circle cx={i===0||i===2?0:28} cy={i===0||i===1?0:28} r="2.5" fill="#d4af37" opacity="0.8" />
+            </svg>
+          ))}
+
+          {/* Aurora glow blobs */}
+          <div style={{ position: 'absolute', top: -80, left: -80, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -60, right: -60, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 400, height: 200, background: 'radial-gradient(ellipse, rgba(212,175,55,0.04) 0%, transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+
+          {/* Subtle dot-grid pattern */}
+          <svg style={{ position: 'absolute', inset: 0, opacity: 0.06, pointerEvents: 'none' }} width="100%" height="100%">
+            <defs>
+              <pattern id="cert-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+                <circle cx="2" cy="2" r="1" fill="#d4af37" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#cert-dots)" />
+          </svg>
+
+          {/* ── HEADER ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 1 }}>
+            {/* Hexagonal seal */}
+            <div style={{ position: 'relative', width: 80, height: 80 }}>
+              <svg viewBox="0 0 80 80" width="80" height="80" style={{ position: 'absolute', inset: 0 }}>
+                <defs>
+                  <linearGradient id="sealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#d4af37" />
+                    <stop offset="50%" stopColor="#f3e5ab" />
+                    <stop offset="100%" stopColor="#b8860b" />
+                  </linearGradient>
+                </defs>
+                <polygon points="40,4 73,22 73,58 40,76 7,58 7,22" fill="none" stroke="url(#sealGrad)" strokeWidth="2" />
+                <polygon points="40,10 67,25 67,55 40,70 13,55 13,25" fill="rgba(212,175,55,0.08)" stroke="url(#sealGrad)" strokeWidth="1" strokeDasharray="3 2" />
+              </svg>
+              <div style={{
+                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Trophy size={28} color="#d4af37" />
+              </div>
+            </div>
+
+            {/* Academy name */}
+            <div style={{ fontSize: '0.65rem', letterSpacing: '0.3em', color: 'rgba(212,175,55,0.7)', textTransform: 'uppercase', fontWeight: 600 }}>
+              ✦ PROMPTARA · AI CODING ACADEMY ✦
+            </div>
+
+            {/* Title */}
+            <h2 style={{
+              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: '#d4af37',
+              letterSpacing: '0.08em',
+              textAlign: 'center',
+              margin: 0,
+              textShadow: '0 0 30px rgba(212,175,55,0.3)',
+            }}>
+              CERTIFICATE OF COMPLETION
+            </h2>
+
+            {/* Golden divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', maxWidth: 380 }}>
+              <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.6))' }} />
+              <span style={{ color: 'rgba(212,175,55,0.5)', fontSize: '0.7rem' }}>◆</span>
+              <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, rgba(212,175,55,0.6), transparent)' }} />
+            </div>
+          </div>
+
+          {/* ── RECIPIENT ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', position: 'relative', zIndex: 1 }}>
+            <span style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
+              This is proudly presented to
+            </span>
+            <div style={{
+              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
+              fontWeight: 700,
+              color: '#ffffff',
+              textAlign: 'center',
+              textShadow: '0 2px 20px rgba(255,255,255,0.1)',
+              lineHeight: 1.2,
+              letterSpacing: '0.02em',
+            }}>
+              {user?.name}
+            </div>
+            <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', maxWidth: 420, textAlign: 'center', lineHeight: 1.6 }}>
+              for successfully completing all lessons and assessments in
+            </span>
+            <div style={{
+              fontSize: '1rem',
+              fontWeight: 700,
+              color: '#7dd3fc',
+              textAlign: 'center',
+              padding: '0.4rem 1.2rem',
+              background: 'rgba(6,182,212,0.08)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              borderRadius: 8,
+              letterSpacing: '0.02em',
+              marginTop: '0.25rem',
+            }}>
+              {course?.title}
+            </div>
+          </div>
+
+          {/* ── STATS ROW ── */}
+          <div style={{
+            display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap',
+            position: 'relative', zIndex: 1,
+          }}>
+            {[
+              { label: 'Lessons Completed', value: `${course?.lessons?.length || 0}`, icon: '📚' },
+              { label: 'XP Earned', value: `${totalXP}`, icon: '⚡' },
+              { label: 'Skill Level', value: course?.level?.charAt(0).toUpperCase() + course?.level?.slice(1) || 'Beginner', icon: '🎯' },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
+                padding: '0.6rem 1.1rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 10,
+                minWidth: 90,
+              }}>
+                <span style={{ fontSize: '1.1rem' }}>{stat.icon}</span>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>{stat.value}</span>
+                <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>{stat.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* ── CERTIFIED BADGE ── */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.6rem',
+            padding: '0.45rem 1.4rem',
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.05))',
+            border: '1px solid rgba(212,175,55,0.3)',
+            borderRadius: 30,
+            position: 'relative', zIndex: 1,
+          }}>
+            <span style={{ fontSize: '0.9rem' }}>🛡️</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#d4af37', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Certified Digital Builder · Vibe Coding Graduate
+            </span>
+          </div>
+
+          {/* ── FOOTER ── */}
+          <div style={{
+            width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            paddingTop: '1.5rem',
+            position: 'relative', zIndex: 1,
+          }}>
+            {/* Date & Credential ID */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Date of Completion</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>{dateStr}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Credential ID</span>
+                <span style={{ fontSize: '0.82rem', fontFamily: 'monospace', color: '#d4af37', fontWeight: 700, letterSpacing: '0.05em' }}>{certId}</span>
+              </div>
+            </div>
+
+            {/* Signatures */}
+            <div style={{ display: 'flex', justifyContent: 'space-around', gap: '2rem' }}>
+              {[
+                { name: 'Arifia Mulia', role: 'Academy Director' },
+                { name: 'Prasetia Dwidharma', role: 'Lead Instructor' },
+              ].map((sig, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', flex: 1 }}>
+                  <span style={{
+                    fontFamily: "'Georgia', serif", fontStyle: 'italic',
+                    color: 'rgba(212,175,55,0.85)', fontSize: '1rem', letterSpacing: '0.02em',
+                  }}>{sig.name}</span>
+                  <div style={{ width: 120, height: 1, background: 'rgba(212,175,55,0.25)' }} />
+                  <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{sig.role}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom branding */}
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                Issued by Promptara · AI Coding Academy · virtuenet.id · Verify at vibe.virtuenet.space
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CourseDetailPage() {
   const { id } = useParams();
   const { authFetch, user } = useAuth();
   const { success, error } = useAlert();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
@@ -108,7 +398,7 @@ export default function CourseDetailPage() {
             {enrolled ? (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: 8 }}>
-                            <div style={{ fontWeight: 700, marginBottom: '0.3rem' }}>{completedIds.size}/{course.lessons?.length} {t('completed')}</div>
+                  <div style={{ fontWeight: 700, marginBottom: '0.3rem' }}>{completedIds.size}/{course.lessons?.length} {t('completed')}</div>
                   <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{pct}%</span>
                 </div>
                 <div className="progress-track" style={{ height: 10, marginBottom: '1rem' }}>
@@ -117,7 +407,7 @@ export default function CourseDetailPage() {
               </div>
             ) : (
               <button className="btn btn-primary btn-lg" onClick={handleEnroll} disabled={enrolling}>
-                              {enrolling ? t('processing') : <>{t('enroll_now')} <Zap size={18} /></>}
+                {enrolling ? t('processing') : <>{t('enroll_now')} <Zap size={18} /></>}
               </button>
             )}
           </div>
@@ -127,7 +417,7 @@ export default function CourseDetailPage() {
       {/* Visual Learning Path */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <h3 style={{ margin: 0 }}>{t('learning_path')} — {course.lessons?.length} {t('lessons')}</h3>
+          <h3 style={{ margin: 0 }}>{t('learning_path')} — {course.lessons?.length} {t('lessons')}</h3>
           {enrolled && (
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               {completedIds.size} of {course.lessons?.length} done · {totalXP} XP available
@@ -186,7 +476,7 @@ export default function CourseDetailPage() {
                           <span style={{ fontSize: '0.7rem', color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             {i + 1}. {TYPE_LABELS[lesson.type] || 'Lesson'}
                           </span>
-                                                    {isActive && <span style={{ fontSize: '0.65rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('up_next')}</span>}
+                          {isActive && <span style={{ fontSize: '0.65rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('up_next')}</span>}
                           {done && <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('done')}</span>}
                         </div>
                         <div style={{ fontWeight: 600, fontSize: '0.88rem', color: done ? 'var(--success)' : 'var(--text-primary)' }}>{lesson.title}</div>
@@ -204,106 +494,15 @@ export default function CourseDetailPage() {
         </div>
       </div>
 
-      {/* Digital Builder Certificate Modal */}
+      {/* Certificate Modal */}
       {showCert && (
-        <div className="no-print" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(6px)' }}
-          onClick={() => setShowCert(false)}>
-          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '800px', border: '1px solid var(--border-light)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}
-            onClick={e => e.stopPropagation()}>
-            
-            {/* Modal Controls */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Certificate Viewer</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowCert(false)} style={{ minWidth: 'auto', padding: '0.25rem' }}>✕</button>
-            </div>
-
-            {/* Certificate Card Container */}
-            <div className="certificate-card" style={{
-              background: '#0d0d26',
-              color: 'white',
-              border: '10px double #d4af37',
-              padding: '3rem 2rem',
-              textAlign: 'center',
-              borderRadius: 'var(--radius-md)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1.5rem',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', top: -50, left: -50, width: 150, height: 150, borderRadius: '50%', background: 'rgba(212,175,55,0.06)', filter: 'blur(30px)' }} />
-              <div style={{ position: 'absolute', bottom: -50, right: -50, width: 150, height: 150, borderRadius: '50%', background: 'rgba(124,58,237,0.1)', filter: 'blur(30px)' }} />
-
-              {/* Header */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #f3e5ab)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(212,175,55,0.4)' }}>
-                  <Trophy size={30} color="#0d0d26" />
-                </div>
-                <h2 style={{ fontFamily: "'Georgia', serif", fontSize: '1.4rem', letterSpacing: '0.12em', color: '#d4af37', margin: '0.5rem 0 0', fontWeight: 800 }}>
-                  {t('certificate_modal_title')}
-                </h2>
-                <div style={{ height: '2px', width: '80px', background: 'linear-gradient(90deg, transparent, #d4af37, transparent)', marginTop: '0.25rem' }} />
-              </div>
-
-              {/* Presented To */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
-                  {t('certificate_presented_to')}
-                </span>
-                <h1 style={{ fontFamily: "'Georgia', serif", fontSize: '2.5rem', color: '#ffffff', textShadow: '0 2px 10px rgba(255,255,255,0.1)', margin: '0.5rem 0', fontWeight: 700 }}>
-                  {user?.name}
-                </h1>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '480px', lineHeight: 1.5 }}>
-                  {t('certificate_course_completed')}
-                </span>
-                <h3 style={{ fontSize: '1.25rem', color: 'var(--accent)', margin: '0.25rem 0', fontWeight: 700 }}>
-                  {course?.title}
-                </h3>
-              </div>
-
-              {/* Role Badge */}
-              <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: '30px', padding: '0.4rem 1.2rem', fontSize: '0.82rem', color: '#d4af37', fontWeight: 700, letterSpacing: '0.05em' }}>
-                🛡️ {t('certificate_role')}
-              </div>
-
-              {/* Footer details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', width: '100%', marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('certificate_date')}</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('certificate_id')}</span>
-                  <span style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', color: '#d4af37', fontWeight: 600 }}>{`VL-CERT-${course.id}-${user?.id || 99}-${Math.abs((course.id * 183 + (user?.id || 99) * 761) % 100000).toString().padStart(5, '0')}`}</span>
-                </div>
-              </div>
-
-              {/* Signatures */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', width: '100%', marginTop: '1rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic', color: '#d4af37', fontSize: '1rem' }}>Arifia Mulia</span>
-                  <div style={{ width: '120px', height: '1px', background: 'rgba(255,255,255,0.2)', margin: '0.25rem 0' }} />
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Academy Director</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic', color: '#d4af37', fontSize: '1rem' }}>AI Validator</span>
-                  <div style={{ width: '120px', height: '1px', background: 'rgba(255,255,255,0.2)', margin: '0.25rem 0' }} />
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Automated Reviewer</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Print Action */}
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button className="btn btn-ghost" onClick={() => setShowCert(false)}>Close</button>
-              <button className="btn btn-primary" onClick={() => window.print()}>
-                🖨️ {t('certificate_print')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CertificateModal
+          course={course}
+          user={user}
+          lang={lang}
+          t={t}
+          onClose={() => setShowCert(false)}
+        />
       )}
     </div>
   );
