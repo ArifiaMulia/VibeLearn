@@ -11,7 +11,7 @@ export default function LandingPage() {
   const [currency, setCurrency] = useState('IDR');
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/subscriptions/plans`)
+    fetch(`${import.meta.env.VITE_API_URL || '/api'}/subscriptions/plans`)
       .then(res => res.json())
       .then(setApiPlans)
       .catch(err => console.error('Failed to load plans:', err));

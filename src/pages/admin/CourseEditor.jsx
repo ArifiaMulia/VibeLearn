@@ -84,7 +84,7 @@ export default function CourseEditor() {
       // In case authFetch overrides Content-Type to application/json, we need a custom fetch
       // Let's use standard fetch with token:
       const token = localStorage.getItem('vl_token');
-      const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/upload`, {
+      const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

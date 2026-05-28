@@ -27,7 +27,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/health', async (req, res) => {
-  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '3.1.2', timestamp: new Date().toISOString() };
+  const checks = { api: 'ok', database: 'unknown', uptime: process.uptime(), version: '3.1.3', timestamp: new Date().toISOString() };
   try {
     await pool.query('SELECT 1');
     checks.database = 'ok';
