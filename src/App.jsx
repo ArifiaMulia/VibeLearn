@@ -19,6 +19,7 @@ import CoursesManager from './pages/admin/CoursesManager';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import SubscriptionsPage from './pages/admin/SubscriptionsPage';
 import CourseEditor from './pages/admin/CourseEditor';
+import CertificateBuilderPage from './pages/admin/CertificateBuilderPage';
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
                     <Route path="/admin/courses" element={<CoursesManager />} />
                     <Route path="/admin/courses/edit/:id" element={<CourseEditor />} />
                     <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
+                    <Route path="/admin/certificates" element={<CertificateBuilderPage />} />
                   </Route>
                   <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
                     <Route path="/admin/subscriptions" element={<SubscriptionsPage />} />

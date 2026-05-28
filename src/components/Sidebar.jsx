@@ -5,6 +5,7 @@ import { useSidebar } from '../contexts/SidebarContext';
 import {
   LayoutDashboard, BookOpen, FlaskConical, Users, BarChart3,
   CreditCard, Settings, LogOut, Shield, ChevronLeft, ChevronRight,
+  Award,
 } from 'lucide-react';
 import pkg from '../../package.json';
 
@@ -25,6 +26,7 @@ export default function Sidebar() {
       { icon: BarChart3,        key: 'nav_analytics',      to: '/admin/analytics' },
       { icon: CreditCard,       key: 'nav_subscriptions',  to: '/admin/subscriptions' },
       { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
+      { icon: Award,            key: 'nav_certificate_builder', to: '/admin/certificates' },
     ],
     master: [
       { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
@@ -33,6 +35,7 @@ export default function Sidebar() {
       { icon: Users,            key: 'nav_students',       to: '/admin/users' },
       { icon: BarChart3,        key: 'nav_analytics',      to: '/admin/analytics' },
       { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
+      { icon: Award,            key: 'nav_certificate_builder', to: '/admin/certificates' },
     ],
     participant: [
       { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
@@ -59,6 +62,7 @@ export default function Sidebar() {
     nav_analytics:      null,
     nav_subscriptions:  null,
     nav_course_builder: null,
+    nav_certificate_builder: null,
   };
 
   const W = collapsed ? 72 : 260;

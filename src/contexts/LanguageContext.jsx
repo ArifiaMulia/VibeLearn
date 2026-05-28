@@ -17,6 +17,7 @@ export const TRANSLATIONS = {
     nav_analytics: 'Analytics',
     nav_subscriptions: 'Subscriptions',
     nav_course_builder: 'Course Builder',
+    nav_certificate_builder: 'Certificate Builder',
     nav_sign_out: 'Sign Out',
     nav_admin_panel: 'Admin Panel',
 
@@ -313,6 +314,7 @@ export const TRANSLATIONS = {
     nav_analytics: 'Analitik',
     nav_subscriptions: 'Langganan',
     nav_course_builder: 'Pembuat Kursus',
+    nav_certificate_builder: 'Pembuat Sertifikat',
     nav_sign_out: 'Keluar',
     nav_admin_panel: 'Panel Admin',
 
