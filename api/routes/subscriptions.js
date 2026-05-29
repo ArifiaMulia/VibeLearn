@@ -171,4 +171,65 @@ router.put('/verifications/:id', auth, requireRole('super_admin', 'master'), asy
   }
 });
 
+// GET /api/subscriptions/settings — get manual bank transfer destination details
+router.get('/settings', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT key, value FROM system_settings 
+       WHERE key IN ('manual_bank_name', 'manual_bank_account', 'manual_bank_recipient')`
+    );
+    const settings = {
+      manual_bank_name: 'Bank Central Asia (BCA)',
+      manual_bank_account: '123-456-7890',
+      manual_bank_recipient: 'PT Vibe Learn / Arifia Mulia'
+    };
+    result.rows.forEach(row => {
+      settings[row.key] = row.value;
+    });
+    res.json(settings);
+  } catch (err) {
+    console.error("Error fetching manual bank transfer settings:", err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/subscriptions/settings — update manual bank transfer destination details
+router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, res) => {
+  const { manual_bank_name, manual_bank_account, manual_bank_recipient } = req.body;
+  try {
+    await pool.query('BEGIN');
+    
+    if (manual_bank_name !== undefined) {
+      await pool.query(
+        `INSERT INTO system_settings (key, value) VALUES ('manual_bank_name', $1)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [manual_bank_name]
+      );
+    }
+    
+    if (manual_bank_account !== undefined) {
+      await pool.query(
+        `INSERT INTO system_settings (key, value) VALUES ('manual_bank_account', $1)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [manual_bank_account]
+      );
+    }
+    
+    if (manual_bank_recipient !== undefined) {
+      await pool.query(
+        `INSERT INTO system_settings (key, value) VALUES ('manual_bank_recipient', $1)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [manual_bank_recipient]
+      );
+    }
+    
+    await pool.query('COMMIT');
+    res.json({ message: 'Settings updated successfully' });
+  } catch (err) {
+    await pool.query('ROLLBACK');
+    console.error("Error updating manual bank transfer settings:", err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

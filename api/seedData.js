@@ -5,7 +5,7 @@ module.exports = {
       title_id: 'Koki AI (Prompt & MCP)',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=zjkBMFhNj_g',
+      video_url: 'https://www.youtube.com/watch?v=R94aK4L6lT8',
       xp_reward: 50,
       order_index: 1,
       transcript: 'Welcome to The AI Chef. In this lesson, we will explain prompts and the Model Context Protocol using a simple restaurant analogy. Imagine you are at a restaurant. A prompt is your order ticket. The clearer and more detailed the order, the better the food you get. MCP, or Model Context Protocol, is like giving the chef a phone line to call external markets for fresh ingredients, letting the AI retrieve real-time data.',

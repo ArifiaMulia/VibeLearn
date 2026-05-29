@@ -193,7 +193,29 @@ const initDb = async (retries = 10, delay = 3000) => {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
           resolved_at TIMESTAMP WITH TIME ZONE
         );
+
+        CREATE TABLE IF NOT EXISTS system_settings (
+          key VARCHAR(100) PRIMARY KEY,
+          value TEXT NOT NULL
+        );
       `);
+
+      // Seed system_settings
+      try {
+        const existingSettings = await pool.query('SELECT key FROM system_settings LIMIT 1');
+        if (!existingSettings.rows.length) {
+          await pool.query(`
+            INSERT INTO system_settings (key, value) VALUES 
+            ('manual_bank_name', 'Bank Central Asia (BCA)'),
+            ('manual_bank_account', '123-456-7890'),
+            ('manual_bank_recipient', 'PT Vibe Learn / Arifia Mulia')
+            ON CONFLICT (key) DO NOTHING
+          `);
+          console.log('✅ Seeded default system_settings.');
+        }
+      } catch (err) {
+        console.error('Error seeding system settings:', err);
+      }
 
       // Seed subscription_plans
       try {

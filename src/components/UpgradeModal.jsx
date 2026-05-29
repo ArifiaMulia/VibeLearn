@@ -45,6 +45,12 @@ export default function UpgradeModal({ planId, plansData, onClose }) {
   const [hasPending, setHasPending] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(null);
 
+  const [bankSettings, setBankSettings] = useState({
+    manual_bank_name: 'Bank Central Asia (BCA)',
+    manual_bank_account: '123-456-7890',
+    manual_bank_recipient: 'PT Vibe Learn / Arifia Mulia'
+  });
+
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -71,6 +77,14 @@ export default function UpgradeModal({ planId, plansData, onClose }) {
       })
       .catch(err => console.error("Error checking pending verifications:", err))
       .finally(() => setLoading(false));
+
+    authFetch('/subscriptions/settings')
+      .then(res => {
+        if (res) {
+          setBankSettings(res);
+        }
+      })
+      .catch(err => console.error("Error fetching manual bank settings:", err));
   }, []);
 
   const planObj = plansData?.find(p => p.id === planId) || { label: 'Pro', price_idr: 450000, price_usd: 29 };
@@ -478,9 +492,9 @@ export default function UpgradeModal({ planId, plansData, onClose }) {
                         {/* Bank destination card */}
                         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', padding: '0.75rem 0.9rem', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.8rem' }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Transfer Destination</span>
-                          <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>Bank Central Asia (BCA)</span>
-                          <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 800, color: '#fff' }}>123 - 456 - 7890</span>
-                          <span style={{ color: 'var(--text-secondary)' }}>A/N: PT Vibe Learn / Arifia Mulia</span>
+                          <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>{bankSettings.manual_bank_name}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '1rem', fontWeight: 800, color: '#fff' }}>{bankSettings.manual_bank_account}</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>A/N: {bankSettings.manual_bank_recipient}</span>
                           <span style={{ color: 'var(--accent)', fontWeight: 800, marginTop: '0.15rem' }}>Transfer: {priceDisplay}</span>
                         </div>
 

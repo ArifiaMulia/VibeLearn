@@ -102,6 +102,14 @@ export default function SubscriptionsPage() {
   const [editingPlan, setEditingPlan] = useState(null);
   const [editForm, setEditForm] = useState({ price_usd: 0, price_idr: 0 });
 
+  // Tab 4: Manual Bank settings state
+  const [bankSettings, setBankSettings] = useState({
+    manual_bank_name: '',
+    manual_bank_account: '',
+    manual_bank_recipient: ''
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+
   // Tab 2: Verifications state
   const [verifications, setVerifications] = useState([]);
   const [selectedVerification, setSelectedVerification] = useState(null);
@@ -130,9 +138,20 @@ export default function SubscriptionsPage() {
       .catch(err => console.error("Error loading verifications:", err));
   };
 
+  const loadBankSettings = () => {
+    authFetch('/subscriptions/settings')
+      .then(res => {
+        if (res) {
+          setBankSettings(res);
+        }
+      })
+      .catch(err => console.error("Error loading bank settings:", err));
+  };
+
   useEffect(() => {
     loadPlans();
     loadVerifications();
+    loadBankSettings();
   }, []);
 
   useEffect(() => {
@@ -152,6 +171,23 @@ export default function SubscriptionsPage() {
       loadPlans();
     } catch (err) {
       error(err.message || 'Failed to update plan.');
+    }
+  };
+
+  // Tab 4: Save manual bank settings
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      await authFetch('/subscriptions/settings', {
+        method: 'PUT',
+        body: JSON.stringify(bankSettings)
+      });
+      success('Successfully updated manual bank transfer settings!');
+    } catch (err) {
+      error(err.message || 'Failed to save settings.');
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -388,6 +424,16 @@ export default function SubscriptionsPage() {
           }}
         >
           📄 Receipt Builder
+        </button>
+        <button
+          onClick={() => setActiveSubTab('settings')}
+          style={{
+            background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer',
+            color: activeSubTab === 'settings' ? 'var(--primary)' : 'var(--text-muted)',
+            borderBottom: activeSubTab === 'settings' ? '2px solid var(--primary)' : 'none',
+          }}
+        >
+          💳 Payment Settings
         </button>
       </div>
 
@@ -945,6 +991,80 @@ export default function SubscriptionsPage() {
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: MANUAL PAYMENT SETTINGS ── */}
+      {activeSubTab === 'settings' && (
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '2rem', maxWidth: 600 }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+            💳 Manual Payment Destination
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+            Configure the bank details that students will see when they select the "Manual Bank Transfer" option in the subscription checkout flow.
+          </p>
+
+          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                Bank Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={bankSettings.manual_bank_name}
+                onChange={e => setBankSettings({ ...bankSettings, manual_bank_name: e.target.value })}
+                style={{
+                  width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                  borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                }}
+                placeholder="e.g. Bank Central Asia (BCA)"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                Account Number *
+              </label>
+              <input
+                type="text"
+                required
+                value={bankSettings.manual_bank_account}
+                onChange={e => setBankSettings({ ...bankSettings, manual_bank_account: e.target.value })}
+                style={{
+                  width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                  borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                }}
+                placeholder="e.g. 123-456-7890"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                Account Holder Name (A/N) *
+              </label>
+              <input
+                type="text"
+                required
+                value={bankSettings.manual_bank_recipient}
+                onChange={e => setBankSettings({ ...bankSettings, manual_bank_recipient: e.target.value })}
+                style={{
+                  width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                  borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                }}
+                placeholder="e.g. PT Vibe Learn / Arifia Mulia"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingSettings}
+              className="btn btn-primary"
+              style={{ padding: '0.65rem 1.2rem', fontWeight: 700, alignSelf: 'flex-start', marginTop: '0.5rem', minWidth: 150, justifyContent: 'center' }}
+            >
+              {savingSettings ? 'Saving...' : 'Save Settings'}
+            </button>
+          </form>
         </div>
       )}
 
