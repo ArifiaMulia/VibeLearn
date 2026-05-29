@@ -71,7 +71,7 @@ Anggap Batas Penggunaan seperti langganan kopi bulanan Anda. Anda diizinkan mend
       title_id: 'Bangunan Restoran (VPS & Deployment)',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=R-l1qX6zGSA',
+      video_url: 'https://www.youtube.com/watch?v=PziYflu8cB8',
       xp_reward: 50,
       order_index: 3,
       transcript: 'Welcome to The Restaurant Building. Once your app is built, you need to host and deploy it. VPS, or Virtual Private Server, is like renting an empty plot of land and a building. You have total control, but you have to handle everything yourself. A PaaS, or Platform as a Service like Coolify or Vercel, is like renting a fully-furnished restaurant inside a mall. Git and GitHub act as your master recipe book, tracking every change so you can rollback if needed.',
