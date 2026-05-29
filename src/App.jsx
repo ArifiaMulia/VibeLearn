@@ -20,6 +20,7 @@ import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import SubscriptionsPage from './pages/admin/SubscriptionsPage';
 import CourseEditor from './pages/admin/CourseEditor';
 import CertificateBuilderPage from './pages/admin/CertificateBuilderPage';
+import LarkCallbackPage from './pages/LarkCallbackPage';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/lark-callback" element={<LarkCallbackPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />

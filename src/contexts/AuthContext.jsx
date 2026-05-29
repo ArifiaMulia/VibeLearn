@@ -56,6 +56,20 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  const larkLogin = async (code, redirectUri) => {
+    const res = await fetch(`${API}/auth/lark/callback`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirectUri }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Lark Login failed');
+    localStorage.setItem('vl_token', data.token);
+    localStorage.setItem('vl_user', JSON.stringify(data.user));
+    setToken(data.token);
+    setUser(data.user);
+    return data.user;
+  };
+
   const logout = () => {
     localStorage.removeItem('vl_token');
     localStorage.removeItem('vl_user');
@@ -95,7 +109,7 @@ export function AuthProvider({ children }) {
   const isRole = (...roles) => roles.includes(effectiveUser?.role);
 
   return (
-    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, logout, authFetch, isRole, ROLES, previewRole, previewAs, upgradePlanClientSide }}>
+    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, larkLogin, logout, authFetch, isRole, ROLES, previewRole, previewAs, upgradePlanClientSide }}>
       {children}
     </AuthContext.Provider>
   );

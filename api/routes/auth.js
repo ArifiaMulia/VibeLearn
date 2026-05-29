@@ -61,4 +61,126 @@ router.post('/activity', require('../middleware/auth'), async (req, res) => {
   }
 });
 
+// GET /api/auth/lark/config
+router.get('/lark/config', (req, res) => {
+  const appId = process.env.LARK_APP_ID;
+  const redirectUri = req.query.redirect_uri;
+  if (!appId || appId === 'YOUR_APP_ID') {
+    return res.status(500).json({ error: 'Lark SSO is not configured on the server. Please set LARK_APP_ID in .env' });
+  }
+  if (!redirectUri) {
+    return res.status(400).json({ error: 'redirect_uri query parameter is required' });
+  }
+  const baseUrl = process.env.LARK_API_BASE_URL || 'https://open.larksuite.com';
+  const authUrl = `${baseUrl}/open-apis/authen/v1/index?app_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=lark_sso`;
+  res.json({ authUrl });
+});
+
+// POST /api/auth/lark/callback
+router.post('/lark/callback', async (req, res) => {
+  const { code, redirectUri } = req.body;
+  if (!code) return res.status(400).json({ error: 'Authorization code is required' });
+
+  const appId = process.env.LARK_APP_ID;
+  const appSecret = process.env.LARK_APP_SECRET;
+  const baseUrl = process.env.LARK_API_BASE_URL || 'https://open.larksuite.com';
+
+  if (!appId || !appSecret || appId === 'YOUR_APP_ID' || appSecret === 'YOUR_APP_SECRET') {
+    return res.status(500).json({ error: 'Lark SSO is not configured on the server.' });
+  }
+
+  try {
+    // 1. Get app_access_token
+    const appTokenRes = await fetch(`${baseUrl}/open-apis/auth/v3/app_access_token/internal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app_id: appId, app_secret: appSecret }),
+    });
+    const appTokenData = await appTokenRes.json();
+    if (!appTokenRes.ok || appTokenData.code !== 0) {
+      console.error('Lark app_access_token error:', appTokenData);
+      return res.status(500).json({ error: appTokenData.msg || 'Failed to fetch Lark app access token.' });
+    }
+    const appAccessToken = appTokenData.app_access_token;
+
+    // 2. Exchange code for user_access_token and user info
+    const userTokenRes = await fetch(`${baseUrl}/open-apis/authen/v1/access_token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': `Bearer ${appAccessToken}`
+      },
+      body: JSON.stringify({
+        grant_type: 'authorization_code',
+        code: code
+      }),
+    });
+    const userTokenData = await userTokenRes.json();
+    if (!userTokenRes.ok || userTokenData.code !== 0) {
+      console.error('Lark user access token error:', userTokenData);
+      return res.status(400).json({ error: userTokenData.msg || 'Failed to authorize with Lark.' });
+    }
+
+    const { name, email: larkEmail, avatar_url, open_id } = userTokenData.data;
+
+    // Safeguard: Fallback email if email is not shared or empty
+    const email = larkEmail || `${open_id}@lark.vibelearn.id`;
+
+    // 3. Check if user already exists
+    let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    let user;
+
+    if (userResult.rows.length === 0) {
+      // Register new user
+      const randPassword = require('crypto').randomBytes(16).toString('hex');
+      const hashedPassword = await bcrypt.hash(randPassword, 10);
+      
+      const insertResult = await pool.query(
+        `INSERT INTO users (name, email, password, role, plan, avatar) 
+         VALUES ($1, $2, $3, 'participant', 'free', $4) 
+         RETURNING *`,
+        [name, email, hashedPassword, avatar_url || null]
+      );
+      user = insertResult.rows[0];
+
+      // Auto-enroll in free subscription
+      await pool.query(
+        `INSERT INTO subscriptions (user_id, plan, status) 
+         VALUES ($1, 'free', 'active') 
+         ON CONFLICT (user_id) DO NOTHING`,
+        [user.id]
+      ).catch(() => {});
+    } else {
+      user = userResult.rows[0];
+      // Update avatar if changed
+      if (avatar_url && user.avatar !== avatar_url) {
+        await pool.query('UPDATE users SET avatar = $1 WHERE id = $2', [avatar_url, user.id]).catch(() => {});
+        user.avatar = avatar_url;
+      }
+    }
+
+    // Log login activity
+    await pool.query('INSERT INTO usage_logs (user_id, action, resource_type) VALUES ($1, $2, $3)', [user.id, 'lark_login', 'auth']).catch(() => {});
+    await pool.query('UPDATE users SET last_activity = NOW() WHERE id = $1', [user.id]).catch(() => {});
+
+    // 4. Generate JWT
+    const token = generateToken(user);
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        plan: user.plan,
+        avatar: user.avatar
+      },
+      token
+    });
+
+  } catch (err) {
+    console.error('Lark SSO callback error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

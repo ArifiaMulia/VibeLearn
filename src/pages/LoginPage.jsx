@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
-import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy } from 'lucide-react';
+import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy, Bird } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, register, user } = useAuth();
@@ -34,6 +34,21 @@ export default function LoginPage() {
     } catch (err) {
       showError(err.message);
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLarkLogin = async () => {
+    setLoading(true);
+    try {
+      const redirectUri = `${window.location.origin}/lark-callback`;
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(`${API_URL}/auth/lark/config?redirect_uri=${encodeURIComponent(redirectUri)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch Lark configuration.');
+      window.location.href = data.authUrl;
+    } catch (err) {
+      showError(err.message);
       setLoading(false);
     }
   };
@@ -130,6 +145,41 @@ export default function LoginPage() {
               {loading ? <span className="animate-spin" style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block' }} />
                 : <>{mode === 'login' ? 'Sign In' : 'Get Started'} <ArrowRight size={18} /></>}
             </button>
+
+            {mode === 'login' && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' }}>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>or continue with</span>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLarkLogin}
+                  className="btn btn-secondary btn-lg w-full"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.6rem',
+                    background: 'rgba(59,130,246,0.1)',
+                    borderColor: 'rgba(59,130,246,0.3)',
+                    color: '#3b82f6',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(59,130,246,0.2)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(59,130,246,0.1)';
+                  }}
+                >
+                  <Bird size={18} />
+                  Sign In with Lark
+                </button>
+              </>
+            )}
           </form>
 
           {mode === 'register' && (
