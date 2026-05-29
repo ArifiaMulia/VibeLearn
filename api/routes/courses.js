@@ -49,6 +49,18 @@ router.get('/:id', auth, async (req, res) => {
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Course not found' });
     const course = result.rows[0];
+
+    // Access control check
+    const PLAN_TIERS = { free: 0, pro: 1, enterprise: 2 };
+    const userTier = PLAN_TIERS[req.user.plan] || 0;
+    const requiredTier = PLAN_TIERS[course.required_plan] || 0;
+    const isPromoActive = course.promo_expiry && new Date(course.promo_expiry) > new Date();
+    
+    const isAdmin = req.user.role === 'super_admin' || req.user.role === 'master';
+    if (!isAdmin && (requiredTier > userTier) && !isPromoActive) {
+      return res.status(403).json({ error: 'Upgrade plan to access this course' });
+    }
+
     const lessons = await pool.query('SELECT * FROM lessons WHERE course_id = $1 ORDER BY order_index ASC', [req.params.id]);
     course.lessons = lessons.rows;
     res.json(course);
@@ -59,14 +71,14 @@ router.get('/:id', auth, async (req, res) => {
 
 // POST /api/courses — master or super_admin
 router.post('/', auth, requireRole('super_admin', 'master'), async (req, res) => {
-  const { title, description, thumbnail, level, category, is_published, order_index, lessons } = req.body;
+  const { title, description, thumbnail, level, category, is_published, order_index, required_plan, promo_expiry, lessons } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const result = await client.query(
-      `INSERT INTO courses (title, description, thumbnail, level, category, created_by, is_published, order_index)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [title, description, thumbnail || null, level || 'beginner', category || 'general', req.user.id, is_published || false, order_index || 0]
+      `INSERT INTO courses (title, description, thumbnail, level, category, created_by, is_published, order_index, required_plan, promo_expiry)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [title, description, thumbnail || null, level || 'beginner', category || 'general', req.user.id, is_published || false, order_index || 0, required_plan || 'pro', promo_expiry || null]
     );
     const courseId = result.rows[0].id;
 
@@ -103,13 +115,13 @@ router.post('/', auth, requireRole('super_admin', 'master'), async (req, res) =>
 
 // PUT /api/courses/:id
 router.put('/:id', auth, requireRole('super_admin', 'master'), async (req, res) => {
-  const { title, description, thumbnail, level, category, is_published, order_index, lessons } = req.body;
+  const { title, description, thumbnail, level, category, is_published, order_index, required_plan, promo_expiry, lessons } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const result = await client.query(
-      `UPDATE courses SET title=$1, description=$2, thumbnail=$3, level=$4, category=$5, is_published=$6, order_index=$7 WHERE id=$8 RETURNING *`,
-      [title, description, thumbnail, level, category, is_published, order_index, req.params.id]
+      `UPDATE courses SET title=$1, description=$2, thumbnail=$3, level=$4, category=$5, is_published=$6, order_index=$7, required_plan=$8, promo_expiry=$9 WHERE id=$10 RETURNING *`,
+      [title, description, thumbnail, level, category, is_published, order_index, required_plan || 'pro', promo_expiry || null, req.params.id]
     );
     if (!result.rows.length) {
       await client.query('ROLLBACK');
@@ -162,6 +174,21 @@ router.delete('/:id', auth, requireRole('super_admin', 'master'), async (req, re
 // POST /api/courses/:id/enroll
 router.post('/:id/enroll', auth, async (req, res) => {
   try {
+    const courseRes = await pool.query('SELECT required_plan, promo_expiry FROM courses WHERE id=$1', [req.params.id]);
+    if (!courseRes.rows.length) return res.status(404).json({ error: 'Course not found' });
+    const course = courseRes.rows[0];
+
+    // Access control check
+    const PLAN_TIERS = { free: 0, pro: 1, enterprise: 2 };
+    const userTier = PLAN_TIERS[req.user.plan] || 0;
+    const requiredTier = PLAN_TIERS[course.required_plan] || 0;
+    const isPromoActive = course.promo_expiry && new Date(course.promo_expiry) > new Date();
+    
+    const isAdmin = req.user.role === 'super_admin' || req.user.role === 'master';
+    if (!isAdmin && (requiredTier > userTier) && !isPromoActive) {
+      return res.status(403).json({ error: 'Upgrade plan to enroll in this course' });
+    }
+
     await pool.query(
       `INSERT INTO enrollments (user_id, course_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       [req.user.id, req.params.id]

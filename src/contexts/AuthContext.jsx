@@ -89,11 +89,12 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const [previewRole, setPreviewRole] = useState(null);
+  const [previewPlan, setPreviewPlan] = useState(null);
 
   const previewAs = (role) => {
-    // Only real super_admin can use preview mode
     if (user?.role !== 'super_admin') return;
-    setPreviewRole(role); // null = exit preview mode
+    setPreviewRole(role);
+    if (!role) setPreviewPlan(null); // Reset plan preview when exiting preview mode
   };
 
   const upgradePlanClientSide = (newPlan) => {
@@ -103,13 +104,20 @@ export function AuthProvider({ children }) {
     setUser(updatedUser);
   };
 
-  // The "effective" user role — previewRole overrides for UI, but token stays the same
-  const effectiveUser = previewRole ? { ...user, role: previewRole, _isPreview: true } : user;
+  // Merge both role and plan previewing into the effective user
+  const effectiveUser = (previewRole || previewPlan)
+    ? {
+        ...user,
+        ...(previewRole ? { role: previewRole } : {}),
+        ...(previewPlan ? { plan: previewPlan } : {}),
+        _isPreview: true
+      }
+    : user;
 
   const isRole = (...roles) => roles.includes(effectiveUser?.role);
 
   return (
-    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, larkLogin, logout, authFetch, isRole, ROLES, previewRole, previewAs, upgradePlanClientSide }}>
+    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, larkLogin, logout, authFetch, isRole, ROLES, previewRole, previewPlan, previewAs, setPreviewPlan, upgradePlanClientSide }}>
       {children}
     </AuthContext.Provider>
   );

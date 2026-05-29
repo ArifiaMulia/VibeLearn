@@ -18,11 +18,15 @@ export default function CourseEditor() {
 
   useEffect(() => {
     if (id === 'new') {
-      setCourse({ title: '', description: '', level: 'beginner', category: 'general' });
+      setCourse({ title: '', description: '', level: 'beginner', category: 'general', required_plan: 'pro', promo_expiry: null });
       setLoading(false);
     } else {
       authFetch(`/courses/${id}`).then(data => {
-        setCourse(data);
+        setCourse({
+          ...data,
+          required_plan: data.required_plan || 'pro',
+          promo_expiry: data.promo_expiry || null
+        });
         setLessons(data.lessons || []);
         setLoading(false);
       });
@@ -155,6 +159,39 @@ export default function CourseEditor() {
                 <option value="intermediate">Intermediate</option>
                 <option value="advanced">Advanced</option>
               </select>
+            </div>
+
+            <div className="form-group mb-3">
+              <label className="form-label">Subscription Model</label>
+              <select className="form-select" value={course.required_plan || 'pro'} onChange={e => setCourse({...course, required_plan: e.target.value})}>
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+
+            <div className="form-group mb-3">
+              <label className="form-label">Promotion Expiration (Optional)</label>
+              <input 
+                type="datetime-local"
+                className="form-input"
+                value={course.promo_expiry ? (() => {
+                  try {
+                    const d = new Date(course.promo_expiry);
+                    const offset = d.getTimezoneOffset();
+                    return new Date(d.getTime() - (offset * 60 * 1000)).toISOString().substring(0, 16);
+                  } catch (e) {
+                    return '';
+                  }
+                })() : ''}
+                onChange={e => {
+                  const val = e.target.value;
+                  setCourse({...course, promo_expiry: val ? new Date(val).toISOString() : null});
+                }}
+              />
+              <span style={{ display: 'block', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Set an expiration date to temporarily make a premium course free (e.g., for Lebaran events).
+              </span>
             </div>
           </div>
 

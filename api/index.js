@@ -230,6 +230,8 @@ const initDb = async (retries = 10, delay = 3000) => {
         `ALTER TABLE lessons ADD COLUMN IF NOT EXISTS title_id TEXT DEFAULT NULL;`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS format VARCHAR(50) DEFAULT 'multiple_choice';`,
         `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS code_lines JSONB DEFAULT '[]';`,
+        `ALTER TABLE courses ADD COLUMN IF NOT EXISTS required_plan VARCHAR(50) DEFAULT 'pro';`,
+        `ALTER TABLE courses ADD COLUMN IF NOT EXISTS promo_expiry TIMESTAMP WITH TIME ZONE DEFAULT NULL;`,
       ];
       for (const sql of migrations) {
         try { await pool.query(sql); } catch (e) { /* ignore */ }
@@ -285,12 +287,12 @@ const initDb = async (retries = 10, delay = 3000) => {
 
       // ─── SEED: Courses ───
       const courseSeeds = [
-        { title: 'IT Basics for AI Coding', description: 'Beginner-friendly IT concepts explained using simple analogies. Learn about Prompts, Deployment, and Git without the jargon.', level: 'beginner', category: 'fundamentals', order_index: 0 },
-        { title: 'Vibe Coding 101', description: 'Learn the mindset and fundamentals of AI-powered coding. Understand how to collaborate with AI to build anything fast.', level: 'beginner', category: 'fundamentals', order_index: 1 },
-        { title: 'Prompt Engineering Mastery', description: 'Master the art of crafting perfect AI prompts for code generation. Learn patterns, formulas, and advanced techniques.', level: 'beginner', category: 'prompting', order_index: 2 },
-        { title: 'Build Your First App in 4 Hours', description: 'A hands-on guide to building and deploying a full web application from scratch using only AI assistance.', level: 'intermediate', category: 'project', order_index: 3 },
-        { title: 'AI Code Review & Debugging', description: 'Learn to spot bugs, security holes, and bad patterns in AI-generated code. Then fix them — with AI.', level: 'intermediate', category: 'quality', order_index: 4 },
-        { title: 'Security-Aware Vibe Coding', description: 'Penetration test your AI-built apps. Find vulnerabilities, practice prompt injection defense, and ship secure code.', level: 'advanced', category: 'security', order_index: 5 },
+        { title: 'IT Basics for AI Coding', description: 'Beginner-friendly IT concepts explained using simple analogies. Learn about Prompts, Deployment, and Git without the jargon.', level: 'beginner', category: 'fundamentals', order_index: 0, required_plan: 'free' },
+        { title: 'Vibe Coding 101', description: 'Learn the mindset and fundamentals of AI-powered coding. Understand how to collaborate with AI to build anything fast.', level: 'beginner', category: 'fundamentals', order_index: 1, required_plan: 'pro' },
+        { title: 'Prompt Engineering Mastery', description: 'Master the art of crafting perfect AI prompts for code generation. Learn patterns, formulas, and advanced techniques.', level: 'beginner', category: 'prompting', order_index: 2, required_plan: 'pro' },
+        { title: 'Build Your First App in 4 Hours', description: 'A hands-on guide to building and deploying a full web application from scratch using only AI assistance.', level: 'intermediate', category: 'project', order_index: 3, required_plan: 'pro' },
+        { title: 'AI Code Review & Debugging', description: 'Learn to spot bugs, security holes, and bad patterns in AI-generated code. Then fix them — with AI.', level: 'intermediate', category: 'quality', order_index: 4, required_plan: 'pro' },
+        { title: 'Security-Aware Vibe Coding', description: 'Penetration test your AI-built apps. Find vulnerabilities, practice prompt injection defense, and ship secure code.', level: 'advanced', category: 'security', order_index: 5, required_plan: 'pro' },
       ];
 
       for (const c of courseSeeds) {
@@ -298,16 +300,16 @@ const initDb = async (retries = 10, delay = 3000) => {
         const existing = await pool.query(`SELECT id FROM courses WHERE title=$1`, [c.title]);
         if (!existing.rows.length) {
           const courseRes = await pool.query(
-            `INSERT INTO courses (title, description, level, category, created_by, is_published, order_index) VALUES ($1,$2,$3,$4,$5,true,$6) RETURNING id`,
-            [c.title, c.description, c.level, c.category, masterId, c.order_index]
+            `INSERT INTO courses (title, description, level, category, created_by, is_published, order_index, required_plan) VALUES ($1,$2,$3,$4,$5,true,$6,$7) RETURNING id`,
+            [c.title, c.description, c.level, c.category, masterId, c.order_index, c.required_plan || 'pro']
           );
           courseId = courseRes.rows[0].id;
         } else {
           courseId = existing.rows[0].id;
           // Update course info in case description changed
           await pool.query(
-            `UPDATE courses SET description=$1, level=$2, category=$3, order_index=$4 WHERE id=$5`,
-            [c.description, c.level, c.category, c.order_index, courseId]
+            `UPDATE courses SET description=$1, level=$2, category=$3, order_index=$4, required_plan=$5 WHERE id=$6`,
+            [c.description, c.level, c.category, c.order_index, c.required_plan || 'pro', courseId]
           );
         }
 

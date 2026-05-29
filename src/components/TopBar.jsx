@@ -73,7 +73,7 @@ function NotificationPanel({ onClose, t }) {
 }
 
 export default function TopBar({ title, subtitle }) {
-  const { user, realUser, previewRole, previewAs } = useAuth();
+  const { user, realUser, previewRole, previewPlan, previewAs, setPreviewPlan } = useAuth();
   const { lang, toggleLang, t } = useLanguage();
   const { collapsed } = useSidebar();
   const [xp, setXp] = useState(0);
@@ -159,15 +159,31 @@ export default function TopBar({ title, subtitle }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
           {previewRole && (
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--warning)', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 6, padding: '0.25rem 0.6rem' }}>
-              👁 {previewRole?.replace('_', ' ')}
+              👁 {previewRole?.replace('_', ' ')} {previewPlan ? `(${previewPlan.toUpperCase()})` : ''}
             </span>
           )}
-          <select value={previewRole || ''} onChange={e => previewAs(e.target.value || null)}
+          <select value={previewRole || ''} onChange={e => {
+            const role = e.target.value || null;
+            previewAs(role);
+            if (role === 'participant') {
+              setPreviewPlan('free'); // default plan to free when previewing participant
+            } else {
+              setPreviewPlan(null);
+            }
+          }}
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '0.35rem 0.7rem', color: 'var(--text-primary)', fontSize: '0.8rem', cursor: 'pointer' }}>
             <option value="">{t('preview_admin')}</option>
             <option value="master">{t('preview_master')}</option>
             <option value="participant">{t('preview_participant')}</option>
           </select>
+          {previewRole && (
+            <select value={previewPlan || 'free'} onChange={e => setPreviewPlan(e.target.value || null)}
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '0.35rem 0.7rem', color: 'var(--text-primary)', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <option value="free">Free Plan</option>
+              <option value="pro">Pro Plan</option>
+              <option value="enterprise">Enterprise Plan</option>
+            </select>
+          )}
         </div>
       )}
 

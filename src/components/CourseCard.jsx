@@ -22,25 +22,42 @@ export default function CourseCard({ course, index = 0, progress = null, enrolle
   const lvl = LEVEL_STYLES[course.level] || LEVEL_STYLES.beginner;
   const pct = progress ? Math.round((progress.completed_lessons / Math.max(progress.total_lessons, 1)) * 100) : 0;
   const gradient = GRADIENT_PRESETS[index % GRADIENT_PRESETS.length];
-  const isLocked = user?.plan === 'free' && index > 0;
+
+  // Dynamic access check
+  const PLAN_TIERS = { free: 0, pro: 1, enterprise: 2 };
+  const userTier = PLAN_TIERS[user?.plan] || 0;
+  const requiredTier = PLAN_TIERS[course.required_plan] || 0; // default to free if not set
+  const isPromoActive = course.promo_expiry && new Date(course.promo_expiry) > new Date();
+  
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'master';
+  const isLocked = !isAdmin && (requiredTier > userTier) && !isPromoActive;
 
   return (
     <div className="card" onClick={() => !isLocked && navigate(`/courses/${course.id}`)}
-      style={{ cursor: isLocked ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 0, padding: 0, overflow: 'hidden', opacity: isLocked ? 0.7 : 1 }}>
+      style={{ cursor: isLocked ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 0, padding: 0, overflow: 'hidden', opacity: isLocked ? 0.75 : 1 }}>
       {/* Thumbnail */}
       <div style={{ height: 140, background: gradient, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <BookOpen size={42} color="rgba(255,255,255,0.3)" />
         <div style={{ position: 'absolute', top: 12, left: 12 }}>
           <span className={`badge ${lvl.cls}`}>{lvl.label}</span>
         </div>
-        {isLocked && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}>
-            <Lock size={28} color="white" />
-            <span style={{ color: 'white', fontSize: '0.75rem', fontWeight: 600 }}>Upgrade to Pro</span>
+        {isPromoActive && (
+          <div style={{ position: 'absolute', top: 12, right: enrolled && pct === 100 ? 100 : 12 }}>
+            <span className="badge badge-accent" style={{ background: 'var(--accent)', color: 'white', fontSize: '0.7rem', fontWeight: 700 }}>
+              🎁 Promo Free
+            </span>
           </div>
         )}
-        {enrolled && pct === 100 && (
-          <div style={{ position: 'absolute', top: 12, right: 12 }}>
+        {isLocked && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem' }}>
+            <Lock size={28} color="white" />
+            <span style={{ color: 'white', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Upgrade to {course.required_plan === 'enterprise' ? 'Enterprise' : 'Pro'}
+            </span>
+          </div>
+        )}
+        {enrolled && pct === 100 && !isLocked && (
+          <div style={{ position: 'absolute', top: 12, right: isPromoActive ? 100 : 12 }}>
             <span className="badge badge-success">✓ Completed</span>
           </div>
         )}
