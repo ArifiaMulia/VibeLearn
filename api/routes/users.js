@@ -30,6 +30,30 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// GET /api/users/leaderboard — accessible to all authenticated users
+router.get('/leaderboard', auth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        u.id,
+        u.name,
+        COALESCE(SUM(x.amount), 0)::int AS xp,
+        COUNT(DISTINCT a.id)::int        AS badges
+      FROM users u
+      LEFT JOIN xp_log      x ON x.user_id = u.id
+      LEFT JOIN achievements a ON a.user_id = u.id
+      WHERE u.role = 'participant'
+      GROUP BY u.id, u.name
+      ORDER BY xp DESC
+      LIMIT 50
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('[GET /users/leaderboard]', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/users/:id
 router.get('/:id', auth, async (req, res) => {
   try {
@@ -115,30 +139,6 @@ router.delete('/:id', auth, requireRole('super_admin'), async (req, res) => {
     if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
     res.json({ message: 'User deleted', id });
   } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// GET /api/users/leaderboard — accessible to all authenticated users
-router.get('/leaderboard', auth, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        u.id,
-        u.name,
-        COALESCE(SUM(x.amount), 0)::int AS xp,
-        COUNT(DISTINCT a.id)::int        AS badges
-      FROM users u
-      LEFT JOIN xp_log      x ON x.user_id = u.id
-      LEFT JOIN achievements a ON a.user_id = u.id
-      WHERE u.role = 'participant'
-      GROUP BY u.id, u.name
-      ORDER BY xp DESC
-      LIMIT 50
-    `);
-    res.json(result.rows);
-  } catch (err) {
-    console.error('[GET /users/leaderboard]', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

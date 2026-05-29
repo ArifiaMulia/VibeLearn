@@ -23,7 +23,7 @@ router.get('/me', auth, async (req, res) => {
       SELECT TO_CHAR(created_at, 'Mon DD') as n, COUNT(*) as v 
       FROM usage_logs WHERE user_id=$1 AND created_at > NOW() - INTERVAL '7 days'
       GROUP BY n, DATE(created_at) ORDER BY DATE(created_at) ASC
-    `);
+    `, [req.user.id]);
 
     res.json({
       total_xp: parseInt(xp.rows[0].total),
