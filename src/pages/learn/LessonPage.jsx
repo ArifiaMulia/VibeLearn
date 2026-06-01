@@ -61,8 +61,20 @@ function SubtitleBar({ transcript, transcript_id, lang }) {
   const [visible, setVisible] = useState(true);
   const [showSubs, setShowSubs] = useState(true);
 
-  // Pick preferred language
-  const rawText = (lang === 'id' && transcript_id) ? transcript_id : (transcript || transcript_id || '');
+  // Pick preferred language — fall back to the other if not available
+  const isId = lang === 'id';
+  const rawText = (isId && transcript_id)
+    ? transcript_id
+    : (!isId && transcript)
+    ? transcript
+    : (transcript_id || transcript || '');
+
+  // Determine what is actually being shown
+  const actualLang = (isId && transcript_id) ? 'id'
+    : (!isId && transcript) ? 'en'
+    : transcript_id ? 'id' : 'en';
+  const isFallback = actualLang !== lang;
+
   // Split into sentences for timed display
   const lines = rawText
     .split(/(?<=[.!?।])\s+/)
@@ -70,22 +82,30 @@ function SubtitleBar({ transcript, transcript_id, lang }) {
     .filter(s => s.length > 10)
     .slice(0, 60);
 
+  // Restart interval whenever rawText or showSubs changes (covers lang switch)
   useEffect(() => {
     if (!showSubs || lines.length === 0) return;
+    setLineIdx(0);
+    setVisible(true);
     const interval = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
         setLineIdx(i => (i + 1) % lines.length);
         setVisible(true);
       }, 300);
-    }, 5000); // advance every 5s
+    }, 5000);
     return () => clearInterval(interval);
-  }, [showSubs, lines.length]);
-
-  // Reset to first line when lang changes
-  useEffect(() => { setLineIdx(0); setVisible(true); }, [lang]);
+  }, [rawText, showSubs]);
 
   if (!rawText) return null;
+
+  const showFlag  = actualLang === 'id' ? '🇮🇩' : '🇬🇧';
+  const showLabel = actualLang === 'id'
+    ? (isFallback ? 'Bahasa Indonesia (fallback)' : 'Bahasa Indonesia')
+    : (isFallback ? 'English (fallback)' : 'English');
+  const showColor  = actualLang === 'id' ? 'var(--accent)' : 'var(--primary)';
+  const showBg     = actualLang === 'id' ? 'rgba(6,182,212,0.12)' : 'rgba(124,58,237,0.1)';
+  const showBorder = actualLang === 'id' ? 'rgba(6,182,212,0.3)'  : 'rgba(124,58,237,0.25)';
 
   return (
     <div style={{ position: 'relative' }}>
@@ -123,24 +143,21 @@ function SubtitleBar({ transcript, transcript_id, lang }) {
               color: showSubs ? 'var(--primary)' : 'var(--text-muted)',
             }}
           >
-            {lang === 'id' ? (showSubs ? '✓ Subtittel Aktif' : '⊗ Subtitel') : (showSubs ? '✓ Subtitles ON' : '⊗ Subtitles')}
+            {lang === 'id' ? (showSubs ? '✓ Subtitel Aktif' : '⊗ Subtitel') : (showSubs ? '✓ Subtitles ON' : '⊗ Subtitles')}
           </button>
           {showSubs && (
             <span style={{
               fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: 10,
-              background: lang === 'id' && transcript_id
-                ? 'rgba(6,182,212,0.12)' : 'rgba(124,58,237,0.1)',
-              border: `1px solid ${lang === 'id' && transcript_id ? 'rgba(6,182,212,0.3)' : 'rgba(124,58,237,0.25)'}`,
-              color: lang === 'id' && transcript_id ? 'var(--accent)' : 'var(--primary)',
-              fontWeight: 700,
+              background: showBg, border: `1px solid ${showBorder}`,
+              color: showColor, fontWeight: 700,
             }}>
-              {lang === 'id' && transcript_id ? '🇮🇩 Bahasa Indonesia' : '🇬🇧 English'}
+              {showFlag} {showLabel}
             </span>
           )}
         </div>
         <div style={{ display: 'flex', gap: '0.25rem' }}>
-          {transcript && <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.3rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: lang === 'en' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 700 }}>EN</span>}
-          {transcript_id && <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.3rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: lang === 'id' ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 700 }}>ID</span>}
+          {transcript && <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.3rem', borderRadius: 6, background: lang === 'en' ? 'rgba(124,58,237,0.15)' : 'var(--bg-card)', border: `1px solid ${lang === 'en' ? 'rgba(124,58,237,0.3)' : 'var(--border-light)'}`, color: lang === 'en' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 700 }}>EN</span>}
+          {transcript_id && <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.3rem', borderRadius: 6, background: lang === 'id' ? 'rgba(6,182,212,0.15)' : 'var(--bg-card)', border: `1px solid ${lang === 'id' ? 'rgba(6,182,212,0.3)' : 'var(--border-light)'}`, color: lang === 'id' ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 700 }}>ID</span>}
         </div>
       </div>
     </div>
@@ -227,6 +244,9 @@ function TranscriptPanel({ transcript, transcript_id, lang }) {
   const hasId        = !!transcript_id;
   const hasEn        = !!transcript;
 
+  // Reset copied state when language changes
+  useEffect(() => { setCopied(false); }, [lang]);
+
   if (!displayText) return null;
 
   const handleCopy = () => {
@@ -236,10 +256,13 @@ function TranscriptPanel({ transcript, transcript_id, lang }) {
     });
   };
 
-  const label     = lang === 'id' ? 'Transkrip Video' : 'Video Transcript';
-  const langBadge = lang === 'id'
-    ? { flag: '🇮🇩', text: 'Bahasa Indonesia', color: 'var(--accent)', bg: 'rgba(6,182,212,0.12)', border: 'rgba(6,182,212,0.3)' }
-    : { flag: '🇬🇧', text: 'English',          color: 'var(--primary)', bg: 'rgba(124,58,237,0.1)', border: 'rgba(124,58,237,0.25)' };
+  const label = lang === 'id' ? 'Transkrip Video' : 'Video Transcript';
+
+  // Badge reflects the ACTUAL language shown, not just user preference
+  const actualLang = preferred ? lang : (lang === 'id' ? 'en' : 'id');
+  const langBadge = actualLang === 'id'
+    ? { flag: '🇮🇩', text: isUsingFallback ? 'Bahasa Indonesia (fallback)' : 'Bahasa Indonesia', color: 'var(--accent)', bg: 'rgba(6,182,212,0.12)', border: 'rgba(6,182,212,0.3)' }
+    : { flag: '🇬🇧', text: isUsingFallback ? 'English (fallback)' : 'English', color: 'var(--primary)', bg: 'rgba(124,58,237,0.1)', border: 'rgba(124,58,237,0.25)' };
 
   const fallbackNote = lang === 'id'
     ? '🇮🇩 Transkrip Bahasa Indonesia belum tersedia. Menampilkan versi Bahasa Inggris.'
@@ -821,7 +844,10 @@ export default function LessonPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div className="markdown-content">
               <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                {injectGlossaryTooltips(lesson.content, lang)}
+                {injectGlossaryTooltips(
+                  (lang === 'id' && lesson.content_id) ? lesson.content_id : (lesson.content || ''),
+                  lang
+                )}
               </ReactMarkdown>
             </div>
 
