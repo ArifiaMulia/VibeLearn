@@ -82,7 +82,8 @@ export function AuthProvider({ children }) {
       ...options,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...options.headers },
     });
-    if (res.status === 401 || res.status === 403) { logout(); throw new Error('Session expired'); }
+    if (res.status === 401) { logout(); throw new Error('Session expired'); }
+    if (res.status === 403) { throw new Error('Insufficient permissions'); }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
