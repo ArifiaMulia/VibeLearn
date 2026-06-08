@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BookOpen, Play, CheckCircle, Lock, Clock, Zap, ArrowLeft, Users, Trophy, Star } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const TYPE_ICONS = { text: BookOpen, video: Play, quiz: Zap, lab: Lock };
 const TYPE_LABELS = { text: 'Reading', video: 'Video', quiz: 'Quiz', lab: 'Lab' };
@@ -24,9 +26,63 @@ function CertificateModal({ course, user, lang, t, onClose }) {
   const dateStr = new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const totalXP = course?.lessons?.reduce((s, l) => s + (l.xp_reward || 0), 0) || 0;
 
-  const handlePrint = () => {
-    window.print();
+  const certRef = useRef(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const downloadPDF = async () => {
+    if (!certRef.current) return;
+    setIsGenerating(true);
+    try {
+      // Allow a brief delay for layout calculation and loading animations
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      const canvas = await html2canvas(certRef.current, {
+        scale: 2, // High resolution
+        useCORS: true,
+        backgroundColor: '#07071a',
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`VibeLearn-Certificate-${course.title.replace(/\s+/g, '-')}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  const downloadPNG = async () => {
+    if (!certRef.current) return;
+    setIsGenerating(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      const canvas = await html2canvas(certRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#07071a',
+      });
+      const url = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `VibeLearn-Certificate-${course.title.replace(/\s+/g, '-')}.png`;
+      link.href = url;
+      link.click();
+    } catch (err) {
+      console.error('Failed to generate PNG:', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Auto download PDF on mount
+  useEffect(() => {
+    downloadPDF();
+  }, []);
 
   return (
     <div
@@ -45,24 +101,49 @@ function CertificateModal({ course, user, lang, t, onClose }) {
         style={{ width: '100%', maxWidth: 860, display: 'flex', flexDirection: 'column', gap: '1rem' }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            🎓 Certificate of Completion
-          </span>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+        {/* Controls & Auto-download progress */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              🎓 Certificate of Completion
+            </span>
+            {isGenerating && (
+              <span style={{
+                fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: 20,
+                background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)', color: '#06b6d4',
+              }}>
+                ⚙️ {lang === 'id' ? 'Menyiapkan unduhan...' : 'Preparing download...'}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button
-              onClick={handlePrint}
+              onClick={downloadPDF}
+              disabled={isGenerating}
               style={{
-                padding: '0.5rem 1.25rem', borderRadius: 8, border: '1px solid rgba(212,175,55,0.4)',
+                padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid rgba(212,175,55,0.4)',
                 background: 'rgba(212,175,55,0.1)', color: '#d4af37', fontWeight: 700,
-                fontSize: '0.82rem', cursor: 'pointer', letterSpacing: '0.05em',
-                transition: 'all 0.2s',
+                fontSize: '0.82rem', cursor: isGenerating ? 'not-allowed' : 'pointer', letterSpacing: '0.05em',
+                transition: 'all 0.2s', opacity: isGenerating ? 0.7 : 1,
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.2)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.1)'; }}
+              onMouseEnter={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(212,175,55,0.2)'; }}
+              onMouseLeave={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(212,175,55,0.1)'; }}
             >
-              ⬇ Save as PDF
+              ⬇ {lang === 'id' ? 'Unduh PDF' : 'Download PDF'}
+            </button>
+            <button
+              onClick={downloadPNG}
+              disabled={isGenerating}
+              style={{
+                padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid rgba(6,182,212,0.4)',
+                background: 'rgba(6,182,212,0.1)', color: '#06b6d4', fontWeight: 700,
+                fontSize: '0.82rem', cursor: isGenerating ? 'not-allowed' : 'pointer', letterSpacing: '0.05em',
+                transition: 'all 0.2s', opacity: isGenerating ? 0.7 : 1,
+              }}
+              onMouseEnter={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(6,182,212,0.2)'; }}
+              onMouseLeave={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(6,182,212,0.1)'; }}
+            >
+              ⬇ {lang === 'id' ? 'Unduh PNG' : 'Download PNG'}
             </button>
             <button
               onClick={onClose}
@@ -77,6 +158,7 @@ function CertificateModal({ course, user, lang, t, onClose }) {
 
         {/* ── THE CERTIFICATE CARD ── */}
         <div
+          ref={certRef}
           className="certificate-card"
           style={{
             position: 'relative',
