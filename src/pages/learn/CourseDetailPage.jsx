@@ -28,19 +28,105 @@ function CertificateModal({ course, user, lang, t, onClose }) {
 
   const certRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const autoDownloadDone = useRef(false);
+
+  // Wait for the component to fully paint before enabling capture
+  useEffect(() => {
+    // Double-rAF ensures the browser has actually painted the content
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => {
+        setIsReady(true);
+      });
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => cancelAnimationFrame(raf1);
+  }, []);
+
+  // Capture helper: ensures element has non-zero dimensions and is fully laid out
+  const captureCanvas = async () => {
+    const el = certRef.current;
+    if (!el) throw new Error('Certificate element not found');
+
+    // Wait an extra frame + timeout to guarantee paint
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        setTimeout(resolve, 300);
+      });
+    });
+
+    // Validate dimensions
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) {
+      throw new Error(`Certificate element has zero dimensions: ${rect.width}x${rect.height}`);
+    }
+
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#07071a',
+      logging: false,
+      width: Math.ceil(rect.width),
+      height: Math.ceil(rect.height),
+      // Nuclear sanitization: strip ALL background-images and filters from cloned DOM
+      // to prevent html2canvas createPattern() errors with 0-dimension canvases
+      onclone: (clonedDoc, clonedElement) => {
+        const win = clonedDoc.defaultView || window;
+        const allElements = [clonedElement, ...clonedElement.querySelectorAll('*')];
+        
+        for (const node of allElements) {
+          try {
+            // Remove SVGs completely (they create 0-dim internal canvases)
+            if (node.tagName === 'svg' || node.tagName === 'SVG') {
+              node.parentNode?.removeChild(node);
+              continue;
+            }
+
+            // Use computed style to catch ALL gradients regardless of how they were set
+            const computed = win.getComputedStyle(node);
+            
+            // Strip ANY background-image that isn't 'none' (gradients, patterns, etc.)
+            const bgImage = computed.backgroundImage;
+            if (bgImage && bgImage !== 'none') {
+              node.style.setProperty('background-image', 'none', 'important');
+            }
+
+            // Strip any filter (blur, etc.)
+            const filter = computed.filter;
+            if (filter && filter !== 'none') {
+              node.style.setProperty('filter', 'none', 'important');
+            }
+
+            // Strip backdrop-filter too
+            const bdFilter = computed.backdropFilter || computed.webkitBackdropFilter;
+            if (bdFilter && bdFilter !== 'none') {
+              node.style.setProperty('backdrop-filter', 'none', 'important');
+              node.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+            }
+          } catch (e) {
+            // Skip any errors on individual nodes
+          }
+        }
+
+        // Set the certificate card background to solid dark color
+        clonedElement.style.setProperty('background', '#0a0a2e', 'important');
+        clonedElement.style.setProperty('background-image', 'none', 'important');
+      },
+    });
+
+    // Validate canvas was rendered properly
+    if (canvas.width < 1 || canvas.height < 1) {
+      throw new Error(`html2canvas produced a canvas with zero dimensions: ${canvas.width}x${canvas.height}`);
+    }
+
+    return canvas;
+  };
 
   const downloadPDF = async () => {
-    if (!certRef.current) return;
+    if (!certRef.current || isGenerating) return;
     setIsGenerating(true);
     try {
-      // Allow a brief delay for layout calculation and loading animations
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      const canvas = await html2canvas(certRef.current, {
-        scale: 2, // High resolution
-        useCORS: true,
-        backgroundColor: '#07071a',
-      });
+      const canvas = await captureCanvas();
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'landscape',
@@ -57,16 +143,10 @@ function CertificateModal({ course, user, lang, t, onClose }) {
   };
 
   const downloadPNG = async () => {
-    if (!certRef.current) return;
+    if (!certRef.current || isGenerating) return;
     setIsGenerating(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      const canvas = await html2canvas(certRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#07071a',
-      });
+      const canvas = await captureCanvas();
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `VibeLearn-Certificate-${course.title.replace(/\s+/g, '-')}.png`;
@@ -79,10 +159,13 @@ function CertificateModal({ course, user, lang, t, onClose }) {
     }
   };
 
-  // Auto download PDF on mount
+  // Auto download PDF only after the certificate is fully painted
   useEffect(() => {
-    downloadPDF();
-  }, []);
+    if (isReady && !autoDownloadDone.current) {
+      autoDownloadDone.current = true;
+      downloadPDF();
+    }
+  }, [isReady]);
 
   return (
     <div
@@ -119,29 +202,29 @@ function CertificateModal({ course, user, lang, t, onClose }) {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button
               onClick={downloadPDF}
-              disabled={isGenerating}
+              disabled={isGenerating || !isReady}
               style={{
                 padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid rgba(212,175,55,0.4)',
                 background: 'rgba(212,175,55,0.1)', color: '#d4af37', fontWeight: 700,
-                fontSize: '0.82rem', cursor: isGenerating ? 'not-allowed' : 'pointer', letterSpacing: '0.05em',
-                transition: 'all 0.2s', opacity: isGenerating ? 0.7 : 1,
+                fontSize: '0.82rem', cursor: (isGenerating || !isReady) ? 'not-allowed' : 'pointer', letterSpacing: '0.05em',
+                transition: 'all 0.2s', opacity: (isGenerating || !isReady) ? 0.7 : 1,
               }}
-              onMouseEnter={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(212,175,55,0.2)'; }}
-              onMouseLeave={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(212,175,55,0.1)'; }}
+              onMouseEnter={e => { if (!isGenerating && isReady) e.currentTarget.style.background = 'rgba(212,175,55,0.2)'; }}
+              onMouseLeave={e => { if (!isGenerating && isReady) e.currentTarget.style.background = 'rgba(212,175,55,0.1)'; }}
             >
               ⬇ {lang === 'id' ? 'Unduh PDF' : 'Download PDF'}
             </button>
             <button
               onClick={downloadPNG}
-              disabled={isGenerating}
+              disabled={isGenerating || !isReady}
               style={{
                 padding: '0.5rem 1rem', borderRadius: 8, border: '1px solid rgba(6,182,212,0.4)',
                 background: 'rgba(6,182,212,0.1)', color: '#06b6d4', fontWeight: 700,
-                fontSize: '0.82rem', cursor: isGenerating ? 'not-allowed' : 'pointer', letterSpacing: '0.05em',
-                transition: 'all 0.2s', opacity: isGenerating ? 0.7 : 1,
+                fontSize: '0.82rem', cursor: (isGenerating || !isReady) ? 'not-allowed' : 'pointer', letterSpacing: '0.05em',
+                transition: 'all 0.2s', opacity: (isGenerating || !isReady) ? 0.7 : 1,
               }}
-              onMouseEnter={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(6,182,212,0.2)'; }}
-              onMouseLeave={e => { if (!isGenerating) e.currentTarget.style.background = 'rgba(6,182,212,0.1)'; }}
+              onMouseEnter={e => { if (!isGenerating && isReady) e.currentTarget.style.background = 'rgba(6,182,212,0.2)'; }}
+              onMouseLeave={e => { if (!isGenerating && isReady) e.currentTarget.style.background = 'rgba(6,182,212,0.1)'; }}
             >
               ⬇ {lang === 'id' ? 'Unduh PNG' : 'Download PNG'}
             </button>
@@ -171,6 +254,7 @@ function CertificateModal({ course, user, lang, t, onClose }) {
             alignItems: 'center',
             gap: '1.5rem',
             minHeight: 520,
+            width: '100%',
           }}
         >
           {/* Outer golden border frame */}
@@ -187,18 +271,18 @@ function CertificateModal({ course, user, lang, t, onClose }) {
             pointerEvents: 'none',
           }} />
 
-          {/* Corner ornaments */}
+          {/* Corner ornaments – pure CSS, no SVG (html2canvas-friendly) */}
           {[
-            { top: 18, left: 18 },
-            { top: 18, right: 18 },
-            { bottom: 18, left: 18 },
-            { bottom: 18, right: 18 },
+            { top: 18, left: 18, borderTop: '2px solid rgba(212,175,55,0.6)', borderLeft: '2px solid rgba(212,175,55,0.6)' },
+            { top: 18, right: 18, borderTop: '2px solid rgba(212,175,55,0.6)', borderRight: '2px solid rgba(212,175,55,0.6)' },
+            { bottom: 18, left: 18, borderBottom: '2px solid rgba(212,175,55,0.6)', borderLeft: '2px solid rgba(212,175,55,0.6)' },
+            { bottom: 18, right: 18, borderBottom: '2px solid rgba(212,175,55,0.6)', borderRight: '2px solid rgba(212,175,55,0.6)' },
           ].map((pos, i) => (
-            <svg key={i} width="28" height="28" viewBox="0 0 28 28" style={{ position: 'absolute', ...pos, opacity: 0.6 }}>
-              <path d="M0 14 L0 0 L14 0" fill="none" stroke="#d4af37" strokeWidth="1.5"
-                transform={i === 1 ? 'scale(-1,1) translate(-28,0)' : i === 2 ? 'scale(1,-1) translate(0,-28)' : i === 3 ? 'scale(-1,-1) translate(-28,-28)' : ''} />
-              <circle cx={i===0||i===2?0:28} cy={i===0||i===1?0:28} r="2.5" fill="#d4af37" opacity="0.8" />
-            </svg>
+            <div key={i} style={{
+              position: 'absolute', width: 20, height: 20,
+              ...pos,
+              pointerEvents: 'none',
+            }} />
           ))}
 
           {/* Aurora glow blobs */}
@@ -215,14 +299,16 @@ function CertificateModal({ course, user, lang, t, onClose }) {
 
           {/* ── HEADER ── */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 1 }}>
-            {/* Hexagonal seal */}
-            <div style={{ position: 'relative', width: 80, height: 80 }}>
-              <svg viewBox="0 0 80 80" width="80" height="80" style={{ position: 'absolute', inset: 0 }}>
-                <polygon points="40,4 73,22 73,58 40,76 7,58 7,22" fill="none" stroke="#d4af37" strokeWidth="2" />
-                <polygon points="40,10 67,25 67,55 40,70 13,55 13,25" fill="rgba(212,175,55,0.08)" stroke="#d4af37" strokeWidth="1" strokeDasharray="3 2" />
-              </svg>
+            {/* Trophy seal – pure CSS hexagon shape instead of SVG */}
+            <div style={{
+              position: 'relative', width: 80, height: 80,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
               <div style={{
-                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 64, height: 64, borderRadius: '50%',
+                border: '2px solid #d4af37',
+                background: 'rgba(212,175,55,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <Trophy size={28} color="#d4af37" />
               </div>
@@ -230,7 +316,7 @@ function CertificateModal({ course, user, lang, t, onClose }) {
 
             {/* Academy name */}
             <div style={{ fontSize: '0.65rem', letterSpacing: '0.3em', color: 'rgba(212,175,55,0.7)', textTransform: 'uppercase', fontWeight: 600 }}>
-              ✦ PROMPTARA · AI CODING ACADEMY ✦
+              PROMPTARA · AI CODING ACADEMY
             </div>
 
             {/* Title */}
@@ -262,7 +348,7 @@ function CertificateModal({ course, user, lang, t, onClose }) {
             </span>
             <div style={{
               fontFamily: "'Georgia', 'Times New Roman', serif",
-              fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
+              fontSize: '2.2rem',
               fontWeight: 700,
               color: '#ffffff',
               textAlign: 'center',
@@ -325,7 +411,6 @@ function CertificateModal({ course, user, lang, t, onClose }) {
             borderRadius: 30,
             position: 'relative', zIndex: 1,
           }}>
-            <span style={{ fontSize: '0.9rem' }}>🛡️</span>
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#d4af37', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
               Certified Digital Builder · Vibe Coding Graduate
             </span>
