@@ -207,29 +207,19 @@ function CertificateModal({ course, user, lang, t, onClose }) {
           <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 400, height: 200, background: 'radial-gradient(ellipse, rgba(212,175,55,0.04) 0%, transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }} />
 
           {/* Subtle dot-grid pattern */}
-          <svg style={{ position: 'absolute', inset: 0, opacity: 0.06, pointerEvents: 'none' }} width="100%" height="100%">
-            <defs>
-              <pattern id="cert-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-                <circle cx="2" cy="2" r="1" fill="#d4af37" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#cert-dots)" />
-          </svg>
+          <div style={{
+            position: 'absolute', inset: 0, opacity: 0.4, pointerEvents: 'none',
+            backgroundImage: 'radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }} />
 
           {/* ── HEADER ── */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 1 }}>
             {/* Hexagonal seal */}
             <div style={{ position: 'relative', width: 80, height: 80 }}>
               <svg viewBox="0 0 80 80" width="80" height="80" style={{ position: 'absolute', inset: 0 }}>
-                <defs>
-                  <linearGradient id="sealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#d4af37" />
-                    <stop offset="50%" stopColor="#f3e5ab" />
-                    <stop offset="100%" stopColor="#b8860b" />
-                  </linearGradient>
-                </defs>
-                <polygon points="40,4 73,22 73,58 40,76 7,58 7,22" fill="none" stroke="url(#sealGrad)" strokeWidth="2" />
-                <polygon points="40,10 67,25 67,55 40,70 13,55 13,25" fill="rgba(212,175,55,0.08)" stroke="url(#sealGrad)" strokeWidth="1" strokeDasharray="3 2" />
+                <polygon points="40,4 73,22 73,58 40,76 7,58 7,22" fill="none" stroke="#d4af37" strokeWidth="2" />
+                <polygon points="40,10 67,25 67,55 40,70 13,55 13,25" fill="rgba(212,175,55,0.08)" stroke="#d4af37" strokeWidth="1" strokeDasharray="3 2" />
               </svg>
               <div style={{
                 position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
