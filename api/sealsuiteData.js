@@ -2232,12 +2232,13 @@ Test your knowledge of SealSuite as an end user.`,
   // COURSE 3: SealSuite Fundamentals
   // ═══════════════════════════════════════════════════════════════════════════
   "SealSuite Fundamentals": [
+    // ── Lesson 1: The Gatekeeper Concept ─────────────────────────────────────
     {
       title: 'Simplifying Cybersecurity: The Gatekeeper Concept',
       title_id: 'Menyederhanakan Keamanan Siber: Konsep Penjaga Pintu',
       type: 'text',
       difficulty: 'beginner',
-      xp_reward: 100,
+      xp_reward: 75,
       order_index: 1,
       resources: [
         { type: 'docs', label: 'Official SealSuite Intro', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-what-is-sealsuite' }
@@ -2257,25 +2258,13 @@ Historically, offices secured data like a fortress: a large wall (called a firew
 But what if a bad actor snuck in disguised as an employee? Or what if a trusted employee's laptop got infected by a virus? They would have free access to everything!
 
 ### ✈️ The Airport Security Approach
-SealSuite uses a strategy called **Zero Trust**. It acts like continuous airport security:
+SealSuite uses a strategy called **Zero Trust** (Never Trust, Always Verify). It acts like continuous airport security:
 
 1. **Who are you?** (Identity check): Just like checking your passport and boarding pass.
 2. **What are you carrying?** (Device health check): Walking through the metal detector.
 3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
 
-![Gatekeeper Concept Analogy](/images/sealsuite_airport_analogy.png)
-
----
-
-## 🛠️ The 3 Pillars of SealSuite Explained Simply
-
-Let's break down SealSuite's core modules using our everyday Gatekeeper analogies:
-
-| IT Term | Easy Analogy | How it helps you |
-|:---|:---|:---|
-| **Identity & SSO (IAM)** | **The Digital Boarding Pass** | One secure digital ID card to unlock all your office work apps (Email, HR, drive) without remembering 50 different passwords. |
-| **Endpoint Security** | **The Metal Detector Gate** | Scans your laptop before letting it connect to the network. If your antivirus is off or your OS is too old, the gate "beeps" and blocks access until it is updated. |
-| **Data Loss Prevention (DLP)** | **The Bag Check & X-Ray** | Monitors files being sent outside the company. If you try to copy a file with customer details onto a personal USB or personal chat app, the scanner blocks it to prevent a leak. |
+![Office vs Airport Security](/images/office_vs_airport_security.png)
 
 ---
 
@@ -2305,19 +2294,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
 3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
 
-![Konsep Penjaga Pintu](/images/sealsuite_airport_analogy.png)
-
----
-
-## 🛠️ 3 Pilar Utama SealSuite dengan Analogi Sederhana
-
-Mari kita bedah modul inti SealSuite menggunakan analogi sehari-hari:
-
-| Istilah IT | Analogi Sederhana | Manfaat Bagi Anda |
-|:---|:---|:---|
-| **Identity & SSO (IAM)** | **Tiket Boarding Digital** | Satu kartu identitas digital yang aman untuk membuka semua aplikasi kerja kantor (Email, HR, drive) tanpa perlu mengingat 50 kata sandi yang berbeda. |
-| **Endpoint Security** | **Gerbang Detektor Logam** | Memindai laptop Anda sebelum diizinkan terhubung ke jaringan. Jika antivirus Anda mati atau sistem operasi Anda usang, pintu akan "berbunyi bip" dan memblokir akses hingga laptop Anda diperbarui. |
-| **Data Loss Prevention (DLP)** | **Pemeriksaan Tas & Sinar-X** | Memantau file yang dikirim ke luar perusahaan. Jika Anda mencoba menyalin file berisi data rahasia pelanggan ke USB pribadi atau aplikasi chat pribadi, pemindai akan memblokirnya untuk mencegah kebocoran. |
+![Konsep Penjaga Pintu](/images/office_vs_airport_security.png)
 
 ---
 
@@ -2326,117 +2303,283 @@ Mari kita bedah modul inti SealSuite menggunakan analogi sehari-hari:
 > **Cara menjelaskan SealSuite dalam 10 detik:**
 > *"SealSuite itu seperti pintu detektor logam digital untuk perusahaan kita. Sistem ini memastikan siapa diri kita, memastikan perangkat kerja kita aman & bersih dari virus, dan menjaga agar file rahasia perusahaan tidak bocor keluar secara tidak sengaja."*`
     },
+
+    // ── Lesson 2: The 3 Core Pillars ─────────────────────────────────────────
     {
-      title: 'AI Data Security Agents: The Superpowered Security Guards',
-      title_id: 'AI Data Security Agents: Penjaga Keamanan Super',
+      title: 'The 3 Pillars of SealSuite Office Security',
+      title_id: '3 Pilar Utama Keamanan Kantor SealSuite',
       type: 'text',
       difficulty: 'beginner',
-      xp_reward: 100,
+      xp_reward: 75,
       order_index: 2,
       resources: [
-        { type: 'docs', label: 'SealSuite AI Agent Features', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-what-is-sealsuite' }
+        { type: 'docs', label: 'SealSuite Core Capabilities', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-what-is-sealsuite' }
       ],
-      content: `# AI Data Security Agents: The Superpowered Security Guards
+      content: `# The 3 Pillars of SealSuite Office Security
 
-In a real airport, security guards can get tired. They might miss a suspicious container, fail to read a blurred text on a document, or get overwhelmed by thousands of passengers passing through all at once.
+To protect your company's data, SealSuite relies on three main pillars working side-by-side. Think of them as the three main safety measures at any major event or location.
 
-In cybersecurity, companies generate **millions of computer logs (audit logs)** every day. It is humanly impossible for IT staff to review every single file transfer or link clicked.
-
-This is where **SealSuite\'s Data Security AI Agent** comes in. Think of it as a **superpowered security guard** equipped with absolute intelligence, laser vision, and infinite speed.
+![The 3 Pillars of SealSuite](/images/sealsuite_pillars.png)
 
 ---
 
-## 🤖 What does the AI Agent do? (Analogy Style)
+## 🛠️ Explaining the 3 Pillars Simply
 
-The AI Agent leverages Large Language Models (like Doubao LLM) to do three main tasks that normal software and humans struggle with:
+### 🔑 Pillar 1: Identity (IAM)
+* **What it is:** Checking who is trying to access the office applications.
+* **Easy Analogy:** **The Digital Boarding Pass.** You show your ticket at the entrance. If your name matches the list, you get in.
 
-### 1. Laser Vision (Multimodal Data Identification)
-* **IT Concept:** Auto-categorizing sensitive data within images, code snippets, templates, or design files.
-* **Easy Analogy:** Traditional security only searches for text keywords. It is like a guard looking for a label that says *"DANGER"*. If a smuggler draws a picture of a bomb or wraps code in an unlabelled box, the traditional guard misses it.
-* **AI Security Guard:** The AI looks at screenshots, scan photos, blueprints, and computer programming codes. It actually **understands what is inside the picture or document** and classifies it as sensitive, even if there are no explicit warning keywords!
+### 💻 Pillar 2: Endpoint Security
+* **What it is:** Inspecting the safety and health of the device (laptop or phone) you use to work.
+* **Easy Analogy:** **The Metal Detector Gate.** Even if you have a valid ticket, if you are carrying something unsafe (like a virus or a security risk), the gate beeps and blocks you.
 
-### 2. Mind Reader (Behavioral Risk Insights)
-* **IT Concept:** Identifying anomalies based on user roles and behaviors.
-* **Easy Analogy:** If a cashier at the airport starts carrying blueprint schematics of the aircraft, or if a customer service staff starts downloading thousands of credit card logs at 3:00 AM, something is wrong.
-* **AI Security Guard:** The AI Agent understands employee job roles. It knows that while it\'s normal for a graphic designer to share large pictures, it is highly suspicious for a finance officer to suddenly upload source code files or large database archives to external cloud storage.
+### 🛡️ Pillar 3: Data Loss Prevention (DLP)
+* **What it is:** Scanning and controlling outgoing files to prevent data leaks.
+* **Easy Analogy:** **The Bag Check / X-Ray scanner.** Before you leave, security guards scan your bags to ensure you are not carrying away sensitive company files.`,
 
-### 3. Smart Gate Actions (Intelligent Policy Recommendation)
-* **IT Concept:** Shifting from "post-incident audit" to "proactive control".
-* **Easy Analogy:** Instead of waiting for a leak to happen and then looking at the security cameras after the data is gone, the AI gate immediately stops the person and recommends a rule to prevent it from ever happening again.
+      content_id: `# 3 Pilar Utama Keamanan Kantor SealSuite
 
-![AI Security Guard Analogy](/images/sealsuite_airport_analogy.png)
+Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama yang bekerja saling berdampingan. Bayangkan ini sebagai tiga tindakan pengamanan utama di setiap acara atau lokasi besar.
 
----
-
-## 🎯 Case Study: JinkoSolar
-A global solar energy company with over 10,000 employees used SealSuite\'s AI Agents:
-* **The Problem:** Thousands of employees accessed company servers remotely via VPN, creating massive logs that were impossible to audit manually.
-* **The AI Result:** Reduced risk response and identification times by **50%**, and reduced the volume of manual incident reviews by **50%**.
+![3 Pilar Utama SealSuite](/images/sealsuite_pillars.png)
 
 ---
 
-## 💡 Summary to Share with Others
+## 🛠️ Menjelaskan 3 Pilar Secara Sederhana
 
-> **How to explain the AI Agent:**
-> *"The SealSuite AI Agent is like an intelligent security guard with x-ray vision. It automatically reads through millions of network logs, understands the contents of files and pictures, and alerts us immediately if someone is doing something that doesn't fit their job description."*`,
+### 🔑 Pilar 1: Identitas (IAM)
+* **Apa fungsinya:** Memeriksa siapa yang mencoba mengakses aplikasi kerja kantor.
+* **Analogi Sederhana:** **Tiket Boarding Digital.** Anda menunjukkan tiket di pintu masuk. Jika nama Anda terdaftar, Anda dipersilakan masuk.
 
-      content_id: `# AI Data Security Agents: Penjaga Keamanan Super
+### 💻 Pilar 2: Keamanan Endpoint
+* **Apa fungsinya:** Memeriksa keamanan dan kesehatan perangkat (laptop/ponsel) yang Anda gunakan untuk bekerja.
+* **Analogi Sederhana:** **Gerbang Detektor Logam.** Meskipun tiket Anda sah, jika Anda membawa sesuatu yang tidak aman (seperti virus atau celah keamanan), pintu akan berbunyi dan menahan Anda.
 
-Di bandara nyata, petugas keamanan bisa merasa lelah. Mereka mungkin melewatkan wadah yang mencurigakan, gagal membaca teks yang buram pada dokumen, atau kewalahan karena ribuan penumpang yang lewat secara bersamaan.
-
-Dalam keamanan siber, perusahaan menghasilkan **jutaan catatan komputer (audit log)** setiap harinya. Secara manusiawi, mustahil bagi staf IT untuk memeriksa setiap pengiriman file atau tautan yang diklik.
-
-Di sinilah **SealSuite Data Security AI Agent** hadir. Bayangkan ini sebagai **penjaga keamanan berkekuatan super** yang dilengkapi dengan kecerdasan mutlak, penglihatan sinar-X, dan kecepatan tanpa batas.
-
----
-
-## 🤖 Apa Saja yang Dilakukan oleh AI Agent? (Gaya Analogi)
-
-AI Agent memanfaatkan Model Bahasa Besar (seperti Doubao LLM) untuk melakukan tiga tugas utama yang sulit dilakukan oleh perangkat lunak biasa maupun manusia:
-
-### 1. Penglihatan Sinar-X (Multimodal Data Identification)
-* **Konsep IT:** Mengidentifikasi data sensitif secara otomatis di dalam gambar, potongan kode program, templat, atau file desain.
-* **Analogi Sederhana:** Keamanan tradisional hanya mencari kata kunci teks. Itu seperti penjaga yang hanya mencari label bertuliskan *"BAHAYA"*. Jika penyelundup menggambar gambar bom atau membungkus kode dalam kotak tanpa label, penjaga biasa akan melewatkannya.
-* **AI Security Guard:** AI melihat tangkapan layar, foto pemindaian, cetak biru, dan kode pemrograman komputer. AI benar-benar **memahami apa yang ada di dalam gambar atau dokumen** tersebut dan mengklasifikasikannya sebagai file penting perusahaan, bahkan jika tidak ada kata kunci peringatan eksplisit!
-
-### 2. Pembaca Pikiran (Behavioral Risk Insights)
-* **Konsep IT:** Mengidentifikasi keanehan berdasarkan peran dan kebiasaan kerja karyawan.
-* **Analogi Sederhana:** Jika seorang kasir di bandara mulai membawa cetak biru skema pesawat, atau jika staf layanan pelanggan mulai mengunduh ribuan riwayat kartu kredit pada jam 3:00 pagi, ada sesuatu yang tidak beres.
-* **AI Security Guard:** AI Agent memahami peran pekerjaan karyawan. Ia tahu bahwa meskipun wajar bagi seorang desainer grafis untuk membagikan gambar besar, sangat mencurigakan jika seorang petugas keuangan tiba-tiba mengunggah file kode pemrograman atau arsip basis data besar ke penyimpanan cloud eksternal.
-### 3. Aksi Pintu Pintar (Intelligent Policy Recommendation)
-* **Konsep IT:** Beralih dari "pemeriksaan setelah kejadian" menjadi "pencegahan aktif secara langsung".
-* **Analogi Sederhana:** Daripada menunggu kebocoran data terjadi baru kemudian melihat kamera keamanan setelah datanya hilang, gerbang AI segera menghentikan orang tersebut dan menyarankan aturan baru agar hal itu tidak terjadi lagi.
-
-![Penjaga Keamanan Super AI](/images/sealsuite_airport_analogy.png)
-
----
-
-## 🎯 Studi Kasus: JinkoSolar
-Perusahaan energi surya global dengan lebih dari 10.000 karyawan menggunakan AI Agent dari SealSuite:
-* **Masalah:** Ribuan karyawan mengakses server perusahaan dari jarak jauh melalui VPN, menghasilkan jutaan baris catatan aktivitas yang tidak mungkin diperiksa manual.
-* **Hasil Kerja AI:** Mempercepat waktu identifikasi dan penanganan risiko sebesar **50%**, serta memangkas beban pemeriksaan insiden manual hingga **50%**.
-
----
-
-## 💡 Ringkasan untuk Dibagikan kepada Orang Lain
-
-> **Cara menjelaskan AI Agent:**
-> *"AI Agent dari SealSuite itu seperti penjaga keamanan pintar dengan penglihatan x-ray. Dia membaca jutaan aktivitas jaringan secara otomatis, memahami isi file dan gambar, dan langsung memperingatkan kita jika ada karyawan yang melakukan aktivitas yang tidak sesuai dengan tugas pekerjaannya."*`
+### 🛡️ Pilar 3: Pencegahan Kebocoran Data (DLP)
+* **Apa fungsinya:** Memantau dan mengontrol pengiriman file ke luar untuk mencegah kebocoran data.
+* **Analogi Sederhana:** **Pemeriksaan Tas / Sinar-X.** Sebelum Anda pergi, petugas keamanan memindai tas Anda untuk memastikan Anda tidak membawa keluar berkas rahasia milik perusahaan.`
     },
+
+    // ── Lesson 3: Authentication (SSO & MFA) ─────────────────────────────────
     {
-      title: 'SealSuite Fundamentals Assessment',
-      title_id: 'Evaluasi Dasar-Dasar SealSuite',
+      title: 'Identity Check: Single Sign-On (SSO) & MFA',
+      title_id: 'Pemeriksaan Identitas: Single Sign-On (SSO) & MFA',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 3,
+      resources: [
+        { type: 'docs', label: 'Identity and SSO Guide', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-basic-concepts' }
+      ],
+      content: `# Identity Check: Single Sign-On (SSO) & Multi-Factor Authentication (MFA)
+
+How does SealSuite verify who you are without causing headache? It uses two secure features: **Single Sign-On (SSO)** and **Multi-Factor Authentication (MFA)**.
+
+![SSO and MFA Analogy](/images/sealsuite_mfa_sso.png)
+
+---
+
+## 🔑 Single Sign-On (SSO): The Golden Master Key
+Normally, you need 20 different usernames and passwords for email, HR software, internal drives, and work tools. Keeping track of all of them is exhausting.
+
+* **SSO is like a Golden Master Key.** Once you unlock the main SealSuite client, that single key unlocks all your corporate web apps. You do not need to sign in repeatedly.
+
+## 📱 Multi-Factor Authentication (MFA): The Double Lock
+A master key is powerful, so it needs extra protection. If someone steals your password, they could access everything.
+
+* **MFA is like a Double Lock.** When you login, SealSuite asks for a password, but also sends a temporary 6-digit verification code to your phone app. Even if a thief knows your password, they cannot enter because they don't have your physical phone!`,
+
+      content_id: `# Pemeriksaan Identitas: Single Sign-On (SSO) & Multi-Factor Authentication (MFA)
+
+Bagaimana cara SealSuite memverifikasi identitas Anda tanpa membuat Anda pusing? Sistem ini menggunakan dua fitur keamanan: **Single Sign-On (SSO)** dan **Multi-Factor Authentication (MFA)**.
+
+![Analogi SSO dan MFA](/images/sealsuite_mfa_sso.png)
+
+---
+
+## 🔑 Single Sign-On (SSO): Kunci Emas Utama
+Biasanya, Anda memerlukan 20 nama pengguna dan kata sandi yang berbeda untuk email, portal HR, drive kerja, dan aplikasi lainnya. Menghafal semuanya sangat melelahkan.
+
+* **SSO itu seperti Kunci Emas Utama.** Begitu Anda masuk ke dalam aplikasi SealSuite, kunci tunggal tersebut otomatis membukakan akses ke semua aplikasi kerja perusahaan Anda. Anda tidak perlu login berulang-ulang.
+
+## 📱 Multi-Factor Authentication (MFA): Kunci Ganda Pengaman
+Karena kunci utama sangat kuat, ia membutuhkan perlindungan ekstra. Jika ada orang yang mencuri kata sandi Anda, mereka bisa membuka semuanya.
+
+* **MFA itu seperti Gembok Kunci Ganda.** Saat Anda login, SealSuite meminta kata sandi, tetapi juga mengirimkan kode verifikasi 6-digit sementara ke aplikasi ponsel Anda. Bahkan jika pencuri tahu kata sandi Anda, mereka tetap tidak bisa masuk karena mereka tidak memegang ponsel fisik Anda!`
+    },
+
+    // ── Lesson 4: Network Security (VPN) ─────────────────────────────────────
+    {
+      title: 'Secure Remote Work: Connecting to the Office VPN',
+      title_id: 'Kerja Remote yang Aman: Terhubung ke VPN Kantor',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 4,
+      resources: [
+        { type: 'docs', label: 'VPN and Network Settings', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-viewing-sealsuite-portal' }
+      ],
+      content: `# Secure Remote Work: Connecting to the Office VPN
+
+When you work from home or a public cafe, you connect to the internet via public networks. Sending sensitive business files over public Wi-Fi is risky — hackers can intercept the data.
+
+SealSuite resolves this risk by building a **Virtual Private Network (VPN)** tunnel.
+
+![VPN Secure Tunnel Analogy](/images/sealsuite_vpn.png)
+
+---
+
+## 🚗 The Secure Tunnel Analogy
+
+* **Public Internet is like a public highway.** Anyone sitting nearby can look at your car and see what you are carrying inside.
+* **SealSuite VPN is like a Private Underground Tunnel.** It connects your laptop directly to the office building. This tunnel is heavily guarded. No one on the public highway can see or touch the cars inside your tunnel.
+
+With SealSuite, connecting to the VPN is built right into the client. With one click, your tunnel is active, allowing you to access office servers securely from anywhere.`,
+
+      content_id: `# Kerja Remote yang Aman: Terhubung ke VPN Kantor
+
+Ketika Anda bekerja dari rumah atau kafe, Anda terhubung ke internet menggunakan jaringan publik. Mengirim file bisnis yang sensitif melalui Wi-Fi publik sangat berisiko — peretas dapat menyadap data tersebut.
+
+SealSuite mengatasi risiko ini dengan membangun terowongan **Virtual Private Network (VPN)**.
+
+![Analogi Terowongan VPN](/images/sealsuite_vpn.png)
+
+---
+
+## 🚗 Analogi Terowongan Pengaman
+
+* **Internet Publik itu seperti jalan raya umum.** Siapa pun yang berada di sekitar jalan tersebut dapat melihat mobil Anda dan isi muatannya.
+* **SealSuite VPN itu seperti Terowongan Bawah Tanah Pribadi.** Terowongan ini menghubungkan laptop Anda secara langsung ke gedung kantor. Terowongan ini dijaga ketat. Tidak ada orang di jalan raya umum yang bisa melihat atau menyentuh mobil di dalam terowongan Anda.
+
+Dengan SealSuite, akses VPN sudah terintegrasi langsung di aplikasi. Cukup dengan satu klik, terowongan aman Anda aktif dan Anda bisa mengakses server kantor dengan aman dari mana saja.`
+    },
+
+    // ── Lesson 5: Device Baseline ────────────────────────────────────────────
+    {
+      title: 'Device Compliance: The Digital Health Check',
+      title_id: 'Kepatuhan Perangkat: Pemeriksaan Kesehatan Digital',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 5,
+      resources: [
+        { type: 'docs', label: 'Endpoint Security and Baselines', url: 'https://docs.byteplus.com/en/docs/sealsuite/quickstart' }
+      ],
+      content: `# Device Compliance: The Digital Health Check
+
+Before you can use the VPN or access apps, SealSuite scans your laptop or phone. This is called a **Device Baseline / Compliance Check**.
+
+![Device Baseline Analogy](/images/sealsuite_device_baseline.png)
+
+---
+
+## 🩺 The 4 Health Criteria for Work Devices
+
+Just like a metal detector at the airport checks for dangerous items, SealSuite checks your device against the company's baseline rules:
+
+1. **🛡️ Antivirus Active:** Is your antivirus software running and updated?
+2. **🔄 Latest Update:** Is your operating system (Windows/Mac) up to date?
+3. **🧱 Firewall On:** Is your computer's built-in shield turned on?
+4. **🔒 Screen Lock:** Do you have a secure PIN or password set to unlock your screen?
+
+> **What happens if your device fails the check?**
+> The gate "beeps" and temporarily limits your connection. Once you turn your antivirus back on or run updates, SealSuite automatically lets you back in. This protects the company from compromised devices.`,
+
+      content_id: `# Kepatuhan Perangkat: Pemeriksaan Kesehatan Digital
+
+Sebelum Anda diizinkan menggunakan VPN atau membuka aplikasi kerja, SealSuite memindai laptop atau ponsel Anda. Ini disebut **Pemeriksaan Kepatuhan Perangkat (Device Baseline)**.
+
+![Analogi Kepatuhan Perangkat](/images/sealsuite_device_baseline.png)
+
+---
+
+## 🩺 4 Kriteria Kesehatan Perangkat Kerja
+
+Sama seperti pintu detektor logam di bandara yang memeriksa benda berbahaya, SealSuite memeriksa perangkat Anda berdasarkan aturan dasar perusahaan:
+
+1. **🛡️ Antivirus Aktif:** Apakah software antivirus Anda menyala dan versi terbaru?
+2. **🔄 Pembaruan OS:** Apakah sistem operasi Anda (Windows/Mac) sudah diperbarui?
+3. **🧱 Firewall Menyala:** Apakah dinding pelindung internal komputer Anda diaktifkan?
+4. **🔒 Kunci Layar:** Apakah Anda memasang PIN atau sandi aman untuk membuka kunci layar?
+
+> **Apa yang terjadi jika perangkat tidak lolos pemeriksaan?**
+> Gerbang akan "berbunyi bip" dan membatasi koneksi Anda sementara waktu. Begitu Anda mengaktifkan kembali antivirus atau memperbarui sistem, SealSuite otomatis mengizinkan Anda masuk kembali. Ini mencegah perangkat yang terinfeksi merusak jaringan kantor.`
+    },
+
+    // ── Lesson 6: Data Leak Prevention (DLP) ──────────────────────────────────
+    {
+      title: 'Preventing Data Leaks: X-Ray Scanner & Watermarks',
+      title_id: 'Mencegah Kebocoran Data: Pemindai Sinar-X & Watermark',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 6,
+      resources: [
+        { type: 'docs', label: 'DLP and Traceability', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-operation-instructions' }
+      ],
+      content: `# Preventing Data Leaks: X-Ray Scanner & Watermarks
+
+The final pillar is **Data Loss Prevention (DLP)**. It keeps confidential files safe from leaving the company borders accidentally or maliciously.
+
+![DLP Watermark Analogy](/images/sealsuite_dlp_watermark.png)
+
+---
+
+## 💼 The 2 Main Data Shields
+
+### 1. 🔍 The Outbound Scanner (The Airport X-Ray)
+When you transfer a file externally (like uploading to a drive or sharing via message), the DLP scanner inspects the document. If it detects customer credit cards, financial records, or internal codes, it immediately blocks the transfer and notifies IT.
+
+### 2. 📝 The Tracking Overlay (Digital Watermarks)
+SealSuite overlays a faint, transparent watermark containing your name, email, and IP address onto sensitive company applications and files.
+* **Why it is helpful:** It discourages anyone from taking photos of the screen with their phone to leak information. If a photo is leaked, the watermark instantly traces who leaked it.`,
+
+      content_id: `# Mencegah Kebocoran Data: Pemindai Sinar-X & Watermark
+
+Pilar terakhir adalah **Data Loss Prevention (DLP)**. Fitur ini menjaga agar dokumen rahasia perusahaan tidak keluar dari batas aman kantor secara tidak sengaja maupun sengaja.
+
+![Analogi DLP dan Watermark](/images/sealsuite_dlp_watermark.png)
+
+---
+
+## 💼 2 Pelindung Data Utama
+
+### 1. 🔍 Pemindai Berkas Keluar (Sinar-X Bandara)
+Saat Anda mengirimkan file ke luar (seperti mengunggah ke cloud drive atau berbagi di chat), pemindai DLP akan memeriksa isi dokumen tersebut. Jika mendeteksi nomor kartu kredit pelanggan, catatan keuangan, atau kode program penting, sistem akan memblokir pengiriman tersebut dan melapor ke IT.
+
+### 2. 📝 Pelacak Gambar (Watermark Digital)
+SealSuite menempelkan tanda watermark transparan tipis yang berisi nama Anda, email, dan alamat IP Anda pada aplikasi dan dokumen kerja yang penting.
+* **Mengapa ini berguna:** Ini mencegah orang mengambil foto layar komputer menggunakan kamera ponsel mereka untuk membocorkan informasi. Jika foto tersebut bocor, watermark akan melacak siapa pemilik akses tersebut.`
+    },
+
+    // ── Lesson 7: Assessment & Logs ──────────────────────────────────────────
+    {
+      title: 'Activity History & Fundamentals Assessment',
+      title_id: 'Riwayat Aktivitas & Evaluasi Dasar',
       type: 'quiz',
       difficulty: 'beginner',
       xp_reward: 150,
-      order_index: 3,
+      order_index: 7,
       resources: [],
-      content: `# SealSuite Fundamentals Assessment
+      content: `# Activity History & Fundamentals Assessment
 
-Test your understanding of basic SealSuite concepts, Zero Trust architecture, and AI-powered security features using everyday analogies.`,
-      content_id: `# Evaluasi Dasar-Dasar SealSuite
+In addition to protecting you, SealSuite records a secure history book of your activities. You can view your login history and devices to ensure no unauthorized access occurred.
 
-Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fitur keamanan bertenaga AI dengan analogi sehari-hari.`,
+![Audit Logs Analogy](/images/sealsuite_audit_logs.png)
+
+---
+
+Test your understanding of basic SealSuite concepts, Zero Trust architecture, and security features using everyday analogies.`,
+
+      content_id: `# Riwayat Aktivitas & Evaluasi Dasar
+
+Selain melindungi Anda, SealSuite mencatat riwayat aktivitas Anda di buku catatan keamanan yang aman. Anda dapat melihat riwayat login dan perangkat untuk memastikan tidak ada akses ilegal yang terjadi.
+
+![Analogi Riwayat Aktivitas](/images/sealsuite_audit_logs.png)
+
+---
+
+Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fitur keamanan utama dengan analogi sehari-hari.`,
       quizzes: [
         {
           question: 'In our airport security analogy, what represents SealSuite\'s "Endpoint Security" check?',
@@ -2461,26 +2604,37 @@ Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fi
           explanation: 'Traditional security relies on network boundaries (once inside, you are trusted). Zero Trust never assumes trust—it continuously verifies the identity and device health of every access request, even if they are already connected.'
         },
         {
-          question: 'Why does SealSuite\'s AI Agent use "Multimodal Data Identification" instead of just searching for text keywords?',
+          question: 'Single Sign-On (SSO) is compared to a "Golden Master Key" because:',
           options: [
-            'Because text keywords are too expensive to configure',
-            'So it can understand the contents of screenshots, scan photos, blueprints, and programming code that do not have warning text labels',
-            'To make the system compile and run programs faster',
-            'To allow employees to watch and download videos faster'
+            'It is made of real gold metal',
+            'It unlocks all your secure work applications with a single account login, so you don\'t need to sign in repeatedly',
+            'It allows you to bypass the antivirus scanner check',
+            'It resets your computer password automatically every day'
           ],
           correct_answer: 1,
-          explanation: 'Multimodal capabilities allow the AI Agent to look at visual blueprints, photos, code blocks, and documents to "comprehend" their context, rather than relying on simple text matches which can be easily bypassed.'
+          explanation: 'Single Sign-On (SSO) acts as a golden master key because it allows you to access all your authorized corporate apps after signing in just once, removing the hassle of logging into multiple apps.'
         },
         {
-          question: 'An employee who works in Marketing suddenly downloads massive amounts of database source code at 3:00 AM. How does the AI Agent identify this risk?',
+          question: 'Which of the following describes how a Virtual Private Network (VPN) works using our vehicle analogy?',
           options: [
-            'It checks if the employee has paid their subscription plan',
-            'It reads their mind via browser trackers',
-            'It performs behavioral risk analysis, correlating their job role with abnormal file access patterns and hours',
-            'It asks the database administrator to review the activity manually first'
+            'It is like driving a very fast sports car on a public highway',
+            'It is like renting a bicycle inside the office parking lot',
+            'It is like driving through a private underground tunnel that connects you directly to the office building, protected from hackers on the public road',
+            'It is like calling a taxi to deliver a file to the office'
           ],
           correct_answer: 2,
-          explanation: 'By combining employee roles with historical behavioral baselines, the AI Agent notices when an employee\'s activity (downloading code) does not match their typical job function (Marketing), flagging it as an anomalous risk.'
+          explanation: 'A VPN works like a private underground tunnel. It encrypts your internet connection from home to the corporate office, protecting your network traffic from being intercepted on public networks.'
+        },
+        {
+          question: 'What is the purpose of SealSuite\'s digital watermarking on corporate files?',
+          options: [
+            'To make the document look artistic and modern',
+            'To increase the file download speed',
+            'To display your identity and IP address on the screen to prevent and trace photo leakage',
+            'To enable editing the file on mobile devices'
+          ],
+          correct_answer: 2,
+          explanation: 'Digital watermarking overlays user details on corporate files so that if someone attempts to capture a photo of sensitive data to leak it, the source of the leak can be instantly traced.'
         }
       ]
     }
