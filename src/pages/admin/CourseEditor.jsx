@@ -287,7 +287,7 @@ export default function CourseEditor() {
                     <label className="form-label">{lesson.type === 'quiz' ? 'Intro Content (Markdown Supported)' : 'Content (Markdown Supported)'}</label>
                     <textarea 
                       className="form-input" 
-                      rows={lesson.type === 'quiz' ? "3" : "6"}
+                      rows={lesson.type === 'quiz' ? "3" : "8"}
                       value={lesson.content || ''} 
                       placeholder="# Heading\nWrite your content here..."
                       onChange={e => {
@@ -295,8 +295,83 @@ export default function CourseEditor() {
                         newLessons[index].content = e.target.value;
                         setLessons(newLessons);
                       }}
-                      style={{ resize: 'vertical', fontFamily: 'monospace' }}
+                      style={{ resize: 'vertical', fontFamily: 'monospace', minHeight: '120px' }}
                     />
+                  </div>
+
+                  {/* Mermaid Builder Panel */}
+                  <div style={{
+                    marginTop: '1rem',
+                    marginBottom: '1rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '1.25rem',
+                    background: 'var(--bg-surface)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        📊 Mermaid Flowchart & Diagram Builder
+                      </span>
+                      <a href="https://mermaid.js.org/intro/" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'underline' }}>
+                        Documentation
+                      </a>
+                    </div>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                      Insert templates into your content area or edit them directly.
+                    </p>
+                    
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          const template = `\n\`\`\`mermaid\ngraph TD\n  A[Start Node] --> B{Is Admin?}\n  B -- Yes --> C[Access Dashboard]\n  B -- No --> D[Access Denied]\n  style A fill:#7c3aed,color:#fff\n  style C fill:#10b981,color:#fff\n  style D fill:#ef4444,color:#fff\n\`\`\`\n`;
+                          const newLessons = [...lessons];
+                          newLessons[index].content = (newLessons[index].content || '') + template;
+                          setLessons(newLessons);
+                          success('Inserted flowchart template!');
+                        }}
+                      >
+                        + Flowchart
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          const template = `\n\`\`\`mermaid\nsequenceDiagram\n  actor Admin\n  actor System\n  Admin->>System: Request VPN Configuration\n  System->>System: Validate compliance baseline\n  System-->>Admin: Grant Tunnel Access\n\`\`\`\n`;
+                          const newLessons = [...lessons];
+                          newLessons[index].content = (newLessons[index].content || '') + template;
+                          setLessons(newLessons);
+                          success('Inserted sequence template!');
+                        }}
+                      >
+                        + Sequence Diagram
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          const template = `\n\`\`\`mermaid\nstateDiagram-v2\n  [*] --> Disconnected\n  Disconnected --> Connected : VPN Trigger\n  Connected --> Restricted : Policy Failure\n  Connected --> [*] : Terminate\n\`\`\`\n`;
+                          const newLessons = [...lessons];
+                          newLessons[index].content = (newLessons[index].content || '') + template;
+                          setLessons(newLessons);
+                          success('Inserted state diagram template!');
+                        }}
+                      >
+                        + State Diagram
+                      </button>
+                    </div>
+
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      background: 'rgba(12, 12, 38, 0.5)', 
+                      padding: '0.75rem', 
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--text-muted)',
+                      border: '1px solid var(--border-light)'
+                    }}>
+                      <strong>💡 Quick Guide:</strong> Start your diagram with <code>```mermaid</code>, put your graph definitions, and close it with <code>```</code>. The colors will automatically align with the theme colors for a premium contrast!
+                    </div>
                   </div>
 
                   {lesson.type === 'video' && (

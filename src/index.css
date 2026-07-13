@@ -657,34 +657,54 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
 /* ── Mermaid Diagram Styling ── */
 .mermaid {
   font-family: 'Inter', 'Segoe UI', sans-serif !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 .mermaid svg {
-  max-width: 100%;
+  max-width: 100% !important;
   height: auto !important;
-  min-height: 140px;
+  min-height: 160px;
   font-size: 16px !important;
 }
 
-/* Node labels — large, readable on any background */
-.mermaid .nodeLabel,
-.mermaid .node .label,
-.mermaid .label {
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-  fill: #e0f7fa !important;
-  color: #e0f7fa !important;
-  line-height: 1.4 !important;
-}
-
-/* Node shapes — tinted fill so labels pop */
+/* Node shapes - Dynamic borders, background with fallback to neutral values */
 .mermaid .node rect,
 .mermaid .node circle,
 .mermaid .node polygon,
-.mermaid .node path {
-  fill: #1a2744 !important;
-  stroke: #22d3ee !important;
-  stroke-width: 2px !important;
+.mermaid .node path,
+.mermaid .node .rect,
+.mermaid .node .circle,
+.mermaid .node .polygon {
+  fill: var(--bg-surface, #0f0f2e) !important;
+  stroke: var(--primary, #7c3aed) !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0px 2px 8px rgba(0,0,0,0.15));
+  transition: all 0.2s ease;
+}
+
+/* Hover effects for nodes */
+.mermaid .node:hover rect,
+.mermaid .node:hover circle,
+.mermaid .node:hover polygon,
+.mermaid .node:hover path {
+  stroke: var(--accent, #06b6d4) !important;
+  fill: var(--bg-card-hover, #1a1a48) !important;
+}
+
+/* Node labels — Enlarged, highly contrastive and adaptive text */
+.mermaid .nodeLabel,
+.mermaid .node .label,
+.mermaid .label,
+.mermaid text {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  fill: var(--text-primary, #f0f0ff) !important;
+  color: var(--text-primary, #f0f0ff) !important;
+  line-height: 1.5 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 /* Node padding — more room for text */
@@ -692,82 +712,122 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
   overflow: visible !important;
 }
 
-/* Edge labels (text on arrows) — large and visible */
-.mermaid .edgeLabel {
-  font-size: 0.92rem !important;
+/* Edge labels (text on arrows) — Large, clean borders, custom badge */
+.mermaid .edgeLabel,
+.mermaid .edgeLabel rect {
+  font-size: 1rem !important;
   font-weight: 700 !important;
-  background-color: #0f172a !important;
-  padding: 4px 10px !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(34,211,238,0.25) !important;
-  color: #67e8f9 !important;
+  fill: var(--text-primary, #f0f0ff) !important;
+  color: var(--text-primary, #f0f0ff) !important;
 }
 
+.mermaid .edgeLabel span,
 .mermaid .edgeLabel .label {
-  color: #67e8f9 !important;
-  fill: #67e8f9 !important;
+  background-color: var(--bg-card, #13133a) !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  border: 1.5px solid var(--border, rgba(124,58,237,0.2)) !important;
+  color: var(--text-secondary, #a0a0cc) !important;
+  display: inline-block;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-/* Arrow lines — thicker, clearly visible */
+/* Arrow lines — Thicker, adapt to primary theme */
 .mermaid .edgePath .path,
-.mermaid .flowchart-link {
-  stroke: #22d3ee !important;
-  stroke-width: 2.5px !important;
+.mermaid .flowchart-link,
+.mermaid .edgePath path {
+  stroke: var(--text-muted, #5a5a8a) !important;
+  stroke-width: 3px !important;
+  opacity: 0.85;
+}
+
+/* Active links or connection arrows */
+.mermaid .edgePath.active .path,
+.mermaid .edgePath:hover .path {
+  stroke: var(--accent, #06b6d4) !important;
 }
 
 /* Arrow heads */
-.mermaid marker path {
-  fill: #22d3ee !important;
+.mermaid marker path,
+.mermaid .marker path {
+  fill: var(--text-muted, #5a5a8a) !important;
+  stroke-width: 0px !important;
 }
 
 /* Subgraph / cluster styling */
 .mermaid .cluster rect {
-  fill: rgba(34,211,238,0.06) !important;
-  stroke: rgba(34,211,238,0.3) !important;
-  stroke-width: 1.5px !important;
-  rx: 10px !important;
+  fill: var(--bg-surface, #0f0f2e) !important;
+  stroke: var(--border, rgba(124,58,237,0.2)) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 4 4;
+  rx: 12px !important;
+  filter: inset 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .mermaid .cluster .nodeLabel,
-.mermaid .cluster span {
-  font-size: 1.05rem !important;
+.mermaid .cluster span,
+.mermaid .cluster .label {
+  font-size: 1.15rem !important;
   font-weight: 800 !important;
-  fill: #a5f3fc !important;
-  color: #a5f3fc !important;
+  fill: var(--accent, #06b6d4) !important;
+  color: var(--accent, #06b6d4) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-/* Styled / colored nodes — keep their fill, override text for readability */
+/* Overriding styled nodes while preserving readability */
+.mermaid .node[style*="fill"] rect,
+.mermaid .node[style*="fill"] circle,
+.mermaid .node[style*="fill"] path {
+  fill: var(--bg-surface, #0f0f2e) !important;
+}
+
+.mermaid .node[style*="fill:#ef4444"] rect,
+.mermaid .node[style*="fill:#ef4444"] path,
+.mermaid .node[style*="fill:rgb(239, 68, 68)"] rect {
+  stroke: var(--danger, #ef4444) !important;
+  fill: rgba(239, 68, 68, 0.15) !important;
+}
+
+.mermaid .node[style*="fill:#10b981"] rect,
+.mermaid .node[style*="fill:#10b981"] path,
+.mermaid .node[style*="fill:rgb(16, 185, 129)"] rect {
+  stroke: var(--success, #10b981) !important;
+  fill: rgba(16, 185, 129, 0.15) !important;
+}
+
+.mermaid .node[style*="fill:#3b82f6"] rect,
+.mermaid .node[style*="fill:#3b82f6"] path,
+.mermaid .node[style*="fill:rgb(59, 130, 246)"] rect {
+  stroke: var(--accent, #06b6d4) !important;
+  fill: rgba(6, 182, 212, 0.15) !important;
+}
+
 .mermaid .node[style*="fill"] .nodeLabel,
-.mermaid .node[style*="fill"] .label {
-  fill: #f0fdfa !important;
-  color: #f0fdfa !important;
+.mermaid .node[style*="fill"] .label,
+.mermaid .node[style*="fill"] text {
+  fill: var(--text-primary, #f0f0ff) !important;
+  color: var(--text-primary, #f0f0ff) !important;
   font-weight: 800 !important;
-  font-size: 1rem !important;
 }
 
-/* Sequence diagram participants */
+/* Sequence diagram styles */
 .mermaid .actor {
-  fill: #1a2744 !important;
-  stroke: #22d3ee !important;
+  fill: var(--bg-card, #13133a) !important;
+  stroke: var(--primary, #7c3aed) !important;
   stroke-width: 2px !important;
 }
 
 .mermaid .actor text,
 .mermaid text.actor {
-  font-size: 1rem !important;
+  font-size: 1.05rem !important;
   font-weight: 700 !important;
-  fill: #e0f7fa !important;
+  fill: var(--text-primary, #f0f0ff) !important;
 }
 
-/* Sequence diagram message text */
 .mermaid .messageText {
-  font-size: 0.92rem !important;
+  font-size: 0.95rem !important;
   font-weight: 600 !important;
-  fill: #a5f3fc !important;
+  fill: var(--text-primary, #f0f0ff) !important;
 }
 
-/* General text fallback */
-.mermaid text {
-  font-size: 0.95rem !important;
-  fill: #cffafe !important;
-}
