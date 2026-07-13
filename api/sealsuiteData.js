@@ -2263,21 +2263,7 @@ SealSuite uses a strategy called **Zero Trust**. It acts like continuous airport
 2. **What are you carrying?** (Device health check): Walking through the metal detector.
 3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
 
-\`\`\`mermaid
-graph TD
-  A[👤 Visitor / Device] --> B[🚪 Entrance Gate]
-  B --> C{Passport Check? <br>Identity IAM}
-  C -->|Invalid| X[🛑 Turn Back]
-  C -->|Valid| D{Metal Detector? <br>Endpoint Health}
-  D -->|Beeps / Virus Found| Y[🛑 Inspect/Isolate]
-  D -->|Clean| E{Destination Access? <br>DLP Policy}
-  E -->|Allowed| F[✅ Access Granted]
-  E -->|Restricted| Z[🛑 Denied]
-  style X fill:#ef4444,color:#fff
-  style Y fill:#ef4444,color:#fff
-  style Z fill:#ef4444,color:#fff
-  style F fill:#10b981,color:#fff
-\`\`\`
+![Gatekeeper Concept Analogy](/images/gatekeeper_analogy.png)
 
 ---
 
@@ -2319,21 +2305,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
 3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
 
-\`\`\`mermaid
-graph TD
-  A[👤 Pengunjung / Perangkat] --> B[🚪 Gerbang Masuk]
-  B --> C{Pemeriksaan Paspor? <br>Identitas IAM}
-  C -->|Tidak Valid| X[🛑 Putar Balik]
-  C -->|Valid| D{Detektor Logam? <br>Kesehatan Perangkat}
-  D -->|Berbunyi / Ada Virus| Y[🛑 Periksa/Isolasi]
-  D -->|Bersih| E{Akses Tujuan? <br>Kebijakan DLP}
-  E -->|Diizinkan| F[✅ Akses Diberikan]
-  E -->|Dibatasi| Z[🛑 Ditolak]
-  style X fill:#ef4444,color:#fff
-  style Y fill:#ef4444,color:#fff
-  style Z fill:#ef4444,color:#fff
-  style F fill:#10b981,color:#fff
-\`\`\`
+![Konsep Penjaga Pintu](/images/gatekeeper_analogy.png)
 
 ---
 
@@ -2392,18 +2364,7 @@ The AI Agent leverages Large Language Models (like Doubao LLM) to do three main 
 * **IT Concept:** Shifting from "post-incident audit" to "proactive control".
 * **Easy Analogy:** Instead of waiting for a leak to happen and then looking at the security cameras after the data is gone, the AI gate immediately stops the person and recommends a rule to prevent it from ever happening again.
 
-\`\`\`mermaid
-flowchart LR
-  A[📄 Outbound File Log] --> B(🔍 AI Agent Scan)
-  B --> C{Is the behavior normal?}
-  C -->|Yes| D[✅ Release File]
-  C -->|No / Risky| E[⚠️ Flag Risk Event]
-  E --> F[🔔 Notify Manager / Block Tunnel]
-  E --> G[📝 Recommend New Policy Rule]
-  style D fill:#10b981,color:#fff
-  style E fill:#f59e0b,color:#fff
-  style G fill:#7c3aed,color:#fff
-\`\`\`
+![AI Security Guard Analogy](/images/super_security_guard.png)
 
 ---
 
@@ -2442,23 +2403,11 @@ AI Agent memanfaatkan Model Bahasa Besar (seperti Doubao LLM) untuk melakukan ti
 * **Konsep IT:** Mengidentifikasi keanehan berdasarkan peran dan kebiasaan kerja karyawan.
 * **Analogi Sederhana:** Jika seorang kasir di bandara mulai membawa cetak biru skema pesawat, atau jika staf layanan pelanggan mulai mengunduh ribuan riwayat kartu kredit pada jam 3:00 pagi, ada sesuatu yang tidak beres.
 * **AI Security Guard:** AI Agent memahami peran pekerjaan karyawan. Ia tahu bahwa meskipun wajar bagi seorang desainer grafis untuk membagikan gambar besar, sangat mencurigakan jika seorang petugas keuangan tiba-tiba mengunggah file kode pemrograman atau arsip basis data besar ke penyimpanan cloud eksternal.
-
 ### 3. Aksi Pintu Pintar (Intelligent Policy Recommendation)
 * **Konsep IT:** Beralih dari "pemeriksaan setelah kejadian" menjadi "pencegahan aktif secara langsung".
 * **Analogi Sederhana:** Daripada menunggu kebocoran data terjadi baru kemudian melihat kamera keamanan setelah datanya hilang, gerbang AI segera menghentikan orang tersebut dan menyarankan aturan baru agar hal itu tidak terjadi lagi.
 
-\`\`\`mermaid
-flowchart LR
-  A[📄 Catatan File Keluar] --> B(🔍 Pemindaian AI Agent)
-  B --> C{Apakah aktivitas normal?}
-  C -->|Ya| D[✅ Lepaskan File]
-  C -->|Tidak / Berisiko| E[⚠️ Tandai Risiko]
-  E --> F[🔔 Beritahu Manajer / Blokir Akses]
-  E --> G[📝 Rekomendasikan Aturan Baru]
-  style D fill:#10b981,color:#fff
-  style E fill:#f59e0b,color:#fff
-  style G fill:#7c3aed,color:#fff
-\`\`\`
+![Penjaga Keamanan Super AI](/images/super_security_guard.png)
 
 ---
 
