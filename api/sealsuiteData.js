@@ -2319,7 +2319,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 
 To protect your company's data, SealSuite relies on three main pillars working side-by-side. Think of them as the three main safety measures at any major event or location.
 
-![The 3 Pillars of SealSuite](/images/sealsuite_pillars.png)
+![The 3 Pillars of SealSuite](/images/sealsuite_ai_dlp.png)
 
 ---
 
@@ -2341,7 +2341,7 @@ To protect your company's data, SealSuite relies on three main pillars working s
 
 Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama yang bekerja saling berdampingan. Bayangkan ini sebagai tiga tindakan pengamanan utama di setiap acara atau lokasi besar.
 
-![3 Pilar Utama SealSuite](/images/sealsuite_pillars.png)
+![3 Pilar Utama SealSuite](/images/sealsuite_ai_dlp.png)
 
 ---
 
