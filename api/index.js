@@ -309,12 +309,16 @@ const initDb = async (retries = 10, delay = 3000) => {
 
       // ─── SEED: Courses ───
       const courseSeeds = [
+        // ── Vibe Coding Track ──
         { title: 'IT Basics for AI Coding', description: 'Beginner-friendly IT concepts explained using simple analogies. Learn about Prompts, Deployment, and Git without the jargon.', level: 'beginner', category: 'fundamentals', order_index: 0, required_plan: 'free' },
         { title: 'Vibe Coding 101', description: 'Learn the mindset and fundamentals of AI-powered coding. Understand how to collaborate with AI to build anything fast.', level: 'beginner', category: 'fundamentals', order_index: 1, required_plan: 'pro' },
         { title: 'Prompt Engineering Mastery', description: 'Master the art of crafting perfect AI prompts for code generation. Learn patterns, formulas, and advanced techniques.', level: 'beginner', category: 'prompting', order_index: 2, required_plan: 'pro' },
         { title: 'Build Your First App in 4 Hours', description: 'A hands-on guide to building and deploying a full web application from scratch using only AI assistance.', level: 'intermediate', category: 'project', order_index: 3, required_plan: 'pro' },
         { title: 'AI Code Review & Debugging', description: 'Learn to spot bugs, security holes, and bad patterns in AI-generated code. Then fix them — with AI.', level: 'intermediate', category: 'quality', order_index: 4, required_plan: 'pro' },
         { title: 'Security-Aware Vibe Coding', description: 'Penetration test your AI-built apps. Find vulnerabilities, practice prompt injection defense, and ship secure code.', level: 'advanced', category: 'security', order_index: 5, required_plan: 'pro' },
+        // ── Cybersecurity Track (SealSuite) ──
+        { title: 'SealSuite for Administrators', description: 'Master the SealSuite platform as an IT administrator. Learn Zero Trust architecture, identity management, VPN setup, endpoint security, DLP, and automated threat response from the Admin Console.', level: 'intermediate', category: 'cybersecurity', order_index: 6, required_plan: 'pro', thumbnail: '/images/sealsuite_admin.png' },
+        { title: 'SealSuite for End Users', description: 'Get started with SealSuite as an employee. Learn how to use Single Sign-On, connect to VPN, understand device security requirements, and protect company data in your daily work.', level: 'beginner', category: 'cybersecurity', order_index: 7, required_plan: 'free', thumbnail: '/images/sealsuite_user.png' },
       ];
 
       for (const c of courseSeeds) {
@@ -322,22 +326,23 @@ const initDb = async (retries = 10, delay = 3000) => {
         const existing = await pool.query(`SELECT id FROM courses WHERE title=$1`, [c.title]);
         if (!existing.rows.length) {
           const courseRes = await pool.query(
-            `INSERT INTO courses (title, description, level, category, created_by, is_published, order_index, required_plan) VALUES ($1,$2,$3,$4,$5,true,$6,$7) RETURNING id`,
-            [c.title, c.description, c.level, c.category, masterId, c.order_index, c.required_plan || 'pro']
+            `INSERT INTO courses (title, description, thumbnail, level, category, created_by, is_published, order_index, required_plan) VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8) RETURNING id`,
+            [c.title, c.description, c.thumbnail || null, c.level, c.category, masterId, c.order_index, c.required_plan || 'pro']
           );
           courseId = courseRes.rows[0].id;
         } else {
           courseId = existing.rows[0].id;
           // Update course info in case description changed
           await pool.query(
-            `UPDATE courses SET description=$1, level=$2, category=$3, order_index=$4, required_plan=$5 WHERE id=$6`,
-            [c.description, c.level, c.category, c.order_index, c.required_plan || 'pro', courseId]
+            `UPDATE courses SET description=$1, thumbnail=COALESCE($2, thumbnail), level=$3, category=$4, order_index=$5, required_plan=$6 WHERE id=$7`,
+            [c.description, c.thumbnail || null, c.level, c.category, c.order_index, c.required_plan || 'pro', courseId]
           );
         }
 
         // Seed/Update lessons uniquely per course using imported data
         const seedData = require('./seedData.js');
-        const lessonSeeds = seedData[c.title] || [];
+        const sealsuiteData = require('./sealsuiteData.js');
+        const lessonSeeds = seedData[c.title] || sealsuiteData[c.title] || [];
         
         for (const l of lessonSeeds) {
           const existingLesson = await pool.query(

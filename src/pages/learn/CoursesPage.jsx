@@ -6,7 +6,7 @@ import CourseCard from '../../components/CourseCard';
 import { Search, Filter, BookOpen, Zap, Star, ArrowRight } from 'lucide-react';
 
 const LEVELS = ['all', 'beginner', 'intermediate', 'advanced'];
-const CATEGORIES = ['all', 'fundamentals', 'prompting', 'project', 'quality', 'security'];
+const CATEGORIES = ['all', 'fundamentals', 'prompting', 'project', 'quality', 'security', 'cybersecurity'];
 
 export default function CoursesPage() {
   const { authFetch } = useAuth();
