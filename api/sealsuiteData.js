@@ -2264,7 +2264,7 @@ SealSuite uses a strategy called **Zero Trust** (Never Trust, Always Verify). It
 2. **What are you carrying?** (Device health check): Walking through the metal detector.
 3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
 
-![Office vs Airport Security](/images/office_vs_airport_security.png)
+![Office vs Airport Security](/images/sealsuite_airport_analogy.png)
 
 ---
 
@@ -2294,7 +2294,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
 3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
 
-![Konsep Penjaga Pintu](/images/office_vs_airport_security.png)
+![Konsep Penjaga Pintu](/images/sealsuite_airport_analogy.png)
 
 ---
 
