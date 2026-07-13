@@ -71,7 +71,7 @@ export default function CourseEditor() {
     }
   };
 
-  const handleFileUpload = async (e, lessonIndex) => {
+  const handleFileUpload = async (e, lessonIndex, uploadType = 'video') => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -79,14 +79,6 @@ export default function CourseEditor() {
     formData.append('file', file);
 
     try {
-      const response = await authFetch('/upload', {
-        method: 'POST',
-        body: formData,
-        headers: {} // Need to let browser set Content-Type for FormData
-      }, true); // if authFetch supports skipping headers
-
-      // In case authFetch overrides Content-Type to application/json, we need a custom fetch
-      // Let's use standard fetch with token:
       const token = localStorage.getItem('vl_token');
       const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
         method: 'POST',
@@ -100,12 +92,19 @@ export default function CourseEditor() {
       if (!uploadRes.ok) throw new Error(data.error || 'Upload failed');
 
       const newLessons = [...lessons];
-      newLessons[lessonIndex].video_url = data.url;
-      setLessons(newLessons);
-      success('Video uploaded successfully!');
+      if (uploadType === 'image') {
+        const imageMarkdown = `\n![${file.name}](${data.url})\n`;
+        newLessons[lessonIndex].content = (newLessons[lessonIndex].content || '') + imageMarkdown;
+        setLessons(newLessons);
+        success('Image uploaded and inserted into content!');
+      } else {
+        newLessons[lessonIndex].video_url = data.url;
+        setLessons(newLessons);
+        success('Video uploaded successfully!');
+      }
     } catch (err) {
       console.error(err);
-      error('Failed to upload video');
+      error(`Failed to upload ${uploadType}`);
     }
   };
 
@@ -406,6 +405,32 @@ export default function CourseEditor() {
                       </div>
                     </div>
                   )}
+
+                  {/* Universal Image/Picture Upload Area */}
+                  <div className="form-group mb-3" style={{ borderTop: '1px dashed var(--border)', paddingTop: '1rem' }}>
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent)' }}>
+                      🖼️ Insert Course Image / Illustration
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        id={`upload-image-${index}`} 
+                        style={{ display: 'none' }} 
+                        onChange={(e) => handleFileUpload(e, index, 'image')}
+                      />
+                      <button 
+                        type="button"
+                        className="btn btn-secondary btn-sm" 
+                        onClick={() => document.getElementById(`upload-image-${index}`).click()}
+                      >
+                        Upload Picture
+                      </button>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Select a file to automatically generate and append the Markdown image tag.
+                      </span>
+                    </div>
+                  </div>
 
                   {lesson.type === 'quiz' && (
                     <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
