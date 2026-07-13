@@ -2582,26 +2582,26 @@ Selain melindungi Anda, SealSuite mencatat riwayat aktivitas Anda di buku catata
 Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fitur keamanan utama dengan analogi sehari-hari.`,
       quizzes: [
         {
-          question: 'In our airport security analogy, what represents SealSuite\'s "Endpoint Security" check?',
+          question: 'If SealSuite detects that your laptop\'s built-in Antivirus program is deactivated, what action will the platform take?',
           options: [
-            'Checking the passenger\'s passport and identity card',
-            'Walking through the metal detector gate to scan for dangerous items',
-            'Scanning the barcode on the boarding ticket',
-            'Buying a cup of coffee inside the airport terminal lounge'
+            'It will automatically download and install a new antivirus software for you',
+            'It will trigger the Gatekeeper policy to restrict or block your network access until you enable the Antivirus',
+            'It will ignore the state as long as your username and password are correct',
+            'It will shut down your laptop immediately to prevent damage'
           ],
           correct_answer: 1,
-          explanation: 'Endpoint Security is like a metal detector gate: it scans your device (laptop/phone) to ensure it is healthy and not carrying any dangerous security issues (such as deactivated antivirus or out-of-date systems) before permitting access.'
+          explanation: 'As part of the device baseline checks, SealSuite ensures critical security software like Antivirus is running. If deactivated, access to corporate networks is restricted to prevent compromised devices from exposing the enterprise.'
         },
         {
-          question: 'What is the main difference between traditional "fortress" security and SealSuite\'s "Zero Trust" security?',
+          question: 'How does SealSuite\'s Identity & Access Management (SSO and MFA) verify you are the real employee, not an attacker who stole your password?',
           options: [
-            'Traditional security is faster, while Zero Trust is slower to run',
-            'Traditional security trusts anyone once they are inside the network, while Zero Trust continuously checks identity and device security',
-            'Zero Trust does not use passwords at all',
-            'Traditional security only works for offices, while Zero Trust only works for airports'
+            'By requiring you to enter the password multiple times in a row',
+            'By combining Single Sign-On (SSO) with a Multi-Factor (MFA) temporary verification code sent to your physical phone',
+            'By scanning your physical fingerprint directly onto your computer screen',
+            'By verifying if you are connected to the office Wi-Fi network first'
           ],
           correct_answer: 1,
-          explanation: 'Traditional security relies on network boundaries (once inside, you are trusted). Zero Trust never assumes trust—it continuously verifies the identity and device health of every access request, even if they are already connected.'
+          explanation: 'IAM prevents password theft bypasses by utilizing Multi-Factor Authentication (MFA). Even if an attacker steals your SSO master password, they are blocked because they do not have your physical device to retrieve the authentication code.'
         },
         {
           question: 'Single Sign-On (SSO) is compared to a "Golden Master Key" because:',
