@@ -662,57 +662,112 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
 .mermaid svg {
   max-width: 100%;
   height: auto !important;
-  min-height: 100px;
+  min-height: 140px;
+  font-size: 16px !important;
 }
 
-/* Node labels — clear, legible */
+/* Node labels — large, readable on any background */
 .mermaid .nodeLabel,
-.mermaid .node .label {
-  font-size: 0.85rem !important;
-  font-weight: 600 !important;
-  fill: #fff !important;
-  color: #fff !important;
+.mermaid .node .label,
+.mermaid .label {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  fill: #e0f7fa !important;
+  color: #e0f7fa !important;
+  line-height: 1.4 !important;
 }
 
-/* Default node fill — dark surface, visible */
+/* Node shapes — tinted fill so labels pop */
 .mermaid .node rect,
 .mermaid .node circle,
-.mermaid .node polygon {
-  stroke: rgba(124,58,237,0.5) !important;
-  stroke-width: 1.5px !important;
+.mermaid .node polygon,
+.mermaid .node path {
+  fill: #1a2744 !important;
+  stroke: #22d3ee !important;
+  stroke-width: 2px !important;
 }
 
-/* Edge labels (text on arrows) */
+/* Node padding — more room for text */
+.mermaid .node foreignObject {
+  overflow: visible !important;
+}
+
+/* Edge labels (text on arrows) — large and visible */
 .mermaid .edgeLabel {
-  font-size: 0.78rem !important;
-  font-weight: 600 !important;
-  background-color: var(--bg-card, #1a1a2e) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  color: var(--text-secondary, #c4c4d4) !important;
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  background-color: #0f172a !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(34,211,238,0.25) !important;
+  color: #67e8f9 !important;
 }
 
-/* Arrow lines */
-.mermaid .edgePath .path {
-  stroke: rgba(124,58,237,0.6) !important;
-  stroke-width: 1.5px !important;
+.mermaid .edgeLabel .label {
+  color: #67e8f9 !important;
+  fill: #67e8f9 !important;
+}
+
+/* Arrow lines — thicker, clearly visible */
+.mermaid .edgePath .path,
+.mermaid .flowchart-link {
+  stroke: #22d3ee !important;
+  stroke-width: 2.5px !important;
 }
 
 /* Arrow heads */
 .mermaid marker path {
-  fill: rgba(124,58,237,0.7) !important;
+  fill: #22d3ee !important;
 }
 
-/* Subgraph styling */
+/* Subgraph / cluster styling */
 .mermaid .cluster rect {
-  fill: rgba(124,58,237,0.06) !important;
-  stroke: rgba(124,58,237,0.25) !important;
-  rx: 8px !important;
+  fill: rgba(34,211,238,0.06) !important;
+  stroke: rgba(34,211,238,0.3) !important;
+  stroke-width: 1.5px !important;
+  rx: 10px !important;
 }
 
-.mermaid .cluster .nodeLabel {
-  font-size: 0.82rem !important;
+.mermaid .cluster .nodeLabel,
+.mermaid .cluster span {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  fill: #a5f3fc !important;
+  color: #a5f3fc !important;
+}
+
+/* Styled / colored nodes — keep their fill, override text for readability */
+.mermaid .node[style*="fill"] .nodeLabel,
+.mermaid .node[style*="fill"] .label {
+  fill: #f0fdfa !important;
+  color: #f0fdfa !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+}
+
+/* Sequence diagram participants */
+.mermaid .actor {
+  fill: #1a2744 !important;
+  stroke: #22d3ee !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .actor text,
+.mermaid text.actor {
+  font-size: 1rem !important;
   font-weight: 700 !important;
-  fill: var(--text-primary, #e4e4f1) !important;
+  fill: #e0f7fa !important;
 }
 
+/* Sequence diagram message text */
+.mermaid .messageText {
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  fill: #a5f3fc !important;
+}
+
+/* General text fallback */
+.mermaid text {
+  font-size: 0.95rem !important;
+  fill: #cffafe !important;
+}
