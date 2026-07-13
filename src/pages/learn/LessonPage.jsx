@@ -566,6 +566,7 @@ export default function LessonPage() {
 
 
   const [lesson, setLesson] = useState(null);
+  const mermaidIdRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState({});
@@ -602,13 +603,21 @@ export default function LessonPage() {
       .finally(() => { if (mountedRef.current) setLoading(false); });
   }, [id]);
 
+  // Re-run mermaid whenever the lesson loads OR the language toggles
   useEffect(() => {
     if (lesson) {
+      mermaidIdRef.current += 1;
+      // Small delay to let React render the new .mermaid divs into the DOM
       setTimeout(() => {
-        try { mermaid.run({ querySelector: '.mermaid' }); } catch (e) {}
-      }, 100);
+        try {
+          document.querySelectorAll('.mermaid[data-processed]').forEach(el => {
+            el.removeAttribute('data-processed');
+          });
+          mermaid.run({ querySelector: '.mermaid' });
+        } catch (e) { /* mermaid parse error — not critical */ }
+      }, 150);
     }
-  }, [lesson]);
+  }, [lesson, lang]);
 
   const handleComplete = async (andNavigateNext = false) => {
     if (completing) return; // guard against double-click
@@ -825,7 +834,23 @@ export default function LessonPage() {
                   code: ({node, inline, className, children, ...props}) => {
                     const match = /language-(\w+)/.exec(className || '');
                     if (!inline && match && match[1] === 'mermaid') {
-                      return <div className="mermaid" style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0', padding: '1rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>{String(children).replace(/\n$/, '')}</div>;
+                      return (
+                        <div
+                          key={`mermaid-${mermaidIdRef.current}-${String(children).length}`}
+                          className="mermaid"
+                          style={{
+                            display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            margin: '2rem 0', padding: '1.5rem 1rem',
+                            background: 'var(--bg-surface)',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--border-light)',
+                            overflowX: 'auto',
+                            minHeight: 120,
+                          }}
+                        >
+                          {String(children).replace(/\n$/, '')}
+                        </div>
+                      );
                     }
                     return !inline ? (
                       <pre style={{ background: '#1e1e2e', padding: '1rem', borderRadius: 'var(--radius-md)', overflowX: 'auto', marginBottom: '1rem', border: '1px solid var(--border-light)' }}>

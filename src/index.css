@@ -654,3 +654,65 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
   }
 }
 
+/* ── Mermaid Diagram Styling ── */
+.mermaid {
+  font-family: 'Inter', 'Segoe UI', sans-serif !important;
+}
+
+.mermaid svg {
+  max-width: 100%;
+  height: auto !important;
+  min-height: 100px;
+}
+
+/* Node labels — clear, legible */
+.mermaid .nodeLabel,
+.mermaid .node .label {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  fill: #fff !important;
+  color: #fff !important;
+}
+
+/* Default node fill — dark surface, visible */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node polygon {
+  stroke: rgba(124,58,237,0.5) !important;
+  stroke-width: 1.5px !important;
+}
+
+/* Edge labels (text on arrows) */
+.mermaid .edgeLabel {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  background-color: var(--bg-card, #1a1a2e) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  color: var(--text-secondary, #c4c4d4) !important;
+}
+
+/* Arrow lines */
+.mermaid .edgePath .path {
+  stroke: rgba(124,58,237,0.6) !important;
+  stroke-width: 1.5px !important;
+}
+
+/* Arrow heads */
+.mermaid marker path {
+  fill: rgba(124,58,237,0.7) !important;
+}
+
+/* Subgraph styling */
+.mermaid .cluster rect {
+  fill: rgba(124,58,237,0.06) !important;
+  stroke: rgba(124,58,237,0.25) !important;
+  rx: 8px !important;
+}
+
+.mermaid .cluster .nodeLabel {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  fill: var(--text-primary, #e4e4f1) !important;
+}
+
