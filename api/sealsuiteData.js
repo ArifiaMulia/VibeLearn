@@ -1,4 +1,4 @@
-﻿// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // SealSuite Training Materials — Lesson Seed Data
 // Category: cybersecurity
 // Courses: "SealSuite for Administrators" | "SealSuite for End Users"
@@ -2223,6 +2223,315 @@ Test your knowledge of SealSuite as an end user.`,
           ],
           correct_answer: 2,
           explanation: 'The safest approach is to access the file remotely via VPN without copying it to a local device or personal account. This keeps the data on the company server (where it\'s protected) and avoids creating an uncontrolled copy outside the corporate environment.'
+        }
+      ]
+    }
+  ],
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COURSE 3: SealSuite Fundamentals
+  // ═══════════════════════════════════════════════════════════════════════════
+  "SealSuite Fundamentals": [
+    {
+      title: 'Simplifying Cybersecurity: The Gatekeeper Concept',
+      title_id: 'Menyederhanakan Keamanan Siber: Konsep Penjaga Pintu',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 100,
+      order_index: 1,
+      resources: [
+        { type: 'docs', label: 'Official SealSuite Intro', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-what-is-sealsuite' }
+      ],
+      content: `# Simplifying Cybersecurity: The Gatekeeper Concept
+
+Imagine entering an airport. Before you can board a plane, you must go through a security checkpoint. You place your bags on a scanner, and you walk through a **metal detector**. If you have a hidden knife or a key, the detector immediately beeps. The security officer stops you, inspects your belongings, and makes sure you are safe to proceed.
+
+This is exactly how **SealSuite** works for your company's digital office, even if you don't have an IT or cybersecurity background!
+
+---
+
+## 🏢 Traditional Security vs. SealSuite (Zero Trust)
+
+Historically, offices secured data like a fortress: a large wall (called a firewall) kept outsiders out. But once you were inside the building (on the office Wi-Fi), you were trusted implicitly. You could access files, databases, and servers without questions.
+
+But what if a bad actor snuck in disguised as an employee? Or what if a trusted employee's laptop got infected by a virus? They would have free access to everything!
+
+### ✈️ The Airport Security Approach
+SealSuite uses a strategy called **Zero Trust**. It acts like continuous airport security:
+
+1. **Who are you?** (Identity check): Just like checking your passport and boarding pass.
+2. **What are you carrying?** (Device health check): Walking through the metal detector.
+3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
+
+\`\`\`mermaid
+graph TD
+  A[👤 Visitor / Device] --> B[🚪 Entrance Gate]
+  B --> C{Passport Check? <br>Identity IAM}
+  C -->|Invalid| X[🛑 Turn Back]
+  C -->|Valid| D{Metal Detector? <br>Endpoint Health}
+  D -->|Beeps / Virus Found| Y[🛑 Inspect/Isolate]
+  D -->|Clean| E{Destination Access? <br>DLP Policy}
+  E -->|Allowed| F[✅ Access Granted]
+  E -->|Restricted| Z[🛑 Denied]
+  style X fill:#ef4444,color:#fff
+  style Y fill:#ef4444,color:#fff
+  style Z fill:#ef4444,color:#fff
+  style F fill:#10b981,color:#fff
+\`\`\`
+
+---
+
+## 🛠️ The 3 Pillars of SealSuite Explained Simply
+
+Let's break down SealSuite's core modules using our everyday Gatekeeper analogies:
+
+| IT Term | Easy Analogy | How it helps you |
+|:---|:---|:---|
+| **Identity & SSO (IAM)** | **The Digital Boarding Pass** | One secure digital ID card to unlock all your office work apps (Email, HR, drive) without remembering 50 different passwords. |
+| **Endpoint Security** | **The Metal Detector Gate** | Scans your laptop before letting it connect to the network. If your antivirus is off or your OS is too old, the gate "beeps" and blocks access until it is updated. |
+| **Data Loss Prevention (DLP)** | **The Bag Check & X-Ray** | Monitors files being sent outside the company. If you try to copy a file with customer details onto a personal USB or personal chat app, the scanner blocks it to prevent a leak. |
+
+---
+
+## 💡 Summary to Share with Others
+
+> **How to explain SealSuite in 10 seconds:**
+> *"SealSuite is like a digital metal detector gate for our company. It checks who we are, makes sure our work devices are safe and clean from viruses, and ensures our company's confidential files don't accidentally leak out."*`,
+
+      content_id: `# Menyederhanakan Keamanan Siber: Konsep Penjaga Pintu
+
+Bayangkan ketika Anda memasuki area bandara. Sebelum Anda dapat naik ke pesawat, Anda harus melewati pos pemeriksaan keamanan. Anda meletakkan tas Anda di atas pemindai (scanner), dan Anda berjalan melalui **pintu detektor logam (metal detector)**. Jika Anda membawa pisau tersembunyi atau senjata, detektor tersebut akan segera berbunyi bip. Petugas keamanan akan menghentikan Anda, memeriksa barang bawaan Anda, dan memastikan Anda aman sebelum dipersilakan melanjutkan perjalanan.
+
+Ini adalah cara kerja dari **SealSuite** untuk mengamankan kantor digital perusahaan Anda, meskipun Anda tidak memiliki latar belakang IT atau keamanan siber!
+
+---
+
+## 🏢 Keamanan Tradisional vs. SealSuite (Zero Trust)
+
+Di masa lalu, kantor mengamankan data seperti sebuah benteng: dinding besar (disebut firewall) digunakan untuk mencegah orang luar masuk. Namun sekali Anda berhasil masuk ke dalam gedung (atau terhubung ke Wi-Fi kantor), Anda langsung dipercaya sepenuhnya. Anda bisa bebas membuka file, basis data, dan server tanpa ada yang bertanya.
+
+Namun, bagaimana jika ada orang jahat menyelinap masuk menyamar sebagai karyawan? Atau bagaimana jika laptop karyawan tepercaya terkena virus? Mereka akan mendapatkan akses bebas ke semua dokumen penting!
+
+### ✈️ Pendekatan Keamanan Bandara
+SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Selalu Verifikasi). Ini bertindak seperti pemeriksaan keamanan bandara yang terus-menerus:
+
+1. **Siapa Anda?** (Pemeriksaan Identitas): Sama seperti memeriksa paspor dan tiket pesawat Anda.
+2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
+3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
+
+\`\`\`mermaid
+graph TD
+  A[👤 Pengunjung / Perangkat] --> B[🚪 Gerbang Masuk]
+  B --> C{Pemeriksaan Paspor? <br>Identitas IAM}
+  C -->|Tidak Valid| X[🛑 Putar Balik]
+  C -->|Valid| D{Detektor Logam? <br>Kesehatan Perangkat}
+  D -->|Berbunyi / Ada Virus| Y[🛑 Periksa/Isolasi]
+  D -->|Bersih| E{Akses Tujuan? <br>Kebijakan DLP}
+  E -->|Diizinkan| F[✅ Akses Diberikan]
+  E -->|Dibatasi| Z[🛑 Ditolak]
+  style X fill:#ef4444,color:#fff
+  style Y fill:#ef4444,color:#fff
+  style Z fill:#ef4444,color:#fff
+  style F fill:#10b981,color:#fff
+\`\`\`
+
+---
+
+## 🛠️ 3 Pilar Utama SealSuite dengan Analogi Sederhana
+
+Mari kita bedah modul inti SealSuite menggunakan analogi sehari-hari:
+
+| Istilah IT | Analogi Sederhana | Manfaat Bagi Anda |
+|:---|:---|:---|
+| **Identity & SSO (IAM)** | **Tiket Boarding Digital** | Satu kartu identitas digital yang aman untuk membuka semua aplikasi kerja kantor (Email, HR, drive) tanpa perlu mengingat 50 kata sandi yang berbeda. |
+| **Endpoint Security** | **Gerbang Detektor Logam** | Memindai laptop Anda sebelum diizinkan terhubung ke jaringan. Jika antivirus Anda mati atau sistem operasi Anda usang, pintu akan "berbunyi bip" dan memblokir akses hingga laptop Anda diperbarui. |
+| **Data Loss Prevention (DLP)** | **Pemeriksaan Tas & Sinar-X** | Memantau file yang dikirim ke luar perusahaan. Jika Anda mencoba menyalin file berisi data rahasia pelanggan ke USB pribadi atau aplikasi chat pribadi, pemindai akan memblokirnya untuk mencegah kebocoran. |
+
+---
+
+## 💡 Ringkasan untuk Dibagikan kepada Orang Lain
+
+> **Cara menjelaskan SealSuite dalam 10 detik:**
+> *"SealSuite itu seperti pintu detektor logam digital untuk perusahaan kita. Sistem ini memastikan siapa diri kita, memastikan perangkat kerja kita aman & bersih dari virus, dan menjaga agar file rahasia perusahaan tidak bocor keluar secara tidak sengaja."*`
+    },
+    {
+      title: 'AI Data Security Agents: The Superpowered Security Guards',
+      title_id: 'AI Data Security Agents: Penjaga Keamanan Super',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 100,
+      order_index: 2,
+      resources: [
+        { type: 'docs', label: 'SealSuite AI Agent Features', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-what-is-sealsuite' }
+      ],
+      content: `# AI Data Security Agents: The Superpowered Security Guards
+
+In a real airport, security guards can get tired. They might miss a suspicious container, fail to read a blurred text on a document, or get overwhelmed by thousands of passengers passing through all at once.
+
+In cybersecurity, companies generate **millions of computer logs (audit logs)** every day. It is humanly impossible for IT staff to review every single file transfer or link clicked.
+
+This is where **SealSuite\'s Data Security AI Agent** comes in. Think of it as a **superpowered security guard** equipped with absolute intelligence, laser vision, and infinite speed.
+
+---
+
+## 🤖 What does the AI Agent do? (Analogy Style)
+
+The AI Agent leverages Large Language Models (like Doubao LLM) to do three main tasks that normal software and humans struggle with:
+
+### 1. Laser Vision (Multimodal Data Identification)
+* **IT Concept:** Auto-categorizing sensitive data within images, code snippets, templates, or design files.
+* **Easy Analogy:** Traditional security only searches for text keywords. It is like a guard looking for a label that says *"DANGER"*. If a smuggler draws a picture of a bomb or wraps code in an unlabelled box, the traditional guard misses it.
+* **AI Security Guard:** The AI looks at screenshots, scan photos, blueprints, and computer programming codes. It actually **understands what is inside the picture or document** and classifies it as sensitive, even if there are no explicit warning keywords!
+
+### 2. Mind Reader (Behavioral Risk Insights)
+* **IT Concept:** Identifying anomalies based on user roles and behaviors.
+* **Easy Analogy:** If a cashier at the airport starts carrying blueprint schematics of the aircraft, or if a customer service staff starts downloading thousands of credit card logs at 3:00 AM, something is wrong.
+* **AI Security Guard:** The AI Agent understands employee job roles. It knows that while it\'s normal for a graphic designer to share large pictures, it is highly suspicious for a finance officer to suddenly upload source code files or large database archives to external cloud storage.
+
+### 3. Smart Gate Actions (Intelligent Policy Recommendation)
+* **IT Concept:** Shifting from "post-incident audit" to "proactive control".
+* **Easy Analogy:** Instead of waiting for a leak to happen and then looking at the security cameras after the data is gone, the AI gate immediately stops the person and recommends a rule to prevent it from ever happening again.
+
+\`\`\`mermaid
+flowchart LR
+  A[📄 Outbound File Log] --> B(🔍 AI Agent Scan)
+  B --> C{Is the behavior normal?}
+  C -->|Yes| D[✅ Release File]
+  C -->|No / Risky| E[⚠️ Flag Risk Event]
+  E --> F[🔔 Notify Manager / Block Tunnel]
+  E --> G[📝 Recommend New Policy Rule]
+  style D fill:#10b981,color:#fff
+  style E fill:#f59e0b,color:#fff
+  style G fill:#7c3aed,color:#fff
+\`\`\`
+
+---
+
+## 🎯 Case Study: JinkoSolar
+A global solar energy company with over 10,000 employees used SealSuite\'s AI Agents:
+* **The Problem:** Thousands of employees accessed company servers remotely via VPN, creating massive logs that were impossible to audit manually.
+* **The AI Result:** Reduced risk response and identification times by **50%**, and reduced the volume of manual incident reviews by **50%**.
+
+---
+
+## 💡 Summary to Share with Others
+
+> **How to explain the AI Agent:**
+> *"The SealSuite AI Agent is like an intelligent security guard with x-ray vision. It automatically reads through millions of network logs, understands the contents of files and pictures, and alerts us immediately if someone is doing something that doesn't fit their job description."*`,
+
+      content_id: `# AI Data Security Agents: Penjaga Keamanan Super
+
+Di bandara nyata, petugas keamanan bisa merasa lelah. Mereka mungkin melewatkan wadah yang mencurigakan, gagal membaca teks yang buram pada dokumen, atau kewalahan karena ribuan penumpang yang lewat secara bersamaan.
+
+Dalam keamanan siber, perusahaan menghasilkan **jutaan catatan komputer (audit log)** setiap harinya. Secara manusiawi, mustahil bagi staf IT untuk memeriksa setiap pengiriman file atau tautan yang diklik.
+
+Di sinilah **SealSuite Data Security AI Agent** hadir. Bayangkan ini sebagai **penjaga keamanan berkekuatan super** yang dilengkapi dengan kecerdasan mutlak, penglihatan sinar-X, dan kecepatan tanpa batas.
+
+---
+
+## 🤖 Apa Saja yang Dilakukan oleh AI Agent? (Gaya Analogi)
+
+AI Agent memanfaatkan Model Bahasa Besar (seperti Doubao LLM) untuk melakukan tiga tugas utama yang sulit dilakukan oleh perangkat lunak biasa maupun manusia:
+
+### 1. Penglihatan Sinar-X (Multimodal Data Identification)
+* **Konsep IT:** Mengidentifikasi data sensitif secara otomatis di dalam gambar, potongan kode program, templat, atau file desain.
+* **Analogi Sederhana:** Keamanan tradisional hanya mencari kata kunci teks. Itu seperti penjaga yang hanya mencari label bertuliskan *"BAHAYA"*. Jika penyelundup menggambar gambar bom atau membungkus kode dalam kotak tanpa label, penjaga biasa akan melewatkannya.
+* **AI Security Guard:** AI melihat tangkapan layar, foto pemindaian, cetak biru, dan kode pemrograman komputer. AI benar-benar **memahami apa yang ada di dalam gambar atau dokumen** tersebut dan mengklasifikasikannya sebagai file penting perusahaan, bahkan jika tidak ada kata kunci peringatan eksplisit!
+
+### 2. Pembaca Pikiran (Behavioral Risk Insights)
+* **Konsep IT:** Mengidentifikasi keanehan berdasarkan peran dan kebiasaan kerja karyawan.
+* **Analogi Sederhana:** Jika seorang kasir di bandara mulai membawa cetak biru skema pesawat, atau jika staf layanan pelanggan mulai mengunduh ribuan riwayat kartu kredit pada jam 3:00 pagi, ada sesuatu yang tidak beres.
+* **AI Security Guard:** AI Agent memahami peran pekerjaan karyawan. Ia tahu bahwa meskipun wajar bagi seorang desainer grafis untuk membagikan gambar besar, sangat mencurigakan jika seorang petugas keuangan tiba-tiba mengunggah file kode pemrograman atau arsip basis data besar ke penyimpanan cloud eksternal.
+
+### 3. Aksi Pintu Pintar (Intelligent Policy Recommendation)
+* **Konsep IT:** Beralih dari "pemeriksaan setelah kejadian" menjadi "pencegahan aktif secara langsung".
+* **Analogi Sederhana:** Daripada menunggu kebocoran data terjadi baru kemudian melihat kamera keamanan setelah datanya hilang, gerbang AI segera menghentikan orang tersebut dan menyarankan aturan baru agar hal itu tidak terjadi lagi.
+
+\`\`\`mermaid
+flowchart LR
+  A[📄 Catatan File Keluar] --> B(🔍 Pemindaian AI Agent)
+  B --> C{Apakah aktivitas normal?}
+  C -->|Ya| D[✅ Lepaskan File]
+  C -->|Tidak / Berisiko| E[⚠️ Tandai Risiko]
+  E --> F[🔔 Beritahu Manajer / Blokir Akses]
+  E --> G[📝 Rekomendasikan Aturan Baru]
+  style D fill:#10b981,color:#fff
+  style E fill:#f59e0b,color:#fff
+  style G fill:#7c3aed,color:#fff
+\`\`\`
+
+---
+
+## 🎯 Studi Kasus: JinkoSolar
+Perusahaan energi surya global dengan lebih dari 10.000 karyawan menggunakan AI Agent dari SealSuite:
+* **Masalah:** Ribuan karyawan mengakses server perusahaan dari jarak jauh melalui VPN, menghasilkan jutaan baris catatan aktivitas yang tidak mungkin diperiksa manual.
+* **Hasil Kerja AI:** Mempercepat waktu identifikasi dan penanganan risiko sebesar **50%**, serta memangkas beban pemeriksaan insiden manual hingga **50%**.
+
+---
+
+## 💡 Ringkasan untuk Dibagikan kepada Orang Lain
+
+> **Cara menjelaskan AI Agent:**
+> *"AI Agent dari SealSuite itu seperti penjaga keamanan pintar dengan penglihatan x-ray. Dia membaca jutaan aktivitas jaringan secara otomatis, memahami isi file dan gambar, dan langsung memperingatkan kita jika ada karyawan yang melakukan aktivitas yang tidak sesuai dengan tugas pekerjaannya."*`
+    },
+    {
+      title: 'SealSuite Fundamentals Assessment',
+      title_id: 'Evaluasi Dasar-Dasar SealSuite',
+      type: 'quiz',
+      difficulty: 'beginner',
+      xp_reward: 150,
+      order_index: 3,
+      resources: [],
+      content: `# SealSuite Fundamentals Assessment
+
+Test your understanding of basic SealSuite concepts, Zero Trust architecture, and AI-powered security features using everyday analogies.`,
+      content_id: `# Evaluasi Dasar-Dasar SealSuite
+
+Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fitur keamanan bertenaga AI dengan analogi sehari-hari.`,
+      quizzes: [
+        {
+          question: 'In our airport security analogy, what represents SealSuite\'s "Endpoint Security" check?',
+          options: [
+            'Checking the passenger\'s passport and identity card',
+            'Walking through the metal detector gate to scan for dangerous items',
+            'Scanning the barcode on the boarding ticket',
+            'Buying a cup of coffee inside the airport terminal lounge'
+          ],
+          correct_answer: 1,
+          explanation: 'Endpoint Security is like a metal detector gate: it scans your device (laptop/phone) to ensure it is healthy and not carrying any dangerous security issues (such as deactivated antivirus or out-of-date systems) before permitting access.'
+        },
+        {
+          question: 'What is the main difference between traditional "fortress" security and SealSuite\'s "Zero Trust" security?',
+          options: [
+            'Traditional security is faster, while Zero Trust is slower to run',
+            'Traditional security trusts anyone once they are inside the network, while Zero Trust continuously checks identity and device security',
+            'Zero Trust does not use passwords at all',
+            'Traditional security only works for offices, while Zero Trust only works for airports'
+          ],
+          correct_answer: 1,
+          explanation: 'Traditional security relies on network boundaries (once inside, you are trusted). Zero Trust never assumes trust—it continuously verifies the identity and device health of every access request, even if they are already connected.'
+        },
+        {
+          question: 'Why does SealSuite\'s AI Agent use "Multimodal Data Identification" instead of just searching for text keywords?',
+          options: [
+            'Because text keywords are too expensive to configure',
+            'So it can understand the contents of screenshots, scan photos, blueprints, and programming code that do not have warning text labels',
+            'To make the system compile and run programs faster',
+            'To allow employees to watch and download videos faster'
+          ],
+          correct_answer: 1,
+          explanation: 'Multimodal capabilities allow the AI Agent to look at visual blueprints, photos, code blocks, and documents to "comprehend" their context, rather than relying on simple text matches which can be easily bypassed.'
+        },
+        {
+          question: 'An employee who works in Marketing suddenly downloads massive amounts of database source code at 3:00 AM. How does the AI Agent identify this risk?',
+          options: [
+            'It checks if the employee has paid their subscription plan',
+            'It reads their mind via browser trackers',
+            'It performs behavioral risk analysis, correlating their job role with abnormal file access patterns and hours',
+            'It asks the database administrator to review the activity manually first'
+          ],
+          correct_answer: 2,
+          explanation: 'By combining employee roles with historical behavioral baselines, the AI Agent notices when an employee\'s activity (downloading code) does not match their typical job function (Marketing), flagging it as an anomalous risk.'
         }
       ]
     }
