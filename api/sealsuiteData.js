@@ -2263,7 +2263,7 @@ SealSuite uses a strategy called **Zero Trust**. It acts like continuous airport
 2. **What are you carrying?** (Device health check): Walking through the metal detector.
 3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
 
-![Gatekeeper Concept Analogy](/images/gatekeeper_analogy.png)
+![Gatekeeper Concept Analogy](/images/sealsuite_airport_analogy.png)
 
 ---
 
@@ -2305,7 +2305,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
 3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
 
-![Konsep Penjaga Pintu](/images/gatekeeper_analogy.png)
+![Konsep Penjaga Pintu](/images/sealsuite_airport_analogy.png)
 
 ---
 
@@ -2364,7 +2364,7 @@ The AI Agent leverages Large Language Models (like Doubao LLM) to do three main 
 * **IT Concept:** Shifting from "post-incident audit" to "proactive control".
 * **Easy Analogy:** Instead of waiting for a leak to happen and then looking at the security cameras after the data is gone, the AI gate immediately stops the person and recommends a rule to prevent it from ever happening again.
 
-![AI Security Guard Analogy](/images/super_security_guard.png)
+![AI Security Guard Analogy](/images/sealsuite_airport_analogy.png)
 
 ---
 
@@ -2407,7 +2407,7 @@ AI Agent memanfaatkan Model Bahasa Besar (seperti Doubao LLM) untuk melakukan ti
 * **Konsep IT:** Beralih dari "pemeriksaan setelah kejadian" menjadi "pencegahan aktif secara langsung".
 * **Analogi Sederhana:** Daripada menunggu kebocoran data terjadi baru kemudian melihat kamera keamanan setelah datanya hilang, gerbang AI segera menghentikan orang tersebut dan menyarankan aturan baru agar hal itu tidak terjadi lagi.
 
-![Penjaga Keamanan Super AI](/images/super_security_guard.png)
+![Penjaga Keamanan Super AI](/images/sealsuite_airport_analogy.png)
 
 ---
 
