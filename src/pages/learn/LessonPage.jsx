@@ -54,8 +54,16 @@ function injectGlossaryTooltips(content, lang) {
   return result.join('');
 }
 
-// Resolves any video URL to an embeddable format, with external link fallback
-// Sub-component: animated caption display below video
+// When showing Indonesian content, replace translated code blocks with the
+// original English ones — code/diagrams should never be translated.
+function mergeCodeBlocks(idContent, enContent) {
+  if (!idContent || !enContent) return idContent || enContent || '';
+  const CODE_BLOCK_RE = /```[\s\S]*?```/g;
+  const enBlocks = enContent.match(CODE_BLOCK_RE) || [];
+  let idx = 0;
+  return idContent.replace(CODE_BLOCK_RE, () => enBlocks[idx++] ?? '');
+}
+
 function SubtitleBar({ transcript, transcript_id, lang }) {
   const [lineIdx, setLineIdx] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -763,8 +771,12 @@ export default function LessonPage() {
 
       {/* Text / Video Markdown Content */}
       {(lesson.type === 'text' || lesson.type === 'video') && lesson.content && (() => {
-        // Bilingual: prefer content_id (Indonesian) when lang=id
-        const displayContentRaw = lang === 'id' && lesson.content_id ? lesson.content_id : lesson.content;
+        // Bilingual: prefer content_id (Indonesian) when lang=id,
+        // but always restore English code blocks so diagrams aren't broken.
+        const rawId = lang === 'id' && lesson.content_id ? lesson.content_id : lesson.content;
+        const displayContentRaw = (lang === 'id' && lesson.content_id && lesson.content)
+          ? mergeCodeBlocks(lesson.content_id, lesson.content)
+          : rawId;
         const displayContent = injectGlossaryTooltips(displayContentRaw, lang);
         const showTranslationBanner = lang === 'id' && !lesson.content_id;
         return (
