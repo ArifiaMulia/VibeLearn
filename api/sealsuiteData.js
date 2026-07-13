@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // SealSuite Training Materials — Lesson Seed Data
 // Category: cybersecurity
 // Courses: "SealSuite for Administrators" | "SealSuite for End Users"
@@ -18,7 +18,7 @@ module.exports = {
       title_id: 'Gambaran Produk — Apa itu SealSuite?',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=tU-msNVkB5k',
       xp_reward: 75,
       order_index: 1,
       resources: [
@@ -155,7 +155,7 @@ flowchart TD
       title_id: 'Arsitektur SealSuite & Konsep Zero Trust',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=QVa7rNFo_ec',
       xp_reward: 75,
       order_index: 2,
       resources: [
@@ -312,7 +312,7 @@ graph TD
       title_id: 'Mulai: Admin Console',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=S0AjZQiS7lc',
       xp_reward: 75,
       order_index: 3,
       resources: [
@@ -441,7 +441,7 @@ Halaman beranda Admin Console terdiri dari tiga bagian:
       title_id: 'Manajemen Identitas — Pengguna, Departemen & Peran',
       type: 'video',
       difficulty: 'intermediate',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=i_yP27Xlw9o',
       xp_reward: 100,
       order_index: 4,
       resources: [
@@ -606,7 +606,7 @@ stateDiagram-v2
       title_id: 'Autentikasi, MFA & Single Sign-On (SSO)',
       type: 'video',
       difficulty: 'intermediate',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=4WM_LjvVIbU',
       xp_reward: 100,
       order_index: 5,
       resources: [
@@ -754,7 +754,7 @@ Protokol SSO yang didukung: SAML 2.0, OIDC/OAuth 2.0, dan Password Autofill untu
       title_id: 'Keamanan Jaringan — Konfigurasi Akses VPN',
       type: 'video',
       difficulty: 'intermediate',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=vStmEniXgWY',
       xp_reward: 100,
       order_index: 6,
       resources: [
@@ -909,7 +909,7 @@ Buat kebijakan yang mendefinisikan: Siapa yang mendapat akses (per departemen/pe
       title_id: 'Keamanan Endpoint & Pencegahan Kehilangan Data (DLP)',
       type: 'video',
       difficulty: 'intermediate',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=gPlrcohCglE',
       xp_reward: 100,
       order_index: 7,
       resources: [
@@ -1089,7 +1089,7 @@ Buat aturan dengan mendefinisikan kondisi pemicu, tindakan (audit/peringatan/blo
       title_id: 'Dynamic Control — Respons Risiko Otomatis',
       type: 'video',
       difficulty: 'advanced',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=KWa7_IwuNKE',
       xp_reward: 125,
       order_index: 8,
       resources: [
@@ -1480,7 +1480,7 @@ Tindakan pasca-keberangkatan: Arsipkan log aktivitas, tinjau akses akun bersama,
       title_id: 'Selamat Datang di SealSuite — Yang Perlu Anda Ketahui',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=1lsPACR-zcc',
       xp_reward: 50,
       order_index: 1,
       resources: [
@@ -1569,7 +1569,7 @@ Organisasi Anda menangani informasi sensitif. SealSuite melindungi data ini deng
       title_id: 'Mulai: Login & Pengaturan Pertama',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=cQv7Pg5v3gM',
       xp_reward: 50,
       order_index: 2,
       resources: [
@@ -1786,7 +1786,7 @@ Untuk aplikasi yang dikonfigurasi dengan SSO SealSuite, saat Anda menavigasi ke 
       title_id: 'Menggunakan VPN untuk Akses Jarak Jauh yang Aman',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=PLfK625JcyPTcnOBbL4lrIYEtdUhYfqzlS',
+      video_url: 'https://www.youtube.com/watch?v=j_GfBjdxt3o',
       xp_reward: 50,
       order_index: 4,
       content: `# Using VPN for Secure Remote Access
