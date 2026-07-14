@@ -2264,7 +2264,7 @@ SealSuite uses a strategy called **Zero Trust** (Never Trust, Always Verify). It
 2. **What are you carrying?** (Device health check): Walking through the metal detector.
 3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
 
-![Office vs Airport Security](/images/sealsuite_airport_analogy.png)
+![Office vs Airport Security](/images/office_vs_airport_security.png)
 
 ---
 
@@ -2294,7 +2294,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
 3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
 
-![Konsep Penjaga Pintu](/images/sealsuite_airport_analogy.png)
+![Konsep Penjaga Pintu](/images/office_vs_airport_security.png)
 
 ---
 
@@ -2375,7 +2375,7 @@ Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama 
 
 How does SealSuite verify who you are without causing headache? It uses two secure features: **Single Sign-On (SSO)** and **Multi-Factor Authentication (MFA)**.
 
-![SSO and MFA Analogy](/images/sealsuite_ai_dlp.png)
+![SSO and MFA Analogy](/images/sealsuite_mfa_sso.png)
 
 ---
 
@@ -2393,7 +2393,7 @@ A master key is powerful, so it needs extra protection. If someone steals your p
 
 Bagaimana cara SealSuite memverifikasi identitas Anda tanpa membuat Anda pusing? Sistem ini menggunakan dua fitur keamanan: **Single Sign-On (SSO)** dan **Multi-Factor Authentication (MFA)**.
 
-![Analogi SSO dan MFA](/images/sealsuite_ai_dlp.png)
+![Analogi SSO dan MFA](/images/sealsuite_mfa_sso.png)
 
 ---
 
@@ -2552,34 +2552,226 @@ SealSuite menempelkan tanda watermark transparan tipis yang berisi nama Anda, em
 * **Mengapa ini berguna:** Ini mencegah orang mengambil foto layar komputer menggunakan kamera ponsel mereka untuk membocorkan informasi. Jika foto tersebut bocor, watermark akan melacak siapa pemilik akses tersebut.`
     },
 
-    // ── Lesson 7: Assessment & Logs ──────────────────────────────────────────
+    // ── Lesson 7: Audit Logs (text) ──────────────────────────────────────────
     {
-      title: 'Activity History & Fundamentals Assessment',
-      title_id: 'Riwayat Aktivitas & Evaluasi Dasar',
-      type: 'quiz',
+      title: 'Activity History: Reading the Security Logbook',
+      title_id: 'Riwayat Aktivitas: Membaca Buku Log Keamanan',
+      type: 'text',
       difficulty: 'beginner',
-      xp_reward: 150,
+      xp_reward: 75,
       order_index: 7,
-      resources: [],
-      content: `# Activity History & Fundamentals Assessment
+      resources: [
+        { type: 'docs', label: 'Audit Logs Guide', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-viewing-the-home-page-of-the-admin-portal' }
+      ],
+      content: `# Activity History: Reading the Security Logbook
 
-In addition to protecting you, SealSuite records a secure history book of your activities. You can view your login history and devices to ensure no unauthorized access occurred.
+In addition to protecting you in real time, SealSuite acts as a silent recorder — it maintains a detailed **Security Audit Logbook** of every login, device connection, and file access.
 
 ![Audit Logs Analogy](/images/sealsuite_audit_logs.png)
 
 ---
 
-Test your understanding of basic SealSuite concepts, Zero Trust architecture, and security features using everyday analogies.`,
+## 📖 What Gets Recorded?
 
-      content_id: `# Riwayat Aktivitas & Evaluasi Dasar
+Think of it like a visitor ledger at an office reception desk. Every person who enters, which floor they went to, and what time they left is noted.
 
-Selain melindungi Anda, SealSuite mencatat riwayat aktivitas Anda di buku catatan keamanan yang aman. Anda dapat melihat riwayat login dan perangkat untuk memastikan tidak ada akses ilegal yang terjadi.
+SealSuite records:
+
+1. **🕒 Login Timestamps:** When and where you logged in (country, IP address, device).
+2. **📱 Devices Used:** Which device (phone/laptop) connected to the account.
+3. **⚠️ Anomaly Alerts:** Unusual logins like a login from two countries at the same time.
+4. **📂 File Access:** Which documents were viewed or transferred.
+
+## 🔍 Why It Matters
+
+If something goes wrong — an account breach, a file leak — the audit log is the first place IT security investigates. It is the **digital CCTV of your company**.`,
+
+      content_id: `# Riwayat Aktivitas: Membaca Buku Log Keamanan
+
+Selain melindungi Anda secara real-time, SealSuite juga bertindak sebagai perekam diam — sistem ini memelihara **Buku Log Keamanan Audit** yang detail dari setiap login, koneksi perangkat, dan akses file.
 
 ![Analogi Riwayat Aktivitas](/images/sealsuite_audit_logs.png)
 
 ---
 
-Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fitur keamanan utama dengan analogi sehari-hari.`,
+## 📖 Apa yang Dicatat?
+
+Bayangkan seperti buku tamu di resepsionis kantor. Setiap orang yang masuk, ke lantai berapa mereka pergi, dan pukul berapa mereka keluar, semua tercatat.
+
+SealSuite mencatat:
+
+1. **🕒 Waktu Login:** Kapan dan dari mana Anda login (negara, IP address, perangkat).
+2. **📱 Perangkat yang Digunakan:** Perangkat (HP/laptop) mana yang terhubung ke akun.
+3. **⚠️ Peringatan Anomali:** Login mencurigakan seperti login dari dua negara sekaligus.
+4. **📂 Akses File:** Dokumen mana yang dibuka atau dipindahkan.
+
+## 🔍 Mengapa Ini Penting
+
+Jika ada sesuatu yang tidak beres — pelanggaran akun, kebocoran file — log audit adalah tempat pertama yang diselidiki oleh tim keamanan IT. Ini adalah **CCTV digital perusahaan Anda**.`
+    },
+
+    // ── Lesson 8: Antivirus ───────────────────────────────────────────────────
+    {
+      title: 'Antivirus Protection: The Real-Time Threat Hunter',
+      title_id: 'Perlindungan Antivirus: Pemburu Ancaman Real-Time',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 8,
+      resources: [
+        { type: 'docs', label: 'Endpoint Security', url: 'https://docs.byteplus.com/en/docs/sealsuite/quickstart' }
+      ],
+      content: `# Antivirus Protection: The Real-Time Threat Hunter
+
+Even with a strong password and VPN, a single infected file can compromise your entire laptop — and through it, the entire company network. SealSuite integrates **Antivirus protection** as a core requirement for every endpoint.
+
+![Antivirus Protection Analogy](/images/sealsuite_antivirus.png)
+
+---
+
+## 🦠 What Is a Virus (In Simple Terms)?
+
+A computer virus is a malicious program that hides inside a file or download. When you open it, the virus:
+- Steals your saved passwords or files
+- Encrypts your data and demands payment (**Ransomware**)
+- Turns your laptop into a spy tool (sending your screen & keystrokes to an attacker)
+
+## 🛡️ How SealSuite Antivirus Works
+
+SealSuite enforces that every connected device must have a **compliant, active antivirus** installed:
+
+1. **Real-Time Scanning:** Every file you open or download is instantly checked against a database of known threats.
+2. **Behavioral Detection:** Even unknown viruses are caught if they behave suspiciously (like trying to secretly encrypt files).
+3. **Compliance Gate:** If your antivirus is turned off or outdated, SealSuite **blocks your access** to corporate resources until it is re-enabled.
+
+> **Analogy:** Think of Antivirus as the Hazmat Team at the airport. Even if you have a valid boarding pass, if a detector senses a dangerous chemical in your bag, the hazmat team intercepts it before it boards the plane.`,
+
+      content_id: `# Perlindungan Antivirus: Pemburu Ancaman Real-Time
+
+Bahkan dengan kata sandi yang kuat dan VPN aktif, satu file yang terinfeksi saja sudah cukup untuk membahayakan seluruh laptop Anda — dan melaluinya, seluruh jaringan perusahaan. SealSuite mengintegrasikan **perlindungan Antivirus** sebagai syarat utama bagi setiap perangkat.
+
+![Analogi Perlindungan Antivirus](/images/sealsuite_antivirus.png)
+
+---
+
+## 🦠 Apa itu Virus (dengan Bahasa Sederhana)?
+
+Virus komputer adalah program jahat yang bersembunyi di dalam file atau unduhan. Saat Anda membukanya, virus tersebut akan:
+- Mencuri kata sandi atau file tersimpan Anda
+- Mengenkripsi data Anda dan meminta tebusan (**Ransomware**)
+- Mengubah laptop Anda menjadi alat mata-mata (mengirim layar & ketikan Anda ke penyerang)
+
+## 🛡️ Cara Kerja Antivirus SealSuite
+
+SealSuite mewajibkan setiap perangkat yang terhubung harus memiliki **antivirus aktif yang patuh** terpasang:
+
+1. **Pemindaian Real-Time:** Setiap file yang Anda buka atau unduh langsung diperiksa terhadap basis data ancaman yang dikenal.
+2. **Deteksi Perilaku:** Virus yang belum dikenal pun tetap tertangkap jika berperilaku mencurigakan (seperti mencoba mengenkripsi file secara diam-diam).
+3. **Gerbang Kepatuhan:** Jika antivirus Anda dimatikan atau kadaluarsa, SealSuite **memblokir akses** Anda ke sumber daya perusahaan hingga antivirus diaktifkan kembali.
+
+> **Analogi:** Bayangkan Antivirus seperti Tim Hazmat di bandara. Meskipun Anda punya tiket boarding yang sah, jika detektor mendeteksi bahan kimia berbahaya di tas Anda, tim hazmat akan menahannya sebelum naik ke pesawat.`
+    },
+
+    // ── Lesson 9: MDM ────────────────────────────────────────────────────────
+    {
+      title: 'Mobile Device Management (MDM): Remote Control Tower',
+      title_id: 'Manajemen Perangkat Mobile (MDM): Menara Kendali Jarak Jauh',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 9,
+      resources: [
+        { type: 'docs', label: 'MDM and Device Management', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-operation-instructions' }
+      ],
+      content: `# Mobile Device Management (MDM): Remote Control Tower
+
+Modern employees use phones, tablets, and personal laptops to access company resources. This creates a challenge: **how does IT control security on devices they don't physically own?** The answer is **MDM — Mobile Device Management**.
+
+![MDM Remote Control Analogy](/images/sealsuite_mdm.png)
+
+---
+
+## 🗼 The Air Traffic Control Analogy
+
+Think of MDM as an **Air Traffic Control Tower**. Dozens of planes (devices) are in the air. The control tower:
+- Knows exactly where every plane is at all times
+- Can redirect a plane to a different runway
+- In an emergency, can instruct a plane to land immediately — or even remotely disable it
+
+SealSuite MDM works the same way for your corporate devices.
+
+## 📱 What IT Can Do with MDM
+
+| Action | What It Means |
+|--------|---------------|
+| **Remote Lock** | Lock a stolen phone instantly from the admin portal |
+| **Remote Wipe** | Erase all corporate data from a lost device |
+| **Policy Push** | Force-install security settings (screen lock, VPN config) |
+| **App Management** | Approve or block specific apps on work phones |
+| **Compliance Check** | Verify device health without touching it physically |
+
+## 🔐 For Personal Devices (BYOD)
+Don't worry — on personal phones, MDM only manages the **corporate work container** (SealSuite app area). Your personal photos, chats, and apps remain completely private and untouched.`,
+
+      content_id: `# Manajemen Perangkat Mobile (MDM): Menara Kendali Jarak Jauh
+
+Karyawan modern menggunakan ponsel, tablet, dan laptop pribadi untuk mengakses sumber daya perusahaan. Ini menimbulkan tantangan: **bagaimana tim IT mengontrol keamanan perangkat yang bukan milik mereka?** Jawabannya adalah **MDM — Mobile Device Management**.
+
+![Analogi Menara Kendali MDM](/images/sealsuite_mdm.png)
+
+---
+
+## 🗼 Analogi Menara Pengatur Lalu Lintas Udara
+
+Bayangkan MDM seperti **Menara Pengatur Lalu Lintas Udara (ATC)**. Puluhan pesawat (perangkat) sedang mengudara. Menara pengendali:
+- Mengetahui persis di mana setiap pesawat berada setiap saat
+- Dapat mengarahkan pesawat ke landasan yang berbeda
+- Dalam keadaan darurat, dapat memerintahkan pesawat untuk mendarat segera — atau bahkan menonaktifkannya dari jarak jauh
+
+MDM SealSuite bekerja dengan cara yang sama untuk perangkat-perangkat perusahaan Anda.
+
+## 📱 Apa yang Bisa Dilakukan IT dengan MDM
+
+| Tindakan | Artinya |
+|----------|----------|
+| **Kunci Jarak Jauh** | Kunci ponsel yang dicuri secara instan dari portal admin |
+| **Hapus Jarak Jauh** | Hapus semua data perusahaan dari perangkat yang hilang |
+| **Kirim Kebijakan** | Paksa-pasang pengaturan keamanan (kunci layar, konfigurasi VPN) |
+| **Manajemen Aplikasi** | Setujui atau blokir aplikasi tertentu di HP kerja |
+| **Pemeriksaan Kepatuhan** | Verifikasi kesehatan perangkat tanpa menyentuhnya secara fisik |
+
+## 🔐 Untuk Perangkat Pribadi (BYOD)
+Jangan khawatir — pada ponsel pribadi, MDM hanya mengelola **area wadah kerja perusahaan** (area aplikasi SealSuite). Foto pribadi, chat, dan aplikasi Anda tetap sepenuhnya privat dan tidak tersentuh.`
+    },
+
+    // ── Lesson 10: Assessment & Quiz ──────────────────────────────────────────
+    {
+      title: 'SealSuite Fundamentals Assessment',
+      title_id: 'Evaluasi Dasar SealSuite',
+      type: 'quiz',
+      difficulty: 'beginner',
+      xp_reward: 150,
+      order_index: 10,
+      resources: [],
+      content: `# SealSuite Fundamentals Assessment
+
+You have completed all 9 core lessons of SealSuite Fundamentals! Now let's test your understanding with a comprehensive scenario-based quiz covering Zero Trust, IAM, VPN, Antivirus, MDM, and Data Protection.
+
+![Audit Logs Analogy](/images/sealsuite_audit_logs.png)
+
+---
+
+Answer each question using the everyday analogies you've learned throughout this course.`,
+
+      content_id: `# Evaluasi Dasar SealSuite
+
+Anda telah menyelesaikan 9 pelajaran inti SealSuite Fundamentals! Sekarang mari uji pemahaman Anda dengan kuis skenario komprehensif yang mencakup Zero Trust, IAM, VPN, Antivirus, MDM, dan Perlindungan Data.
+
+![Analogi Riwayat Aktivitas](/images/sealsuite_audit_logs.png)
+
+---
+
+Jawab setiap pertanyaan menggunakan analogi sehari-hari yang telah Anda pelajari sepanjang kursus ini.`,
       quizzes: [
         {
           question: 'If SealSuite detects that your laptop\'s built-in Antivirus program is deactivated, what action will the platform take?',
@@ -2604,15 +2796,15 @@ Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fi
           explanation: 'IAM prevents password theft bypasses by utilizing Multi-Factor Authentication (MFA). Even if an attacker steals your SSO master password, they are blocked because they do not have your physical device to retrieve the authentication code.'
         },
         {
-          question: 'Single Sign-On (SSO) is compared to a "Golden Master Key" because:',
+          question: 'An employee\'s work phone is lost on public transport. Using SealSuite MDM, what is the FASTEST action an IT admin can take to protect corporate data on that phone?',
           options: [
-            'It is made of real gold metal',
-            'It unlocks all your secure work applications with a single account login, so you don\'t need to sign in repeatedly',
-            'It allows you to bypass the antivirus scanner check',
-            'It resets your computer password automatically every day'
+            'Call the employee and ask them to find the phone',
+            'Wait for the employee to report to the office to handle it',
+            'Remotely lock or wipe all corporate data from the lost device via the MDM admin portal',
+            'Change the employee\'s email password to prevent access'
           ],
-          correct_answer: 1,
-          explanation: 'Single Sign-On (SSO) acts as a golden master key because it allows you to access all your authorized corporate apps after signing in just once, removing the hassle of logging into multiple apps.'
+          correct_answer: 2,
+          explanation: 'MDM (Mobile Device Management) allows IT administrators to remotely lock or wipe corporate data from a lost or stolen device instantly, without needing physical access — like a control tower directing a plane to land immediately.'
         },
         {
           question: 'Which of the following describes how a Virtual Private Network (VPN) works using our vehicle analogy?',
@@ -2640,3 +2832,4 @@ Uji pemahaman Anda tentang konsep dasar SealSuite, arsitektur Zero Trust, dan fi
     }
   ]
 };
+
