@@ -2319,7 +2319,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 
 To protect your company's data, SealSuite relies on three main pillars working side-by-side. Think of them as the three main safety measures at any major event or location.
 
-![The 3 Pillars of SealSuite](/images/sealsuite_ai_dlp.png)
+![The 3 Pillars of SealSuite](/images/sealsuite_pillars.png)
 
 ---
 
@@ -2341,7 +2341,7 @@ To protect your company's data, SealSuite relies on three main pillars working s
 
 Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama yang bekerja saling berdampingan. Bayangkan ini sebagai tiga tindakan pengamanan utama di setiap acara atau lokasi besar.
 
-![3 Pilar Utama SealSuite](/images/sealsuite_ai_dlp.png)
+![3 Pilar Utama SealSuite](/images/sealsuite_pillars.png)
 
 ---
 
@@ -2375,7 +2375,7 @@ Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama 
 
 How does SealSuite verify who you are without causing headache? It uses two secure features: **Single Sign-On (SSO)** and **Multi-Factor Authentication (MFA)**.
 
-![SSO and MFA Analogy](/images/sealsuite_mfa_sso.png)
+![SSO and MFA Analogy](/images/sealsuite_ai_dlp.png)
 
 ---
 
@@ -2393,7 +2393,7 @@ A master key is powerful, so it needs extra protection. If someone steals your p
 
 Bagaimana cara SealSuite memverifikasi identitas Anda tanpa membuat Anda pusing? Sistem ini menggunakan dua fitur keamanan: **Single Sign-On (SSO)** dan **Multi-Factor Authentication (MFA)**.
 
-![Analogi SSO dan MFA](/images/sealsuite_mfa_sso.png)
+![Analogi SSO dan MFA](/images/sealsuite_ai_dlp.png)
 
 ---
 
