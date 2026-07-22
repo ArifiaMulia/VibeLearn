@@ -447,13 +447,94 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
   .grid-4 { grid-template-columns: repeat(2,1fr); }
   .grid-3 { grid-template-columns: repeat(2,1fr); }
 }
+
 @media (max-width: 768px) {
-  .main-content { margin-left: 0; }
+  /* ── Core layout ── */
+  .main-content { margin-left: 0 !important; }
+  .page-container { padding: 1rem; max-width: 100%; }
+
+  /* ── Grid: stack all to 1 column ── */
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .page-container { padding: 1rem; }
-  h1 { font-size: 1.8rem; }
-  h2 { font-size: 1.4rem; }
+
+  /* ── Typography ── */
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.1rem; }
+  h4 { font-size: 1rem; }
+
+  /* ── Cards ── */
+  .card { padding: 1rem; }
+  .stat-card { padding: 1rem; }
+  .stat-value { font-size: 1.6rem; }
+  .stat-icon { width: 40px; height: 40px; }
+
+  /* ── Buttons: larger tap targets ── */
+  .btn { min-height: 44px; padding: 0.6rem 1rem; }
+  .btn-sm { min-height: 36px; padding: 0.4rem 0.8rem; }
+
+  /* ── Forms ── */
+  .form-input, .form-select, .form-textarea {
+    font-size: 1rem; /* Prevent iOS auto-zoom on focus */
+    min-height: 44px;
+  }
+
+  /* ── Toast: reposition above bottom nav ── */
+  .toast-container {
+    left: 1rem;
+    right: 1rem;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    align-items: stretch;
+  }
+  .toast { min-width: unset; max-width: 100%; width: 100%; }
+
+  /* ── Modal: bottom sheet style on mobile ── */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: 1.5rem 1.25rem;
+    max-width: 100%;
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* ── Tables ── */
+  .table-wrap { font-size: 0.8rem; border-radius: var(--radius-md); }
+  thead th { padding: 0.6rem 0.75rem; font-size: 0.72rem; }
+  tbody td { padding: 0.65rem 0.75rem; font-size: 0.82rem; }
+
+  /* ── Markdown content ── */
+  .markdown-content img { margin: 1rem auto; }
+  .markdown-content table { font-size: 0.8rem; }
+
+  /* ── Tab bar ── */
+  .tab-bar { overflow-x: auto; gap: 0.15rem; }
+  .tab-btn { padding: 0.5rem 0.75rem; font-size: 0.8rem; white-space: nowrap; }
+
+  /* ── Code blocks ── */
+  .code-block { font-size: 0.78rem; padding: 0.9rem; }
+
+  /* ── Hero section ── */
+  .hero-gradient { padding: 1.5rem 1rem; }
+
+  /* ── Page container additional clearance ── */
+  .main-content { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* ── Extra small screens (< 480px) ── */
+@media (max-width: 480px) {
+  .page-container { padding: 0.75rem; }
+  h1 { font-size: 1.4rem; }
+  .card { padding: 0.85rem; }
+  .badge { font-size: 0.68rem; }
+}
+
+/* ── Bottom Nav safe area (iPhone notch / home indicator) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-nav {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    height: calc(60px + env(safe-area-inset-bottom));
+  }
+}
+
 
 /* ── Recharts Customization ── */
 .recharts-cartesian-grid-horizontal line,

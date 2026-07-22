@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Search, Zap, Sun, Moon, X } from 'lucide-react';
+import { Bell, Search, Zap, Sun, Moon, X, Menu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSidebar } from '../contexts/SidebarContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 function NotificationPanel({ onClose, t }) {
   const { authFetch } = useAuth();
@@ -75,13 +76,14 @@ function NotificationPanel({ onClose, t }) {
 export default function TopBar({ title, subtitle }) {
   const { user, realUser, previewRole, previewPlan, previewAs, setPreviewPlan } = useAuth();
   const { lang, toggleLang, t } = useLanguage();
-  const { collapsed } = useSidebar();
+  const { collapsed, openMobile } = useSidebar();
+  const isMobile = useIsMobile();
   const [xp, setXp] = useState(0);
   const [search, setSearch] = useState('');
   const [theme, setTheme] = useState(localStorage.getItem('vl_theme') || 'dark');
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const sidebarWidth = collapsed ? 72 : 260;
+  const sidebarWidth = isMobile ? 0 : (collapsed ? 72 : 260);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -105,31 +107,49 @@ export default function TopBar({ title, subtitle }) {
       right: 0,
       height: 'var(--topbar-height)', background: 'var(--bg-topbar)',
       backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border-light)',
-      display: 'flex', alignItems: 'center', padding: '0 1.5rem',
-      zIndex: 99, gap: '1rem',
+      display: 'flex', alignItems: 'center',
+      padding: isMobile ? '0 1rem' : '0 1.5rem',
+      zIndex: 99, gap: '0.75rem',
       transition: 'left 0.25s cubic-bezier(0.4,0,0.2,1)',
     }}>
       {previewRole && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--warning), var(--primary))' }} />
       )}
 
+      {/* Hamburger — mobile only */}
+      {isMobile && (
+        <button
+          onClick={openMobile}
+          style={{
+            width: 38, height: 38, borderRadius: 'var(--radius-sm)',
+            background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--text-muted)', flexShrink: 0,
+          }}
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
       {/* Title */}
-      <div style={{ flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>{title || t('page_dashboard')}</h2>
-        {subtitle && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>{subtitle}</p>}
+      <div style={{ flexShrink: 0, minWidth: 0, flex: isMobile ? 1 : 'initial' }}>
+        <h2 style={{ fontSize: isMobile ? '0.95rem' : '1.1rem', fontWeight: 700, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title || t('page_dashboard')}</h2>
+        {subtitle && !isMobile && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>{subtitle}</p>}
       </div>
 
-      {/* Search */}
-      <div style={{ flex: 1, maxWidth: 360, position: 'relative' }}>
-        <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder={t('search_placeholder')}
-          style={{
-            width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-            borderRadius: 'var(--radius-sm)', padding: '0.5rem 1rem 0.5rem 2.25rem',
-            color: 'var(--text-primary)', fontSize: '0.85rem',
-          }} />
-      </div>
+      {/* Search — hidden on mobile */}
+      {!isMobile && (
+        <div style={{ flex: 1, maxWidth: 360, position: 'relative' }}>
+          <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={t('search_placeholder')}
+            style={{
+              width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+              borderRadius: 'var(--radius-sm)', padding: '0.5rem 1rem 0.5rem 2.25rem',
+              color: 'var(--text-primary)', fontSize: '0.85rem',
+            }} />
+        </div>
+      )}
 
       {/* XP (participants only) */}
       {user?.role === 'participant' && (

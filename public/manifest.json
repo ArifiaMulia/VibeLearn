@@ -1,0 +1,30 @@
+{
+  "name": "Promptara — AI Coding Academy",
+  "short_name": "Promptara",
+  "description": "Belajar Vibe Coding & Cybersecurity dengan AI — interaktif, gamifikasi, dan menyenangkan.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#07071a",
+  "background_color": "#07071a",
+  "lang": "id",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

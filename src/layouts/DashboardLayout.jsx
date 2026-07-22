@@ -1,16 +1,19 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
+import BottomNav from '../components/BottomNav';
 import OnboardingModal from '../components/OnboardingModal';
 import GuidedTour from '../components/GuidedTour';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // Inner layout reads sidebar state
 function InnerLayout() {
   const location = useLocation();
   const { t } = useLanguage();
   const { collapsed } = useSidebar();
+  const isMobile = useIsMobile();
 
   const PAGE_TITLES = {
     '/dashboard':           { title: t('page_dashboard'),   subtitle: t('page_dashboard_sub') },
@@ -25,7 +28,9 @@ function InnerLayout() {
   };
 
   const meta = PAGE_TITLES[location.pathname] || { title: 'Promptara', subtitle: '' };
-  const sidebarWidth = collapsed ? 72 : 260;
+
+  // On desktop: shift content right of sidebar. On mobile: full width.
+  const sidebarWidth = isMobile ? 0 : (collapsed ? 72 : 260);
 
   return (
     <div className="app-layout">
@@ -36,7 +41,9 @@ function InnerLayout() {
         className="main-content"
         style={{
           marginLeft: sidebarWidth,
-          transition: 'margin-left 0.25s cubic-bezier(0.4,0,0.2,1)',
+          transition: isMobile ? 'none' : 'margin-left 0.25s cubic-bezier(0.4,0,0.2,1)',
+          // Extra bottom padding on mobile to clear the bottom nav bar
+          paddingBottom: isMobile ? '64px' : undefined,
         }}
       >
         <TopBar title={meta.title} subtitle={meta.subtitle} />
@@ -44,6 +51,9 @@ function InnerLayout() {
           <Outlet />
         </div>
       </div>
+
+      {/* Bottom navigation — only visible on mobile */}
+      {isMobile && <BottomNav />}
     </div>
   );
 }

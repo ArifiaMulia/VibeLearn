@@ -1,11 +1,13 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSidebar } from '../contexts/SidebarContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
   LayoutDashboard, BookOpen, FlaskConical, Users, BarChart3,
   CreditCard, Settings, LogOut, Shield, ChevronLeft, ChevronRight,
-  Award,
+  Award, X,
 } from 'lucide-react';
 import pkg from '../../package.json';
 
@@ -14,57 +16,203 @@ const PLAN_COLORS = { free: 'var(--text-muted)', pro: 'var(--warning)', enterpri
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
-  const { collapsed, toggle } = useSidebar();
+  const { collapsed, toggle, mobileOpen, closeMobile } = useSidebar();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useIsMobile();
+
+  // Auto-close mobile sidebar on route change
+  useEffect(() => {
+    if (isMobile) closeMobile();
+  }, [location.pathname, isMobile]);
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobile && mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isMobile, mobileOpen]);
 
   const NAV_ITEMS = {
     super_admin: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
-      { icon: BookOpen,         key: 'nav_courses',        to: '/courses' },
-      { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
-      { icon: Users,            key: 'nav_users',          to: '/admin/users' },
-      { icon: BarChart3,        key: 'nav_analytics',      to: '/admin/analytics' },
-      { icon: CreditCard,       key: 'nav_subscriptions',  to: '/admin/subscriptions' },
-      { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',           to: '/dashboard' },
+      { icon: BookOpen,         key: 'nav_courses',            to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',               to: '/labs' },
+      { icon: Users,            key: 'nav_users',              to: '/admin/users' },
+      { icon: BarChart3,        key: 'nav_analytics',          to: '/admin/analytics' },
+      { icon: CreditCard,       key: 'nav_subscriptions',      to: '/admin/subscriptions' },
+      { icon: Settings,         key: 'nav_course_builder',     to: '/admin/courses' },
       { icon: Award,            key: 'nav_certificate_builder', to: '/admin/certificates' },
     ],
     master: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
-      { icon: BookOpen,         key: 'nav_courses',        to: '/courses' },
-      { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
-      { icon: Users,            key: 'nav_students',       to: '/admin/users' },
-      { icon: BarChart3,        key: 'nav_analytics',      to: '/admin/analytics' },
-      { icon: Settings,         key: 'nav_course_builder', to: '/admin/courses' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',           to: '/dashboard' },
+      { icon: BookOpen,         key: 'nav_courses',            to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',               to: '/labs' },
+      { icon: Users,            key: 'nav_students',           to: '/admin/users' },
+      { icon: BarChart3,        key: 'nav_analytics',          to: '/admin/analytics' },
+      { icon: Settings,         key: 'nav_course_builder',     to: '/admin/courses' },
       { icon: Award,            key: 'nav_certificate_builder', to: '/admin/certificates' },
     ],
     participant: [
-      { icon: LayoutDashboard, key: 'nav_dashboard',      to: '/dashboard' },
-      { icon: BookOpen,         key: 'nav_my_courses',     to: '/courses' },
-      { icon: FlaskConical,     key: 'nav_labs',           to: '/labs' },
-      { icon: BarChart3,        key: 'nav_leaderboard',    to: '/leaderboard' },
-      { icon: Settings,         key: 'nav_profile',        to: '/profile' },
+      { icon: LayoutDashboard, key: 'nav_dashboard',   to: '/dashboard' },
+      { icon: BookOpen,         key: 'nav_my_courses', to: '/courses' },
+      { icon: FlaskConical,     key: 'nav_labs',       to: '/labs' },
+      { icon: BarChart3,        key: 'nav_leaderboard', to: '/leaderboard' },
+      { icon: Settings,         key: 'nav_profile',    to: '/profile' },
     ],
   };
 
   const navItems = NAV_ITEMS[user?.role] || NAV_ITEMS.participant;
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  // Sub-label map for each nav item (beginner-friendly context)
   const NAV_SUBS = {
-    nav_dashboard:      t('nav_dashboard_sub'),
-    nav_courses:        t('nav_courses_sub'),
-    nav_my_courses:     t('nav_courses_sub'),
-    nav_labs:           t('nav_labs_sub'),
-    nav_leaderboard:    t('nav_leaderboard_sub'),
-    nav_profile:        t('nav_profile_sub'),
-    nav_users:          null,
-    nav_students:       null,
-    nav_analytics:      null,
-    nav_subscriptions:  null,
-    nav_course_builder: null,
+    nav_dashboard:           t('nav_dashboard_sub'),
+    nav_courses:             t('nav_courses_sub'),
+    nav_my_courses:          t('nav_courses_sub'),
+    nav_labs:                t('nav_labs_sub'),
+    nav_leaderboard:         t('nav_leaderboard_sub'),
+    nav_profile:             t('nav_profile_sub'),
+    nav_users:               null,
+    nav_students:            null,
+    nav_analytics:           null,
+    nav_subscriptions:       null,
+    nav_course_builder:      null,
     nav_certificate_builder: null,
   };
 
+  // ── Mobile: sidebar is an overlay that slides in from the left ───────────
+  if (isMobile) {
+    return (
+      <>
+        {/* Backdrop overlay */}
+        {mobileOpen && (
+          <div
+            onClick={closeMobile}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 199,
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+              animation: 'fadeIn 0.2s ease',
+            }}
+          />
+        )}
+
+        {/* Slide-in sidebar panel */}
+        <aside style={{
+          position: 'fixed', top: 0, left: 0, bottom: 0,
+          width: 280,
+          background: 'var(--bg-surface)',
+          borderRight: '1px solid var(--border-light)',
+          display: 'flex', flexDirection: 'column',
+          zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: mobileOpen ? '4px 0 32px rgba(0,0,0,0.5)' : 'none',
+        }}>
+          {/* Header with close button */}
+          <div style={{
+            padding: '1.25rem',
+            borderBottom: '1px solid var(--border-light)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src="/logo.png" alt="Promptara" style={{
+                width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0,
+                boxShadow: '0 0 12px var(--primary-glow)',
+              }} onError={e => e.target.style.display = 'none'} />
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em' }}>Promptara</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600 }}>AI Coding Academy</div>
+              </div>
+            </div>
+            <button onClick={closeMobile} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-muted)', padding: '0.4rem', borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* User info */}
+          <div style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: '0.95rem',
+              }}>
+                {user?.name?.[0]?.toUpperCase()}
+              </div>
+              <div style={{ overflow: 'hidden', flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</div>
+                <div style={{ fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.1rem' }}>
+                  <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>{user?.role?.replace('_', ' ')}</span>
+                  <span style={{ color: PLAN_COLORS[user?.plan], fontWeight: 700, fontSize: '0.7rem', textTransform: 'uppercase' }}>{user?.plan}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Nav */}
+          <nav style={{
+            flex: 1, padding: '1rem 0.75rem',
+            display: 'flex', flexDirection: 'column', gap: '0.2rem',
+          }}>
+            {user?.role === 'super_admin' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.5rem', marginBottom: '0.5rem' }}>
+                <Shield size={12} color="var(--accent)" />
+                <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('nav_admin_panel')}</span>
+              </div>
+            )}
+            {navItems.map(({ icon: Icon, key, to }) => (
+              <NavLink key={to} to={to} end={to === '/dashboard'}
+                style={({ isActive }) => ({
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  justifyContent: 'flex-start',
+                  padding: '0.7rem 0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  fontWeight: 600, fontSize: '0.875rem',
+                  transition: 'var(--transition)',
+                  textDecoration: 'none',
+                  color: isActive ? 'white' : 'var(--text-muted)',
+                  background: isActive ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : 'transparent',
+                  boxShadow: isActive ? '0 2px 12px var(--primary-glow)' : 'none',
+                })}
+              >
+                <Icon size={18} style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t(key)}</div>
+                  {NAV_SUBS[key] && (
+                    <div style={{ fontSize: '0.65rem', color: 'inherit', opacity: 0.6, marginTop: '0.1rem', fontWeight: 400 }}>
+                      {NAV_SUBS[key]}
+                    </div>
+                  )}
+                </div>
+                <ChevronRight size={14} style={{ opacity: 0.4, flexShrink: 0 }} />
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Footer */}
+          <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <button onClick={handleLogout} className="btn btn-ghost w-full" style={{ justifyContent: 'flex-start' }}>
+              <LogOut size={16} />
+              <span style={{ marginLeft: '0.5rem' }}>{t('nav_sign_out')}</span>
+            </button>
+            <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)' }}>v{pkg.version}</div>
+          </div>
+        </aside>
+      </>
+    );
+  }
+
+  // ── Desktop: existing collapsible sidebar ────────────────────────────────
   const W = collapsed ? 72 : 260;
 
   return (
@@ -87,14 +235,11 @@ export default function Sidebar() {
           gap: '0.75rem', overflow: 'hidden',
           transition: 'padding 0.25s',
         }}>
-          <img
-            src="/logo.png"
-            alt="Promptara"
-            style={{
-              width: 40, height: 40, borderRadius: 10,
-              objectFit: 'cover', flexShrink: 0,
-              boxShadow: '0 0 16px var(--primary-glow)',
-            }}
+          <img src="/logo.png" alt="Promptara" style={{
+            width: 40, height: 40, borderRadius: 10,
+            objectFit: 'cover', flexShrink: 0,
+            boxShadow: '0 0 16px var(--primary-glow)',
+          }}
             onError={e => {
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'flex';
@@ -224,18 +369,11 @@ export default function Sidebar() {
         onClick={toggle}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         style={{
-          position: 'fixed',
-          top: '50%',
-          left: W,
-          transform: 'translateY(-50%)',
-          zIndex: 101,
-          width: 20,
-          height: 48,
+          position: 'fixed', top: '50%', left: W, transform: 'translateY(-50%)',
+          zIndex: 101, width: 20, height: 48,
           background: 'var(--bg-surface)',
-          border: '1px solid var(--border-light)',
-          borderLeft: 'none',
-          borderRadius: '0 6px 6px 0',
-          cursor: 'pointer',
+          border: '1px solid var(--border-light)', borderLeft: 'none',
+          borderRadius: '0 6px 6px 0', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'var(--text-muted)',
           transition: 'left 0.25s cubic-bezier(0.4,0,0.2,1), background 0.2s, color 0.2s',
