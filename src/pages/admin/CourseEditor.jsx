@@ -17,6 +17,7 @@ export default function CourseEditor() {
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const [topic, setTopic] = useState('');
+  const [uploadingIndex, setUploadingIndex] = useState(null); // tracks which lesson is uploading
 
   useEffect(() => {
     if (id === 'new') {
@@ -73,23 +74,79 @@ export default function CourseEditor() {
     }
   };
 
+  /**
+   * Compress an image File using Canvas API.
+   * Returns a new Blob at reduced quality/size.
+   * Done asynchronously so it never freezes the main thread.
+   */
+  const compressImage = (file, maxWidthPx = 1600, quality = 0.82) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          // Calculate scaled dimensions
+          let w = img.width;
+          let h = img.height;
+          if (w > maxWidthPx) {
+            h = Math.round((h * maxWidthPx) / w);
+            w = maxWidthPx;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) return reject(new Error('Canvas compression failed'));
+              resolve(new File([blob], file.name, { type: blob.type, lastModified: Date.now() }));
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
   const handleFileUpload = async (e, lessonIndex, uploadType = 'video') => {
-    const file = e.target.files[0];
+    let file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+    // Reset input so same file can be re-selected after error
+    e.target.value = '';
 
+    const MAX_SIZE_MB = uploadType === 'image' ? 20 : 200;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      error(`File terlalu besar! Maksimal ${MAX_SIZE_MB}MB untuk ${uploadType === 'image' ? 'gambar' : 'video'}.`);
+      return;
+    }
+
+    setUploadingIndex(lessonIndex);
     try {
+      // Compress images before upload to prevent large file freeze
+      if (uploadType === 'image' && file.type.startsWith('image/')) {
+        const originalMB = (file.size / 1024 / 1024).toFixed(1);
+        if (file.size > 1 * 1024 * 1024) { // only compress if > 1MB
+          info(`Mengoptimalkan gambar (${originalMB}MB)...`);
+          file = await compressImage(file);
+        }
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
       const token = localStorage.getItem('vl_token');
       const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
-      
+
       const data = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(data.error || 'Upload failed');
 
@@ -98,15 +155,17 @@ export default function CourseEditor() {
         const imageMarkdown = `\n![${file.name}](${data.url})\n`;
         newLessons[lessonIndex].content = (newLessons[lessonIndex].content || '') + imageMarkdown;
         setLessons(newLessons);
-        success('Image uploaded and inserted into content!');
+        success('✅ Gambar berhasil diupload dan disisipkan ke konten!');
       } else {
         newLessons[lessonIndex].video_url = data.url;
         setLessons(newLessons);
-        success('Video uploaded successfully!');
+        success('✅ Video berhasil diupload!');
       }
     } catch (err) {
       console.error(err);
-      error(`Failed to upload ${uploadType}`);
+      error(`Upload gagal: ${err.message}`);
+    } finally {
+      setUploadingIndex(null);
     }
   };
 
@@ -487,23 +546,37 @@ export default function CourseEditor() {
                     <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent)' }}>
                       🖼️ Insert Course Image / Illustration
                     </label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                       <input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" 
                         id={`upload-image-${index}`} 
                         style={{ display: 'none' }} 
+                        disabled={uploadingIndex !== null}
                         onChange={(e) => handleFileUpload(e, index, 'image')}
                       />
                       <button 
                         type="button"
                         className="btn btn-secondary btn-sm" 
+                        disabled={uploadingIndex !== null}
                         onClick={() => document.getElementById(`upload-image-${index}`).click()}
+                        style={{ minWidth: 140, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                       >
-                        Upload Picture
+                        {uploadingIndex === index ? (
+                          <>
+                            <span style={{
+                              width: 14, height: 14, border: '2px solid currentColor',
+                              borderTopColor: 'transparent', borderRadius: '50%',
+                              display: 'inline-block', animation: 'spin 0.7s linear infinite'
+                            }} />
+                            Uploading...
+                          </>
+                        ) : (
+                          '🖼️ Upload Picture'
+                        )}
                       </button>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        Select a file to automatically generate and append the Markdown image tag.
+                        PNG/JPG/GIF/WebP · Maks 20MB · Gambar besar otomatis dikompres
                       </span>
                     </div>
                   </div>
