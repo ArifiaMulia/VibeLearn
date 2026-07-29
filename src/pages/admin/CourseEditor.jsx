@@ -365,7 +365,6 @@ export default function CourseEditor() {
                               />
                             )
                           }}
-                        >
                           {lesson.content}
                         </ReactMarkdown>
                       ) : (
@@ -373,7 +372,6 @@ export default function CourseEditor() {
                       )}
                     </div>
                   )}
-                </div>
 
                   {/* Mermaid Builder Panel */}
                   <div style={{
