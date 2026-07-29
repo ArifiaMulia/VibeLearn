@@ -43,7 +43,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
-      - "traefik.http.routers.vibe-api-https.rule=Host(`vibe.virtuenet.space`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.vibe-api-https.rule=Host(`vibe.virtuenet.space`) && (PathPrefix(`/api`) || PathPrefix(`/uploads`))"
       - "traefik.http.routers.vibe-api-https.entrypoints=https"
       - "traefik.http.routers.vibe-api-https.tls=true"
       - "traefik.http.routers.vibe-api-https.tls.certresolver=letsencrypt"
