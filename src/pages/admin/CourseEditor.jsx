@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
-import { BookOpen, Plus, Save, Sparkles, Trash2, GripVertical, ChevronRight, Layout, Type, HelpCircle } from 'lucide-react';
+import { BookOpen, Plus, Save, Sparkles, Trash2, GripVertical, ChevronRight, Layout, Type, HelpCircle, Eye, Edit3 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function CourseEditor() {
   const { id } = useParams();
@@ -282,8 +284,40 @@ export default function CourseEditor() {
                     />
                   </div>
 
-                  <div className="form-group mb-3">
-                    <label className="form-label">{lesson.type === 'quiz' ? 'Intro Content (Markdown Supported)' : 'Content (Markdown Supported)'}</label>
+                  {/* Mode Toggle: Edit vs Live Preview */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label className="form-label" style={{ margin: 0 }}>
+                      {lesson.type === 'quiz' ? 'Intro Content (Markdown Supported)' : 'Content (Markdown Supported)'}
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-surface)', padding: '0.2rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${!lesson.showPreview ? 'btn-primary' : 'btn-ghost'}`}
+                        style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem', height: 'auto' }}
+                        onClick={() => {
+                          const newLessons = [...lessons];
+                          newLessons[index].showPreview = false;
+                          setLessons(newLessons);
+                        }}
+                      >
+                        <Edit3 size={12} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${lesson.showPreview ? 'btn-primary' : 'btn-ghost'}`}
+                        style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem', height: 'auto' }}
+                        onClick={() => {
+                          const newLessons = [...lessons];
+                          newLessons[index].showPreview = true;
+                          setLessons(newLessons);
+                        }}
+                      >
+                        <Eye size={12} /> Preview
+                      </button>
+                    </div>
+                  </div>
+
+                  {!lesson.showPreview ? (
                     <textarea 
                       className="form-input" 
                       rows={lesson.type === 'quiz' ? "3" : "8"}
@@ -296,7 +330,50 @@ export default function CourseEditor() {
                       }}
                       style={{ resize: 'vertical', fontFamily: 'monospace', minHeight: '120px' }}
                     />
-                  </div>
+                  ) : (
+                    <div 
+                      className="markdown-content"
+                      style={{
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '1.25rem',
+                        minHeight: '120px',
+                        maxHeight: '400px',
+                        overflowY: 'auto'
+                      }}
+                    >
+                      {lesson.content ? (
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            img: ({node, src, alt, ...props}) => (
+                              <img
+                                src={src}
+                                alt={alt || 'Illustration'}
+                                style={{
+                                  display: 'block',
+                                  maxWidth: '100%',
+                                  maxHeight: '300px',
+                                  height: 'auto',
+                                  margin: '1rem auto',
+                                  borderRadius: 'var(--radius-md)',
+                                  border: '1px solid var(--border-light)',
+                                  objectFit: 'contain'
+                                }}
+                                {...props}
+                              />
+                            )
+                          }}
+                        >
+                          {lesson.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', italic: 'true' }}>No content to preview...</span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                   {/* Mermaid Builder Panel */}
                   <div style={{
