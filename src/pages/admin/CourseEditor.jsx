@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
-import { BookOpen, Plus, Save, Sparkles, Trash2, GripVertical, ChevronRight, Layout, Type, HelpCircle, Eye, Edit3 } from 'lucide-react';
+import { BookOpen, Plus, Save, Sparkles, Trash2, GripVertical, ChevronRight, Layout, Type, HelpCircle, Eye, Edit3, Upload } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -18,6 +18,7 @@ export default function CourseEditor() {
   const [aiLoading, setAiLoading] = useState(false);
   const [topic, setTopic] = useState('');
   const [uploadingIndex, setUploadingIndex] = useState(null); // tracks which lesson is uploading
+  const [uploadingThumb, setUploadingThumb] = useState(false);
 
   useEffect(() => {
     if (id === 'new') {
@@ -169,6 +170,36 @@ export default function CourseEditor() {
     }
   };
 
+  const handleThumbnailUpload = async (e) => {
+    let file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    if (file.size > 20 * 1024 * 1024) { error('File terlalu besar! Maks 20MB.'); return; }
+    setUploadingThumb(true);
+    try {
+      if (file.size > 500 * 1024) {
+        // Compress to max 1200px wide
+        file = await compressImage(file, 1200, 0.88);
+      }
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('vl_token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setCourse(prev => ({ ...prev, thumbnail: data.url }));
+      success('✅ Thumbnail berhasil diupload!');
+    } catch (err) {
+      error(`Upload gagal: ${err.message}`);
+    } finally {
+      setUploadingThumb(false);
+    }
+  };
+
   const addLesson = () => {
     const newLesson = {
       id: 'temp-' + Date.now(),
@@ -211,6 +242,81 @@ export default function CourseEditor() {
                 onChange={e => setCourse({...course, title: e.target.value})} 
                 placeholder="e.g. Master Vibe Coding"
               />
+            </div>
+
+            {/* ── Thumbnail Upload ── */}
+            <div className="form-group mb-3">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                🖼️ Course Thumbnail
+              </label>
+              <div style={{
+                border: '2px dashed var(--border)',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                background: 'var(--bg-surface)',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s'
+              }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                onClick={() => document.getElementById('upload-course-thumb').click()}
+              >
+                {course.thumbnail ? (
+                  <div style={{ position: 'relative' }}>
+                    <img
+                      src={course.thumbnail}
+                      alt="thumbnail"
+                      style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }}
+                    />
+                    <div style={{
+                      position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.35rem',
+                      opacity: 0, transition: 'opacity 0.2s'
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                      onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                    >
+                      <Upload size={22} color="white" />
+                      <span style={{ color: 'white', fontSize: '0.78rem', fontWeight: 600 }}>Ganti Thumbnail</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: 'var(--text-muted)' }}>
+                    {uploadingThumb ? (
+                      <>
+                        <span style={{
+                          width: 22, height: 22, border: '2.5px solid var(--primary)', borderTopColor: 'transparent',
+                          borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite'
+                        }} />
+                        <span style={{ fontSize: '0.8rem' }}>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={24} color="var(--text-muted)" />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Klik untuk upload thumbnail</span>
+                        <span style={{ fontSize: '0.72rem' }}>PNG, JPG, WebP · Maks 20MB</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              <input
+                id="upload-course-thumb"
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleThumbnailUpload}
+              />
+              {course.thumbnail && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ marginTop: '0.4rem', fontSize: '0.72rem', color: 'var(--danger)' }}
+                  onClick={e => { e.stopPropagation(); setCourse(prev => ({ ...prev, thumbnail: null })); }}
+                >
+                  ✕ Hapus thumbnail
+                </button>
+              )}
             </div>
             <div className="form-group mb-3">
               <label className="form-label">Level</label>

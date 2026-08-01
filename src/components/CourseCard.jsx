@@ -36,8 +36,21 @@ export default function CourseCard({ course, index = 0, progress = null, enrolle
     <div className="card" onClick={() => !isLocked && navigate(`/courses/${course.id}`)}
       style={{ cursor: isLocked ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', gap: 0, padding: 0, overflow: 'hidden', opacity: isLocked ? 0.75 : 1 }}>
       {/* Thumbnail */}
-      <div style={{ height: 140, background: gradient, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <BookOpen size={42} color="rgba(255,255,255,0.3)" />
+      <div style={{ height: 140, position: 'relative', overflow: 'hidden', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {course.thumbnail ? (
+          <img
+            src={course.thumbnail}
+            alt={course.title}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={e => { e.target.style.display = 'none'; }}
+          />
+        ) : (
+          <BookOpen size={42} color="rgba(255,255,255,0.3)" />
+        )}
+        {/* Dark overlay so badges are always readable */}
+        {course.thumbnail && (
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.0) 60%)' }} />
+        )}
         <div style={{ position: 'absolute', top: 12, left: 12 }}>
           <span className={`badge ${lvl.cls}`}>{lvl.label}</span>
         </div>
