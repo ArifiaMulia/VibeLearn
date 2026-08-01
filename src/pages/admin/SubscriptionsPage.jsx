@@ -88,9 +88,12 @@ const INVOICE_PRESETS = {
   }
 };
 
+import { useBranding } from '../../contexts/BrandingContext';
+
 export default function SubscriptionsPage() {
   const { authFetch } = useAuth();
   const { success, error } = useAlert();
+  const branding = useBranding();
   const canvasRef = useRef(null);
 
   // Layout tabs state
@@ -106,9 +109,36 @@ export default function SubscriptionsPage() {
   const [bankSettings, setBankSettings] = useState({
     manual_bank_name: '',
     manual_bank_account: '',
-    manual_bank_recipient: ''
+    manual_bank_recipient: '',
+    app_name: '',
+    app_tagline: '',
+    app_logo_url: ''
   });
   const [savingSettings, setSavingSettings] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('vl_token')}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setBankSettings(prev => ({ ...prev, app_logo_url: data.url }));
+      success('Logo uploaded successfully!');
+    } catch (err) {
+      error(err.message || 'Failed to upload logo.');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   // Tab 2: Verifications state
   const [verifications, setVerifications] = useState([]);
@@ -183,7 +213,10 @@ export default function SubscriptionsPage() {
         method: 'PUT',
         body: JSON.stringify(bankSettings)
       });
-      success('Successfully updated manual bank transfer settings!');
+      success('Successfully updated app and payment settings!');
+      if (branding && branding.refreshBranding) {
+        branding.refreshBranding();
+      }
     } catch (err) {
       error(err.message || 'Failed to save settings.');
     } finally {
@@ -994,77 +1027,179 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {/* ── TAB 4: MANUAL PAYMENT SETTINGS ── */}
+      {/* ── TAB 4: APP & PAYMENT SETTINGS ── */}
       {activeSubTab === 'settings' && (
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '2rem', maxWidth: 600 }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-            💳 Manual Payment Destination
-          </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-            Configure the bank details that students will see when they select the "Manual Bank Transfer" option in the subscription checkout flow.
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: 600 }}>
+          
+          {/* App Branding Settings */}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '2rem' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🎨 App Branding & Identity
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              Customize your application identity including the brand name, tagline, and logo image.
+            </p>
 
-          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                Bank Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={bankSettings.manual_bank_name}
-                onChange={e => setBankSettings({ ...bankSettings, manual_bank_name: e.target.value })}
-                style={{
-                  width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
-                  borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
-                }}
-                placeholder="e.g. Bank Central Asia (BCA)"
-              />
-            </div>
+            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Application Logo Image
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {bankSettings.app_logo_url ? (
+                    <img 
+                      src={bankSettings.app_logo_url} 
+                      alt="Logo Preview" 
+                      style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border-light)', background: 'var(--bg-input)' }}
+                    />
+                  ) : (
+                    <div style={{ width: 56, height: 56, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border)', background: 'var(--bg-input)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      No Logo
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      id="branding-logo-upload"
+                      style={{ display: 'none' }}
+                    />
+                    <label 
+                      htmlFor="branding-logo-upload"
+                      className="btn btn-ghost"
+                      style={{
+                        padding: '0.45rem 1rem', borderRadius: 8, fontSize: '0.8rem', cursor: uploadingLogo ? 'not-allowed' : 'pointer',
+                        border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700,
+                        background: 'rgba(255,255,255,0.02)'
+                      }}
+                    >
+                      <Upload size={14} /> {uploadingLogo ? 'Uploading...' : 'Upload Image'}
+                    </label>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Recommended: Square PNG/SVG</span>
+                  </div>
+                </div>
+              </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                Account Number *
-              </label>
-              <input
-                type="text"
-                required
-                value={bankSettings.manual_bank_account}
-                onChange={e => setBankSettings({ ...bankSettings, manual_bank_account: e.target.value })}
-                style={{
-                  width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
-                  borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
-                }}
-                placeholder="e.g. 123-456-7890"
-              />
-            </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Logo URL (Alternative to upload)
+                </label>
+                <input
+                  type="text"
+                  value={bankSettings.app_logo_url}
+                  onChange={e => setBankSettings({ ...bankSettings, app_logo_url: e.target.value })}
+                  style={{
+                    width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                    borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                  }}
+                  placeholder="/logo.png or external link"
+                />
+              </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                Account Holder Name (A/N) *
-              </label>
-              <input
-                type="text"
-                required
-                value={bankSettings.manual_bank_recipient}
-                onChange={e => setBankSettings({ ...bankSettings, manual_bank_recipient: e.target.value })}
-                style={{
-                  width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
-                  borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
-                }}
-                placeholder="e.g. PT Vibe Learn / Arifia Mulia"
-              />
-            </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Brand Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={bankSettings.app_name}
+                  onChange={e => setBankSettings({ ...bankSettings, app_name: e.target.value })}
+                  style={{
+                    width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                    borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                  }}
+                  placeholder="e.g. Promptara"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={savingSettings}
-              className="btn btn-primary"
-              style={{ padding: '0.65rem 1.2rem', fontWeight: 700, alignSelf: 'flex-start', marginTop: '0.5rem', minWidth: 150, justifyContent: 'center' }}
-            >
-              {savingSettings ? 'Saving...' : 'Save Settings'}
-            </button>
-          </form>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Tagline / Subtitle
+                </label>
+                <input
+                  type="text"
+                  value={bankSettings.app_tagline}
+                  onChange={e => setBankSettings({ ...bankSettings, app_tagline: e.target.value })}
+                  style={{
+                    width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                    borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                  }}
+                  placeholder="e.g. AI Coding Academy"
+                />
+              </div>
+
+              <div style={{ height: 1, background: 'var(--border-light)', margin: '1rem 0' }} />
+
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.25rem', color: 'var(--text-primary)' }}>
+                💳 Manual Payment Destination
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                Configure the bank details that students will see when checking out manually.
+              </p>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Bank Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={bankSettings.manual_bank_name}
+                  onChange={e => setBankSettings({ ...bankSettings, manual_bank_name: e.target.value })}
+                  style={{
+                    width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                    borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                  }}
+                  placeholder="e.g. Bank Central Asia (BCA)"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Account Number *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={bankSettings.manual_bank_account}
+                  onChange={e => setBankSettings({ ...bankSettings, manual_bank_account: e.target.value })}
+                  style={{
+                    width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                    borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                  }}
+                  placeholder="e.g. 123-456-7890"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Account Holder Name (A/N) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={bankSettings.manual_bank_recipient}
+                  onChange={e => setBankSettings({ ...bankSettings, manual_bank_recipient: e.target.value })}
+                  style={{
+                    width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)',
+                    borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.88rem'
+                  }}
+                  placeholder="e.g. PT Vibe Learn / Arifia Mulia"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingSettings || uploadingLogo}
+                className="btn btn-primary"
+                style={{ padding: '0.65rem 1.2rem', fontWeight: 700, alignSelf: 'flex-start', marginTop: '0.5rem', minWidth: 150, justifyContent: 'center' }}
+              >
+                {savingSettings ? 'Saving...' : 'Save Settings'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 

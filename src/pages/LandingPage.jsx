@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Code2, Rocket, Play, Shield, CheckCircle, X, Building2, Users, Star, ArrowRight, Globe, Lock, Cpu } from 'lucide-react';
 import UpgradeModal from '../components/UpgradeModal';
+import { useBranding } from '../contexts/BrandingContext';
 
 // ── Main Landing Page ──────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
+  const branding = useBranding();
   const [modal, setModal] = useState(null); // null | 'pro' | 'enterprise'
   const [apiPlans, setApiPlans] = useState([]);
   const [currency, setCurrency] = useState('IDR');
@@ -63,9 +65,9 @@ export default function LandingPage() {
       {/* Nav */}
       <nav style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1.25rem 5%', borderBottom:'1px solid var(--border-light)', background:'rgba(7,7,26,0.85)', backdropFilter:'blur(20px)', position:'sticky', top:0, zIndex:100 }}>
         <div style={{ display:'flex', alignItems:'center', gap:'0.75rem' }}>
-          <img src="/logo.png" alt="Promptara" style={{ width:36, height:36, borderRadius:10, objectFit:'cover', boxShadow:'0 0 16px var(--primary-glow)' }} />
-          <span style={{ fontWeight:800, fontSize:'1.2rem' }}>Promptara</span>
-          <span style={{ fontSize:'0.7rem', color:'var(--accent)', fontWeight:600 }}>AI Coding Academy</span>
+          <img src={branding.app_logo_url || "/logo.png"} alt={branding.app_name || "Promptara"} style={{ width:36, height:36, borderRadius:10, objectFit:'cover', boxShadow:'0 0 16px var(--primary-glow)' }} />
+          <span style={{ fontWeight:800, fontSize:'1.2rem' }}>{branding.app_name || "Promptara"}</span>
+          <span style={{ fontSize:'0.7rem', color:'var(--accent)', fontWeight:600 }}>{branding.app_tagline || "AI Coding Academy"}</span>
         </div>
         <div style={{ display:'flex', gap:'0.75rem', alignItems:'center' }}>
           <a href="#pricing" style={{ fontSize:'0.85rem', color:'var(--text-muted)', textDecoration:'none', padding:'0.4rem 0.75rem' }}
@@ -206,11 +208,11 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ padding:'2.5rem 5%', borderTop:'1px solid var(--border-light)', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'1rem' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'0.6rem' }}>
-          <img src="/logo.png" alt="Promptara" style={{ width:28, height:28, borderRadius:8, objectFit:'cover' }} />
-          <span style={{ fontWeight:700 }}>Promptara</span>
+          <img src={branding.app_logo_url || "/logo.png"} alt={branding.app_name || "Promptara"} style={{ width:28, height:28, borderRadius:8, objectFit:'cover' }} />
+          <span style={{ fontWeight:700 }}>{branding.app_name || "Promptara"}</span>
         </div>
         <div style={{ fontSize:'0.78rem', color:'var(--text-muted)', textAlign:'center' }}>
-          © 2026 Promptara. All rights reserved. |{' '}
+          © 2026 {branding.app_name || "Promptara"}. All rights reserved. |{' '}
           <a href="https://virtuenet.id" target="_blank" rel="noopener noreferrer"
             style={{ color:'var(--accent)', textDecoration:'none' }}>Virtuenet.id</a>{' '}
           powered by Prasetia Dwidharma

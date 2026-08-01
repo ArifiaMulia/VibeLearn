@@ -13,10 +13,13 @@ import pkg from '../../package.json';
 
 const PLAN_COLORS = { free: 'var(--text-muted)', pro: 'var(--warning)', enterprise: 'var(--accent)' };
 
+import { useBranding } from '../contexts/BrandingContext';
+
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const { collapsed, toggle, mobileOpen, closeMobile } = useSidebar();
+  const branding = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -120,13 +123,13 @@ export default function Sidebar() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src="/logo.png" alt="Promptara" style={{
+              <img src={branding.app_logo_url || '/logo.png'} alt={branding.app_name || 'Promptara'} style={{
                 width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0,
                 boxShadow: '0 0 12px var(--primary-glow)',
               }} onError={e => e.target.style.display = 'none'} />
               <div>
-                <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em' }}>Promptara</div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600 }}>AI Coding Academy</div>
+                <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em' }}>{branding.app_name || 'Promptara'}</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600 }}>{branding.app_tagline || 'AI Coding Academy'}</div>
               </div>
             </div>
             <button onClick={closeMobile} style={{
@@ -235,7 +238,7 @@ export default function Sidebar() {
           gap: '0.75rem', overflow: 'hidden',
           transition: 'padding 0.25s',
         }}>
-          <img src="/logo.png" alt="Promptara" style={{
+          <img src={branding.app_logo_url || '/logo.png'} alt={branding.app_name || 'Promptara'} style={{
             width: 40, height: 40, borderRadius: 10,
             objectFit: 'cover', flexShrink: 0,
             boxShadow: '0 0 16px var(--primary-glow)',
@@ -251,11 +254,11 @@ export default function Sidebar() {
             background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
             alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 16px var(--primary-glow)', fontWeight: 800, color: 'white', fontSize: '1.1rem',
-          }}>P</div>
+          }}>{(branding.app_name || 'P')[0]}</div>
           {!collapsed && (
             <div style={{ opacity: collapsed ? 0 : 1, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em' }}>Promptara</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600 }}>AI Coding Academy</div>
+              <div style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em' }}>{branding.app_name || 'Promptara'}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600 }}>{branding.app_tagline || 'AI Coding Academy'}</div>
             </div>
           )}
         </div>

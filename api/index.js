@@ -39,6 +39,28 @@ app.get('/api/health', async (req, res) => {
   res.status(checks.database === 'ok' ? 200 : 503).json(checks);
 });
 
+// Public Config (Branding Settings)
+app.get('/api/config', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT key, value FROM system_settings 
+       WHERE key IN ('app_name', 'app_tagline', 'app_logo_url')`
+    );
+    const config = {
+      app_name: 'Promptara',
+      app_tagline: 'AI Coding Academy',
+      app_logo_url: '/logo.png'
+    };
+    result.rows.forEach(row => {
+      config[row.key] = row.value;
+    });
+    res.json(config);
+  } catch (err) {
+    console.error('Error fetching public config:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ─── DATABASE INITIALIZATION ───────────────────────────────────────────────
 const initDb = async (retries = 10, delay = 3000) => {
   while (retries > 0) {
@@ -202,16 +224,19 @@ const initDb = async (retries = 10, delay = 3000) => {
 
       // Seed system_settings
       try {
-        const existingSettings = await pool.query('SELECT key FROM system_settings LIMIT 1');
+        const existingSettings = await pool.query('SELECT key FROM system_settings WHERE key = \'app_name\'');
         if (!existingSettings.rows.length) {
           await pool.query(`
             INSERT INTO system_settings (key, value) VALUES 
             ('manual_bank_name', 'Bank Central Asia (BCA)'),
             ('manual_bank_account', '123-456-7890'),
-            ('manual_bank_recipient', 'PT Vibe Learn / Arifia Mulia')
+            ('manual_bank_recipient', 'PT Vibe Learn / Arifia Mulia'),
+            ('app_name', 'Promptara'),
+            ('app_tagline', 'AI Coding Academy'),
+            ('app_logo_url', '/logo.png')
             ON CONFLICT (key) DO NOTHING
           `);
-          console.log('✅ Seeded default system_settings.');
+          console.log('✅ Seeded default system_settings and branding settings.');
         }
       } catch (err) {
         console.error('Error seeding system settings:', err);

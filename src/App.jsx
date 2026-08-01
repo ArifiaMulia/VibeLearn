@@ -17,6 +17,7 @@ import ProfilePage from './pages/profile/ProfilePage';
 import UsersPage from './pages/admin/UsersPage';
 import CoursesManager from './pages/admin/CoursesManager';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
+import { BrandingProvider } from './contexts/BrandingContext';
 import SubscriptionsPage from './pages/admin/SubscriptionsPage';
 import CourseEditor from './pages/admin/CourseEditor';
 import CertificateBuilderPage from './pages/admin/CertificateBuilderPage';
@@ -24,42 +25,44 @@ import LarkCallbackPage from './pages/LarkCallbackPage';
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AlertProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/lark-callback" element={<LarkCallbackPage />} />
-              <Route element={<ProtectedRoute />}>
-                <Route element={<DashboardLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/courses" element={<CoursesPage />} />
-                  <Route path="/courses/:id" element={<CourseDetailPage />} />
-                  <Route path="/lessons/:id" element={<LessonPage />} />
-                  <Route path="/labs" element={<LabsPage />} />
-                  <Route path="/labs/:id" element={<LabSession />} />
-                  <Route path="/leaderboard" element={<LeaderboardPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route element={<ProtectedRoute allowedRoles={['super_admin', 'master']} />}>
-                    <Route path="/admin/users" element={<UsersPage />} />
-                    <Route path="/admin/courses" element={<CoursesManager />} />
-                    <Route path="/admin/courses/edit/:id" element={<CourseEditor />} />
-                    <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
-                    <Route path="/admin/certificates" element={<CertificateBuilderPage />} />
-                  </Route>
-                  <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
-                    <Route path="/admin/subscriptions" element={<SubscriptionsPage />} />
+    <BrandingProvider>
+      <LanguageProvider>
+        <AlertProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/lark-callback" element={<LarkCallbackPage />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<DashboardLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/courses" element={<CoursesPage />} />
+                    <Route path="/courses/:id" element={<CourseDetailPage />} />
+                    <Route path="/lessons/:id" element={<LessonPage />} />
+                    <Route path="/labs" element={<LabsPage />} />
+                    <Route path="/labs/:id" element={<LabSession />} />
+                    <Route path="/leaderboard" element={<LeaderboardPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route element={<ProtectedRoute allowedRoles={['super_admin', 'master']} />}>
+                      <Route path="/admin/users" element={<UsersPage />} />
+                      <Route path="/admin/courses" element={<CoursesManager />} />
+                      <Route path="/admin/courses/edit/:id" element={<CourseEditor />} />
+                      <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
+                      <Route path="/admin/certificates" element={<CertificateBuilderPage />} />
+                    </Route>
+                    <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+                      <Route path="/admin/subscriptions" element={<SubscriptionsPage />} />
+                    </Route>
                   </Route>
                 </Route>
-              </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </AlertProvider>
-    </LanguageProvider>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </AlertProvider>
+      </LanguageProvider>
+    </BrandingProvider>
   );
 }
 

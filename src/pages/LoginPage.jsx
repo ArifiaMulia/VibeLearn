@@ -4,9 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
 import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy, Bird } from 'lucide-react';
 
+import { useBranding } from '../contexts/BrandingContext';
+
 export default function LoginPage() {
   const { login, register, user } = useAuth();
   const { error: showError, success } = useAlert();
+  const branding = useBranding();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState('login');
@@ -74,10 +77,10 @@ export default function LoginPage() {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 440 }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-            <img src="/logo.png" alt="Promptara" style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover', boxShadow: '0 0 30px var(--primary-glow)' }} />
+            <img src={branding.app_logo_url || '/logo.png'} alt={branding.app_name || 'Promptara'} style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover', boxShadow: '0 0 30px var(--primary-glow)' }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>Promptara</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>AI Coding Academy</div>
+              <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>{branding.app_name || 'Promptara'}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{branding.app_tagline || 'AI Coding Academy'}</div>
             </div>
           </div>
 
