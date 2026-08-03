@@ -192,7 +192,7 @@ router.get('/settings', auth, async (req, res) => {
     res.json(settings);
   } catch (err) {
     console.error("Error fetching system settings:", err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: err.message, stack: err.stack });
   }
 });
 
