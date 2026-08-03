@@ -466,7 +466,7 @@ export default function SubscriptionsPage() {
             borderBottom: activeSubTab === 'settings' ? '2px solid var(--primary)' : 'none',
           }}
         >
-          💳 Payment Settings
+          ⚙️ Admin Settings
         </button>
       </div>
 
