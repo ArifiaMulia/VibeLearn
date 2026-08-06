@@ -47,22 +47,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// PUT /api/subscriptions/:userId — super_admin changes plan
-router.put('/:userId', auth, requireRole('super_admin'), async (req, res) => {
-  const { plan, status } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE subscriptions SET plan=$1, status=$2 WHERE user_id=$3 RETURNING *`,
-      [plan, status, req.params.userId]
-    );
-    // Also update user's plan column
-    await pool.query('UPDATE users SET plan=$1 WHERE id=$2', [plan, req.params.userId]);
-    if (!result.rows.length) return res.status(404).json({ error: 'Subscription not found' });
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+
 
 // GET /api/subscriptions/stats — super_admin usage stats
 router.get('/stats/overview', auth, requireRole('super_admin'), async (req, res) => {
@@ -247,6 +232,23 @@ router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, 
     await pool.query('ROLLBACK').catch(() => {});
     console.error('Error updating system settings:', err);
     res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// PUT /api/subscriptions/:userId — super_admin changes plan
+router.put('/:userId', auth, requireRole('super_admin'), async (req, res) => {
+  const { plan, status } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE subscriptions SET plan=$1, status=$2 WHERE user_id=$3 RETURNING *`,
+      [plan, status, req.params.userId]
+    );
+    // Also update user's plan column
+    await pool.query('UPDATE users SET plan=$1 WHERE id=$2', [plan, req.params.userId]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Subscription not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
