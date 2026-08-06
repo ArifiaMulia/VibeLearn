@@ -171,8 +171,8 @@ router.put('/verifications/:id', auth, requireRole('super_admin', 'master'), asy
   }
 });
 
-// GET /api/subscriptions/settings — get manual bank transfer destination details and branding
-router.get('/settings', auth, async (req, res) => {
+// GET /api/subscriptions/settings — get bank transfer and branding settings (public)
+router.get('/settings', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT key, value FROM system_settings 
@@ -192,7 +192,7 @@ router.get('/settings', auth, async (req, res) => {
     res.json(settings);
   } catch (err) {
     console.error("Error fetching system settings:", err);
-    res.status(500).json({ error: 'Internal server error', details: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
