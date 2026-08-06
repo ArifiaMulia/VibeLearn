@@ -119,76 +119,54 @@ export default function SubscriptionsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef(null);
 
-  // Compress image client-side before uploading to prevent browser freeze
-  const compressImage = (file, maxSize = 512, quality = 0.8) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let w = img.width;
-          let h = img.height;
-          if (w > maxSize || h > maxSize) {
-            if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
-            else { w = Math.round(w * maxSize / h); h = maxSize; }
-          }
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          canvas.toBlob((blob) => {
-            if (!blob) return reject(new Error('Compression failed'));
-            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
-          }, 'image/jpeg', quality);
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = e.target.result;
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
-    // Reset file input immediately so it can be reused
+    // Reset input immediately so browser doesn't hang on re-select
     if (logoInputRef.current) logoInputRef.current.value = '';
     if (!file) return;
 
-    // Validate file type
+    // Validate type
     if (!file.type.startsWith('image/')) {
       error('Please select an image file (PNG, JPG, SVG, etc.)');
       return;
     }
-    // Validate file size (max 5MB raw)
-    if (file.size > 5 * 1024 * 1024) {
-      error('Image is too large. Maximum size is 5MB.');
+    // Validate size: max 2MB to prevent browser freeze
+    if (file.size > 2 * 1024 * 1024) {
+      error('Image file is too large. Please use an image under 2MB.');
       return;
     }
 
     setUploadingLogo(true);
     try {
-      // Compress the image before uploading
-      const compressed = await compressImage(file);
-      
       const formData = new FormData();
-      formData.append('file', compressed);
+      formData.append('file', file);
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('vl_token')}` },
         body: formData,
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       setBankSettings(prev => ({ ...prev, app_logo_url: data.url }));
-      success('Logo uploaded successfully!');
+      success('Logo uploaded! Click "Save Branding" to apply.');
     } catch (err) {
-      error(err.message || 'Failed to upload logo.');
+      if (err.name === 'AbortError') {
+        error('Upload timed out. Please check your connection and try again.');
+      } else {
+        error(err.message || 'Failed to upload logo.');
+      }
     } finally {
       setUploadingLogo(false);
     }
   };
+
 
   // Tab 2: Verifications state
   const [verifications, setVerifications] = useState([]);

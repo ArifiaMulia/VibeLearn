@@ -171,32 +171,37 @@ router.put('/verifications/:id', auth, requireRole('super_admin', 'master'), asy
   }
 });
 
-// GET /api/subscriptions/settings — get bank transfer and branding settings (public)
+// GET /api/subscriptions/settings — public, always returns defaults even if DB fails
 router.get('/settings', async (req, res) => {
+  const defaults = {
+    manual_bank_name: 'Bank Central Asia (BCA)',
+    manual_bank_account: '123-456-7890',
+    manual_bank_recipient: 'PT Vibe Learn / Arifia Mulia',
+    app_name: 'Promptara',
+    app_tagline: 'AI Coding Academy',
+    app_logo_url: '/logo.png'
+  };
   try {
+    // Ensure table exists first
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
     const result = await pool.query(
       `SELECT key, value FROM system_settings 
        WHERE key IN ('manual_bank_name', 'manual_bank_account', 'manual_bank_recipient', 'app_name', 'app_tagline', 'app_logo_url')`
     );
-    const settings = {
-      manual_bank_name: 'Bank Central Asia (BCA)',
-      manual_bank_account: '123-456-7890',
-      manual_bank_recipient: 'PT Vibe Learn / Arifia Mulia',
-      app_name: 'Promptara',
-      app_tagline: 'AI Coding Academy',
-      app_logo_url: '/logo.png'
-    };
-    result.rows.forEach(row => {
-      settings[row.key] = row.value;
-    });
-    res.json(settings);
+    result.rows.forEach(row => { defaults[row.key] = row.value; });
   } catch (err) {
-    console.error("Error fetching system settings:", err);
-    res.status(500).json({ error: 'Internal server error', details: err.message });
+    // Log but always return defaults — never fail with 500
+    console.error('Error fetching system settings (returning defaults):', err.message);
   }
+  res.json(defaults);
 });
 
-// PUT /api/subscriptions/settings — update settings
+// PUT /api/subscriptions/settings — update settings (admin only)
 router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, res) => {
   const { 
     manual_bank_name, 
@@ -207,6 +212,14 @@ router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, 
     app_logo_url
   } = req.body;
   try {
+    // Ensure table exists before inserting
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+
     await pool.query('BEGIN');
     
     const settingsMap = {
@@ -219,11 +232,11 @@ router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, 
     };
 
     for (const [key, value] of Object.entries(settingsMap)) {
-      if (value !== undefined) {
+      if (value !== undefined && value !== null) {
         await pool.query(
           `INSERT INTO system_settings (key, value) VALUES ($1, $2)
            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-          [key, value]
+          [key, String(value)]
         );
       }
     }
@@ -231,9 +244,9 @@ router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, 
     await pool.query('COMMIT');
     res.json({ message: 'Settings updated successfully' });
   } catch (err) {
-    await pool.query('ROLLBACK');
-    console.error("Error updating system settings:", err);
-    res.status(500).json({ error: 'Internal server error' });
+    await pool.query('ROLLBACK').catch(() => {});
+    console.error('Error updating system settings:', err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
