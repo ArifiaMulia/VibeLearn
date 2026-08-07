@@ -117,6 +117,7 @@ export default function SubscriptionsPage() {
   const [savingBranding, setSavingBranding] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoInputMode, setLogoInputMode] = useState('upload'); // 'upload' | 'url'
   const logoInputRef = useRef(null);
 
   const handleLogoUpload = async (e) => {
@@ -1102,62 +1103,94 @@ export default function SubscriptionsPage() {
             </p>
 
             <form onSubmit={handleSaveBranding} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Logo upload */}
+              {/* Logo selection */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                  Application Logo Image
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  {bankSettings.app_logo_url ? (
-                    <img
-                      src={bankSettings.app_logo_url.startsWith('http') || bankSettings.app_logo_url.startsWith('data:') ? bankSettings.app_logo_url : `${import.meta.env.VITE_API_URL || ''}${bankSettings.app_logo_url.startsWith('/') ? '' : '/'}${bankSettings.app_logo_url}`}
-                      alt="Logo Preview"
-                      style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover', border: '2px solid var(--border-light)', background: 'var(--bg-input)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
-                    />
-                  ) : (
-                    <div style={{ width: 64, height: 64, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-input)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      No Logo
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <input
-                      ref={logoInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      id="branding-logo-upload"
-                      style={{ display: 'none' }}
-                    />
-                    <label
-                      htmlFor="branding-logo-upload"
-                      className="btn btn-ghost"
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    Application Logo Image
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-input)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setLogoInputMode('upload')}
                       style={{
-                        padding: '0.5rem 1.1rem', borderRadius: 8, fontSize: '0.82rem',
-                        cursor: uploadingLogo ? 'not-allowed' : 'pointer',
-                        border: '1px solid var(--border-light)', display: 'flex',
-                        alignItems: 'center', gap: '0.4rem', fontWeight: 700,
-                        opacity: uploadingLogo ? 0.7 : 1,
+                        padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: 600, borderRadius: '6px', border: 'none', cursor: 'pointer',
+                        background: logoInputMode === 'upload' ? 'var(--primary-glow)' : 'transparent',
+                        color: logoInputMode === 'upload' ? 'white' : 'var(--text-muted)'
                       }}
                     >
-                      <Upload size={14} /> {uploadingLogo ? 'Uploading...' : 'Upload Image'}
-                    </label>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Recommended: Square PNG/SVG · max 5MB</span>
+                      File Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLogoInputMode('url')}
+                      style={{
+                        padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: 600, borderRadius: '6px', border: 'none', cursor: 'pointer',
+                        background: logoInputMode === 'url' ? 'var(--primary-glow)' : 'transparent',
+                        color: logoInputMode === 'url' ? 'white' : 'var(--text-muted)'
+                      }}
+                    >
+                      Image URL
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Logo URL */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                  Logo URL (alternative to upload)
-                </label>
-                <input
-                  type="text"
-                  value={bankSettings.app_logo_url}
-                  onChange={e => setBankSettings(prev => ({ ...prev, app_logo_url: e.target.value }))}
-                  style={{ width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.88rem', boxSizing: 'border-box' }}
-                  placeholder="/logo.png or https://..."
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-panel)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                  {/* Single Logo Preview */}
+                  <div style={{ flexShrink: 0 }}>
+                    {bankSettings.app_logo_url ? (
+                      <img
+                        src={bankSettings.app_logo_url.startsWith('http') || bankSettings.app_logo_url.startsWith('data:') ? bankSettings.app_logo_url : `${import.meta.env.VITE_API_URL || ''}${bankSettings.app_logo_url.startsWith('/') ? '' : '/'}${bankSettings.app_logo_url}`}
+                        alt="Logo Preview"
+                        style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover', border: '2px solid var(--border-light)', background: 'var(--bg-input)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
+                      />
+                    ) : (
+                      <div style={{ width: 64, height: 64, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-input)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        No Logo
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    {logoInputMode === 'upload' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          id="branding-logo-upload"
+                          style={{ display: 'none' }}
+                        />
+                        <label
+                          htmlFor="branding-logo-upload"
+                          className="btn btn-ghost"
+                          style={{
+                            padding: '0.5rem 1.1rem', borderRadius: 8, fontSize: '0.82rem',
+                            cursor: uploadingLogo ? 'not-allowed' : 'pointer',
+                            border: '1px solid var(--border-light)', display: 'inline-flex',
+                            alignItems: 'center', gap: '0.4rem', fontWeight: 700,
+                            opacity: uploadingLogo ? 0.7 : 1, alignSelf: 'flex-start'
+                          }}
+                        >
+                          <Upload size={14} /> {uploadingLogo ? 'Uploading...' : 'Browse File...'}
+                        </label>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Recommended: Square PNG/SVG · max 5MB</span>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        <input
+                          type="text"
+                          value={bankSettings.app_logo_url}
+                          onChange={e => setBankSettings(prev => ({ ...prev, app_logo_url: e.target.value }))}
+                          style={{ width: '100%', padding: '0.65rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.88rem', boxSizing: 'border-box' }}
+                          placeholder="e.g. https://imgur.com/logo.png"
+                        />
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Paste an external image URL</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Brand Name */}
