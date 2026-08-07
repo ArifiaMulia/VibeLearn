@@ -14,7 +14,7 @@ export function BrandingProvider({ children }) {
 
   const fetchBranding = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/config`);
+      const res = await fetch(`${API}/config?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setBranding(data);

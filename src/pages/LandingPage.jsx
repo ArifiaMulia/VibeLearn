@@ -65,7 +65,7 @@ export default function LandingPage() {
       {/* Nav */}
       <nav style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1.25rem 5%', borderBottom:'1px solid var(--border-light)', background:'rgba(7,7,26,0.85)', backdropFilter:'blur(20px)', position:'sticky', top:0, zIndex:100 }}>
         <div style={{ display:'flex', alignItems:'center', gap:'0.75rem' }}>
-          <img src={branding.app_logo_url || "/logo.png"} alt={branding.app_name || "Promptara"} style={{ width:36, height:36, borderRadius:10, objectFit:'cover', boxShadow:'0 0 16px var(--primary-glow)' }} />
+          <img src={(branding.app_logo_url || "/logo.png").startsWith('http') || (branding.app_logo_url || "/logo.png").startsWith('data:') ? (branding.app_logo_url || "/logo.png") : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || "/logo.png").startsWith('/') ? '' : '/'}${branding.app_logo_url || "/logo.png"}`} alt={branding.app_name || "Promptara"} style={{ width:36, height:36, borderRadius:10, objectFit:'cover', boxShadow:'0 0 16px var(--primary-glow)' }} />
           <span style={{ fontWeight:800, fontSize:'1.2rem' }}>{branding.app_name || "Promptara"}</span>
           <span style={{ fontSize:'0.7rem', color:'var(--accent)', fontWeight:600 }}>{branding.app_tagline || "AI Coding Academy"}</span>
         </div>
@@ -208,7 +208,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ padding:'2.5rem 5%', borderTop:'1px solid var(--border-light)', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'1rem' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'0.6rem' }}>
-          <img src={branding.app_logo_url || "/logo.png"} alt={branding.app_name || "Promptara"} style={{ width:28, height:28, borderRadius:8, objectFit:'cover' }} />
+          <img src={(branding.app_logo_url || "/logo.png").startsWith('http') || (branding.app_logo_url || "/logo.png").startsWith('data:') ? (branding.app_logo_url || "/logo.png") : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || "/logo.png").startsWith('/') ? '' : '/'}${branding.app_logo_url || "/logo.png"}`} alt={branding.app_name || "Promptara"} style={{ width:28, height:28, borderRadius:8, objectFit:'cover' }} />
           <span style={{ fontWeight:700 }}>{branding.app_name || "Promptara"}</span>
         </div>
         <div style={{ fontSize:'0.78rem', color:'var(--text-muted)', textAlign:'center' }}>

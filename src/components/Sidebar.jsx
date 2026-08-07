@@ -123,7 +123,7 @@ export default function Sidebar() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img src={branding.app_logo_url || '/logo.png'} alt={branding.app_name || 'Promptara'} style={{
+              <img src={(branding.app_logo_url || '/logo.png').startsWith('http') || (branding.app_logo_url || '/logo.png').startsWith('data:') ? (branding.app_logo_url || '/logo.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/logo.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/logo.png'}`} alt={branding.app_name || 'Promptara'} style={{
                 width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0,
                 boxShadow: '0 0 12px var(--primary-glow)',
               }} onError={e => e.target.style.display = 'none'} />
@@ -238,7 +238,7 @@ export default function Sidebar() {
           gap: '0.75rem', overflow: 'hidden',
           transition: 'padding 0.25s',
         }}>
-          <img src={branding.app_logo_url || '/logo.png'} alt={branding.app_name || 'Promptara'} style={{
+          <img src={(branding.app_logo_url || '/logo.png').startsWith('http') || (branding.app_logo_url || '/logo.png').startsWith('data:') ? (branding.app_logo_url || '/logo.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/logo.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/logo.png'}`} alt={branding.app_name || 'Promptara'} style={{
             width: 40, height: 40, borderRadius: 10,
             objectFit: 'cover', flexShrink: 0,
             boxShadow: '0 0 16px var(--primary-glow)',
