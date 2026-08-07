@@ -30,6 +30,28 @@ export function BrandingProvider({ children }) {
     fetchBranding();
   }, [fetchBranding]);
 
+  // Dynamically update favicon and page title based on branding
+  useEffect(() => {
+    if (branding.app_logo_url) {
+      const rawUrl = branding.app_logo_url;
+      const isAbsolute = rawUrl.startsWith('http') || rawUrl.startsWith('data:');
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const finalUrl = isAbsolute ? rawUrl : `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+      
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = finalUrl;
+    }
+    
+    if (branding.app_name) {
+      document.title = branding.app_name;
+    }
+  }, [branding.app_logo_url, branding.app_name]);
+
   return (
     <BrandingContext.Provider value={{ ...branding, refreshBranding: fetchBranding, loading }}>
       {children}
