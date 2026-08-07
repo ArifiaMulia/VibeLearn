@@ -1110,7 +1110,7 @@ export default function SubscriptionsPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   {bankSettings.app_logo_url ? (
                     <img
-                      src={bankSettings.app_logo_url}
+                      src={bankSettings.app_logo_url.startsWith('http') || bankSettings.app_logo_url.startsWith('data:') ? bankSettings.app_logo_url : `${import.meta.env.VITE_API_URL || ''}${bankSettings.app_logo_url.startsWith('/') ? '' : '/'}${bankSettings.app_logo_url}`}
                       alt="Logo Preview"
                       style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover', border: '2px solid var(--border-light)', background: 'var(--bg-input)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
                     />
