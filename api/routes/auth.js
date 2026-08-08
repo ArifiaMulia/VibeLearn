@@ -56,7 +56,13 @@ router.post('/register', async (req, res) => {
     // Auto-enroll in free courses
     await pool.query(`INSERT INTO subscriptions (user_id, plan, status) VALUES ($1, 'free', 'active')`, [user.id]);
     const token = generateToken(user);
+    
+    // Trigger non-blocking welcome email
+    const { sendWelcomeEmail } = require('../services/emailService');
+    sendWelcomeEmail(user.email, user.name).catch(() => {});
+
     res.status(201).json({ user, token });
+
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Email already registered' });
     console.error('Register error:', err);
@@ -197,4 +203,50 @@ router.post('/lark/callback', async (req, res) => {
   }
 });
 
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  try {
+    const userRes = await pool.query('SELECT id, name, email FROM users WHERE email = $1', [email.trim().toLowerCase()]);
+    if (!userRes.rows.length) {
+      // Don't reveal user existence for security
+      return res.json({ message: 'If that email exists in our system, a password reset link has been sent.' });
+    }
+
+    const user = userRes.rows[0];
+    // Generate timed reset token (valid 1 hour)
+    const resetToken = jwt.sign({ id: user.id, email: user.email, type: 'reset' }, jwtSecret, { expiresIn: '1h' });
+
+    const { sendPasswordResetEmail } = require('../services/emailService');
+    await sendPasswordResetEmail(user.email, resetToken).catch(() => {});
+
+    res.json({ message: 'If that email exists in our system, a password reset link has been sent.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/auth/reset-password-confirm
+router.post('/reset-password-confirm', async (req, res) => {
+  const { reset_token, new_password } = req.body;
+  if (!reset_token || !new_password) return res.status(400).json({ error: 'Token and new password are required' });
+  if (new_password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+
+  try {
+    const decoded = jwt.verify(reset_token, jwtSecret);
+    if (decoded.type !== 'reset') return res.status(400).json({ error: 'Invalid reset token' });
+
+    const hashed = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, decoded.id]);
+
+    res.json({ message: 'Password reset successfully! You can now log in with your new password.' });
+  } catch (err) {
+    res.status(400).json({ error: 'Expired or invalid password reset token' });
+  }
+});
+
 module.exports = router;
+

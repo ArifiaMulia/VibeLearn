@@ -60,7 +60,11 @@ app.use('/api/lessons', require('./routes/lessons'));
 app.use('/api/labs', require('./routes/labs'));
 app.use('/api/progress', require('./routes/progress'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
+app.use('/api/payments', require('./routes/payments'));
+app.use('/api/certificates', require('./routes/certificates'));
 app.use('/api/analytics', require('./routes/analytics'));
+
+
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/upload', require('./routes/upload'));
 
