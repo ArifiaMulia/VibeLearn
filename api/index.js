@@ -379,21 +379,10 @@ const initDb = async (retries = 10, delay = 3000) => {
           
           let lessonId;
           if (existingLesson.rows.length) {
+            // ✅ LESSON ALREADY EXISTS — skip update to preserve any admin edits
             lessonId = existingLesson.rows[0].id;
-            // Update existing lesson
-            await pool.query(
-              `UPDATE lessons 
-               SET title=$1, content=$2, video_url=$3, type=$4, xp_reward=$5, order_index=$6, difficulty=$7, 
-                   resources=$8, challenge_text=$9, content_id=$10, challenge_text_id=$11, 
-                   transcript=$12, transcript_id=$13, title_id=$14
-               WHERE id=$15`,
-              [l.title, l.content, l.video_url || null, l.type, l.xp_reward, l.order_index,
-               l.difficulty || 'beginner', JSON.stringify(l.resources || []), l.challenge_text || '',
-               l.content_id || null, l.challenge_text_id || null,
-               l.transcript || null, l.transcript_id || null, l.title_id || null, lessonId]
-            );
           } else {
-            // Insert new lesson
+            // ✅ NEW LESSON ONLY — insert if not present
             const lessonRes = await pool.query(
               `INSERT INTO lessons (course_id, title, content, video_url, type, xp_reward, order_index, difficulty, resources, challenge_text, content_id, challenge_text_id, transcript, transcript_id, title_id)
                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
@@ -403,16 +392,16 @@ const initDb = async (retries = 10, delay = 3000) => {
                l.transcript || null, l.transcript_id || null, l.title_id || null]
             );
             lessonId = lessonRes.rows[0].id;
+            console.log(`  ➕ New lesson seeded: "${l.title}"`);
           }
 
-          // Add/Update quiz questions for quiz lessons
+          // Add quiz questions only if lesson is new or quiz is missing
           if (l.type === 'quiz' && l.quizzes) {
             for (const q of l.quizzes) {
               await pool.query(
                 `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation, format, code_lines)
                  VALUES ($1,$2,$3,$4,$5,$6,$7)
-                 ON CONFLICT (lesson_id, question) DO UPDATE
-                 SET options=EXCLUDED.options, correct_answer=EXCLUDED.correct_answer, explanation=EXCLUDED.explanation, format=EXCLUDED.format, code_lines=EXCLUDED.code_lines`,
+                 ON CONFLICT (lesson_id, question) DO NOTHING`,
                 [lessonId, q.question, JSON.stringify(q.options), q.correct_answer,
                  q.explanation, q.format || 'multiple_choice', JSON.stringify(q.code_lines || [])]
               );
