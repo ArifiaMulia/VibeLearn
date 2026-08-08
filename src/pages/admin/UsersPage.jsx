@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
-import { Search, Trash2, Mail, UserPlus, X, Shield, Crown, User } from 'lucide-react';
+import { Search, Trash2, Mail, UserPlus, X, Shield, Crown, User, KeyRound } from 'lucide-react';
+
 
 const ROLE_ICONS = { super_admin: Shield, master: Crown, participant: User };
 const PLAN_COLORS = { free: 'var(--text-muted)', pro: 'var(--warning)', enterprise: 'var(--accent)' };
@@ -78,6 +79,71 @@ function AddUserModal({ onClose, onCreated, authFetch }) {
   );
 }
 
+function ResetPasswordModal({ targetUser, onClose, authFetch, onSuccess }) {
+
+  const { error: showError } = useAlert();
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.trim().length < 6) {
+      return showError('Password must be at least 6 characters');
+    }
+    setLoading(true);
+    try {
+      const res = await authFetch(`/users/${targetUser.id}/reset-password`, {
+        method: 'POST',
+        body: JSON.stringify({ new_password: newPassword }),
+      });
+      onSuccess(res.message);
+      onClose();
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
+    }}>
+      <div className="card" style={{ width: '100%', maxWidth: 420, padding: '2rem', position: 'relative' }}>
+        <button onClick={onClose} style={{
+          position: 'absolute', top: '1rem', right: '1rem', background: 'none',
+          border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
+        }}><X size={20} /></button>
+        <h3 style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <KeyRound size={20} className="text-primary" /> Reset Password
+        </h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+          Set a new password for <strong style={{ color: 'var(--text-primary)' }}>{targetUser.name}</strong> ({targetUser.email}).
+        </p>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="form-group">
+            <label className="form-label">New Password</label>
+            <input 
+              className="form-input" 
+              type="password" 
+              required 
+              placeholder="Enter new password (min 6 chars)" 
+              value={newPassword} 
+              onChange={e => setNewPassword(e.target.value)} 
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: '0.5rem' }}>
+            {loading ? 'Resetting...' : <><KeyRound size={16} /> Reset Password</>}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+
 export default function UsersPage() {
   const { authFetch, user: currentUser } = useAuth();
   const { success, error } = useAlert();
@@ -85,6 +151,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [resetTargetUser, setResetTargetUser] = useState(null);
+
 
   useEffect(() => { loadUsers(); }, []);
 
@@ -151,6 +219,15 @@ export default function UsersPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {showAddModal && <AddUserModal onClose={() => setShowAddModal(false)} onCreated={handleUserCreated} authFetch={authFetch} />}
+      {resetTargetUser && (
+        <ResetPasswordModal 
+          targetUser={resetTargetUser} 
+          onClose={() => setResetTargetUser(null)} 
+          authFetch={authFetch} 
+          onSuccess={msg => success(msg)} 
+        />
+      )}
+
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ position: 'relative', width: 300 }}>
@@ -233,13 +310,20 @@ export default function UsersPage() {
                   <td style={{ padding: '0.85rem 1.25rem' }}>
                     {formatDate(u.sub_expires_at)}
                   </td>
-                  <td style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>
+                  <td style={{ padding: '0.85rem 1.25rem', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '0.3rem' }}>
+                    <button className="btn btn-ghost" style={{ padding: '0.35rem', color: 'var(--primary)' }}
+                      title="Reset Password"
+                      onClick={() => setResetTargetUser(u)}>
+                      <KeyRound size={16} />
+                    </button>
                     <button className="btn btn-ghost" style={{ padding: '0.35rem', color: 'var(--danger)' }}
                       disabled={u.id === currentUser.id}
+                      title="Delete User"
                       onClick={() => deleteUser(u.id, u.name)}>
                       <Trash2 size={16} />
                     </button>
                   </td>
+
                 </tr>
               );
             })}

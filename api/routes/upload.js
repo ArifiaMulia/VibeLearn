@@ -16,6 +16,20 @@ const imageDir = path.join(uploadDir, 'images');
   }
 });
 
+// Safe MIME types and extensions whitelist
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'video/mp4',
+  'video/webm',
+  'video/ogg'
+];
+
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.webm', '.ogv'];
+
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -28,15 +42,28 @@ const storage = multer.diskStorage({
     }
   },
   filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const cleanExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : '.bin';
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    cb(null, uniqueSuffix + cleanExt);
   }
 });
 
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  
+  if (!ALLOWED_MIME_TYPES.includes(file.mimetype) || !ALLOWED_EXTENSIONS.includes(ext)) {
+    return cb(new Error('Invalid file type. Only JPG, PNG, WEBP, SVG, MP4, and WEBM files are allowed.'), false);
+  }
+  cb(null, true);
+};
+
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+  fileFilter: fileFilter,
+  limits: { fileSize: 50 * 1024 * 1024 } // Max 50MB limit
 });
+
 
 // POST /api/upload
 router.post('/', auth, upload.single('file'), (req, res) => {

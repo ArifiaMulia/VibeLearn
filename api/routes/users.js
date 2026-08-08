@@ -143,4 +143,32 @@ router.delete('/:id', auth, requireRole('super_admin'), async (req, res) => {
   }
 });
 
+// POST /api/users/:id/reset-password — super_admin / master only
+router.post('/:id/reset-password', auth, requireRole('super_admin', 'master'), async (req, res) => {
+  const { id } = req.params;
+  const { new_password } = req.body;
+
+  if (!new_password || new_password.trim().length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
+  try {
+    const hashed = await bcrypt.hash(new_password.trim(), 10);
+    const result = await pool.query(
+      'UPDATE users SET password = $1 WHERE id = $2 RETURNING id, name, email',
+      [hashed, id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: `Password reset successfully for ${result.rows[0].name} (${result.rows[0].email})` });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
+

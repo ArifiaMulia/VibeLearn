@@ -12,6 +12,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
+import ContentProtection from '../../components/ContentProtection';
+
 
 const GLOSSARY_DEFS = {
   en: {
@@ -707,8 +709,10 @@ export default function LessonPage() {
   const isCompleted = lesson.user_progress?.status === 'completed';
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <XPPopup visible={showXP} amount={xpEarned} />
+    <ContentProtection active={true}>
+      <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <XPPopup visible={showXP} amount={xpEarned} />
+
 
       <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/courses/${lesson.course_id}`)} style={{ width: 'fit-content' }}>
         <ArrowLeft size={15} /> {t('back_to_course')}
@@ -1039,5 +1043,8 @@ export default function LessonPage() {
         </div>
       </div>
     </div>
-  );
+  </ContentProtection>
+);
 }
+
+

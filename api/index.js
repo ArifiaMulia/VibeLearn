@@ -3,13 +3,54 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
 
+const helmet = require('helmet');
+const { authLimiter, apiLimiter, uploadLimiter, aiLimiter } = require('./middleware/rateLimit');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+// Trust proxy if running behind Traefik / Nginx / Reverse Proxy
+app.set('trust proxy', 1);
+
+// Security Headers with Helmet
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images/uploads across origins
+  contentSecurityPolicy: false, // Managed by Nginx / tailored policy
+}));
+
+// CORS Configuration — Restricted origins
+const allowedOrigins = [
+  'https://vibe.virtuenet.space',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl) or allowed origins
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS policy'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json({ limit: '10mb' }));
 
 const path = require('path');
+
+// Apply Global Rate Limiter to all /api routes
+app.use('/api', apiLimiter);
+
+// Specific Route Rate Limiters
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/upload', uploadLimiter);
+app.use('/api/ai', aiLimiter);
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -22,6 +63,7 @@ app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/upload', require('./routes/upload'));
+
 
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

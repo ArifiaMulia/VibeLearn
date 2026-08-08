@@ -31,8 +31,21 @@ router.post('/login', async (req, res) => {
 
 // POST /api/auth/register (public self-registration — free plan)
 router.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
+  let { name, email, password } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, and password are required' });
+
+  name = name.trim();
+  email = email.trim().toLowerCase();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
   try {
     const hashed = await bcrypt.hash(password, 10);
     const result = await pool.query(
@@ -50,6 +63,7 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // POST /api/auth/activity
 router.post('/activity', require('../middleware/auth'), async (req, res) => {

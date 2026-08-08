@@ -33,11 +33,16 @@ self.addEventListener('activate', (event) => {
 // ── Fetch strategy ────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  
+  // Skip unsupported schemes (chrome-extension, moz-extension, etc.) and non-http(s)
+  if (!request.url.startsWith('http://') && !request.url.startsWith('https://')) return;
+
   const url = new URL(request.url);
 
   // Skip non-GET and cross-origin API/external requests
   if (request.method !== 'GET') return;
   if (url.pathname.startsWith('/api')) return;  // Always network for API
+
 
   // For navigation requests (HTML pages) — Network first, fallback to cache
   if (request.mode === 'navigate') {
@@ -80,8 +85,10 @@ self.addEventListener('fetch', (event) => {
       caches.match(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
+          }
           return response;
         });
       })
@@ -89,3 +96,4 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
