@@ -61,6 +61,71 @@ app.get('/api/config', async (req, res) => {
   }
 });
 
+// ─── ONE-TIME MIGRATION: Restore lesson images from seed data ───────────────
+// POST /api/admin/restore-lesson-images  (super_admin only)
+// Only restores content that is MISSING images — never overwrites existing ones
+app.post('/api/admin/restore-lesson-images', async (req, res) => {
+  const jwt = require('jsonwebtoken');
+  const jwtSecret = process.env.JWT_SECRET || 'vibelearn_super_secret_jwt_2026';
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  let user;
+  try { user = jwt.verify(token, jwtSecret); } catch { return res.status(401).json({ error: 'Invalid token' }); }
+  if (!['super_admin', 'master'].includes(user.role)) return res.status(403).json({ error: 'Forbidden' });
+
+  const seedData = require('./seedData');
+  const sealsuiteData = require('./sealsuiteData');
+  const allSeedData = { ...seedData, ...sealsuiteData };
+
+  let restored = 0, skipped = 0;
+
+  try {
+    for (const [courseName, lessons] of Object.entries(allSeedData)) {
+      const courseRes = await pool.query('SELECT id FROM courses WHERE title=$1', [courseName]);
+      if (!courseRes.rows.length) continue;
+      const courseId = courseRes.rows[0].id;
+
+      for (const lesson of lessons) {
+        const seedHasImages = lesson.content && lesson.content.includes('![');
+        const seedIdHasImages = lesson.content_id && lesson.content_id.includes('![');
+        if (!seedHasImages && !seedIdHasImages) continue;
+
+        const lessonRes = await pool.query(
+          'SELECT id, content, content_id FROM lessons WHERE course_id=$1 AND (title=$2 OR title_id=$3)',
+          [courseId, lesson.title, lesson.title_id || null]
+        );
+        if (!lessonRes.rows.length) continue;
+
+        const db = lessonRes.rows[0];
+        const dbHasImages = (db.content || '').includes('![');
+        const dbIdHasImages = (db.content_id || '').includes('![');
+        const needsRestore = (seedHasImages && !dbHasImages) || (seedIdHasImages && !dbIdHasImages);
+
+        if (!needsRestore) { skipped++; continue; }
+
+        await pool.query(
+          `UPDATE lessons SET
+            content    = CASE WHEN $1 THEN $2 ELSE content END,
+            content_id = CASE WHEN $3 THEN $4 ELSE content_id END
+           WHERE id = $5`,
+          [seedHasImages && !dbHasImages, lesson.content,
+           seedIdHasImages && !dbIdHasImages, lesson.content_id,
+           db.id]
+        );
+        restored++;
+        console.log(`  🔧 Restored: "${lesson.title}"`);
+      }
+    }
+    res.json({ success: true, restored, skipped, message: `Restored ${restored} lessons, ${skipped} already had images.` });
+  } catch (err) {
+    console.error('restore-lesson-images error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // ─── DATABASE INITIALIZATION ───────────────────────────────────────────────
 const initDb = async (retries = 10, delay = 3000) => {
   while (retries > 0) {
