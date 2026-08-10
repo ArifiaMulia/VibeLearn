@@ -55,7 +55,15 @@ export default function ContentProtection({ children, active = true }) {
   const watermarkText = user?.email ? `${user.email} • Promptara Protected` : 'Promptara Protected Content';
 
   return (
-    <div className={`relative transition-all duration-200 ${blurred ? 'blur-md select-none pointer-events-none' : ''}`}>
+    <div 
+      style={{ 
+        position: 'relative', 
+        transition: 'all 0.2s ease',
+        filter: blurred ? 'blur(12px)' : 'none',
+        userSelect: blurred ? 'none' : 'auto',
+        pointerEvents: blurred ? 'none' : 'auto',
+      }}
+    >
       {/* CSS Rules to prevent printing & selecting */}
       <style>{`
         @media print {
@@ -73,15 +81,40 @@ export default function ContentProtection({ children, active = true }) {
         }
       `}</style>
 
-      {/* Invisible/Subtle Watermark Overlay */}
+      {/* Invisible Watermark Overlay (Inline Pure CSS for 100% Human Invisibility) */}
       <div 
-        className="pointer-events-none absolute inset-0 z-50 overflow-hidden opacity-[0.035] flex flex-wrap justify-between items-center select-none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 10,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          opacity: 0.005, // 0.5% opacity: Completely invisible to the naked human eye
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        }}
         aria-hidden="true"
       >
-        {Array.from({ length: 16 }).map((_, i) => (
+        {Array.from({ length: 24 }).map((_, i) => (
           <div 
             key={i} 
-            className="p-8 text-xs font-mono font-semibold tracking-widest uppercase transform -rotate-12 text-slate-400 dark:text-slate-200"
+            style={{
+              padding: '2rem',
+              fontSize: '0.75rem',
+              fontFamily: 'monospace',
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              transform: 'rotate(-12deg)',
+              color: 'var(--text-muted)',
+            }}
           >
             {watermarkText}
           </div>

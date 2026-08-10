@@ -492,6 +492,10 @@ const initDb = async (retries = 10, delay = 3000) => {
           if (existingLesson.rows.length) {
             // ✅ LESSON ALREADY EXISTS — skip update to preserve any admin edits
             lessonId = existingLesson.rows[0].id;
+            // Ensure type is updated to 'quiz' if seed data specifies 'quiz'
+            if (l.type === 'quiz') {
+              await pool.query(`UPDATE lessons SET type='quiz' WHERE id=$1`, [lessonId]);
+            }
           } else {
             // ✅ NEW LESSON ONLY — insert if not present
             const lessonRes = await pool.query(
@@ -506,18 +510,20 @@ const initDb = async (retries = 10, delay = 3000) => {
             console.log(`  ➕ New lesson seeded: "${l.title}"`);
           }
 
-          // Add quiz questions only if lesson is new or quiz is missing
+          // Add/Update quiz questions for quiz lessons
           if (l.type === 'quiz' && l.quizzes) {
             for (const q of l.quizzes) {
               await pool.query(
                 `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation, format, code_lines)
                  VALUES ($1,$2,$3,$4,$5,$6,$7)
-                 ON CONFLICT (lesson_id, question) DO NOTHING`,
+                 ON CONFLICT (lesson_id, question) DO UPDATE
+                 SET options=EXCLUDED.options, correct_answer=EXCLUDED.correct_answer, explanation=EXCLUDED.explanation, format=EXCLUDED.format, code_lines=EXCLUDED.code_lines`,
                 [lessonId, q.question, JSON.stringify(q.options), q.correct_answer,
                  q.explanation, q.format || 'multiple_choice', JSON.stringify(q.code_lines || [])]
               );
             }
           }
+
         }
       }
 

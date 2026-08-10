@@ -23,9 +23,37 @@ router.get('/:id', auth, async (req, res) => {
 
     // Get quiz questions if quiz type
     if (lesson.type === 'quiz') {
-      const quizzes = await pool.query('SELECT * FROM quizzes WHERE lesson_id = $1 ORDER BY id ASC', [lesson.id]);
+      let quizzes = await pool.query('SELECT * FROM quizzes WHERE lesson_id = $1 ORDER BY id ASC', [lesson.id]);
+      if (!quizzes.rows.length) {
+        // Dynamic fallback: populate from seed data if missing in DB
+        try {
+          const seedData = require('../seedData.js');
+          const sealsuiteData = require('../sealsuiteData.js');
+          const allData = { ...seedData, ...sealsuiteData };
+
+          for (const [courseTitle, lessons] of Object.entries(allData)) {
+            const match = lessons.find(l => l.title === lesson.title || (l.title_id && l.title_id === lesson.title_id));
+            if (match && match.quizzes) {
+              for (const q of match.quizzes) {
+                await pool.query(
+                  `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation, format, code_lines)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7)
+                   ON CONFLICT (lesson_id, question) DO NOTHING`,
+                  [lesson.id, q.question, JSON.stringify(q.options), q.correct_answer,
+                   q.explanation, q.format || 'multiple_choice', JSON.stringify(q.code_lines || [])]
+                );
+              }
+              quizzes = await pool.query('SELECT * FROM quizzes WHERE lesson_id = $1 ORDER BY id ASC', [lesson.id]);
+              break;
+            }
+          }
+        } catch (e) {
+          console.error('Dynamic quiz fallback error:', e.message);
+        }
+      }
       lesson.quizzes = quizzes.rows;
     }
+
     // Get user progress
     const progress = await pool.query('SELECT * FROM progress WHERE user_id=$1 AND lesson_id=$2', [req.user.id, lesson.id]);
     lesson.user_progress = progress.rows[0] || null;
