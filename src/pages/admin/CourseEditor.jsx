@@ -512,23 +512,42 @@ export default function CourseEditor() {
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            img: ({node, src, alt, ...props}) => (
-                              <img
-                                src={src}
-                                alt={alt || 'Illustration'}
-                                style={{
-                                  display: 'block',
-                                  maxWidth: '100%',
-                                  maxHeight: '300px',
-                                  height: 'auto',
-                                  margin: '1rem auto',
-                                  borderRadius: 'var(--radius-md)',
-                                  border: '1px solid var(--border-light)',
-                                  objectFit: 'contain'
-                                }}
-                                {...props}
-                              />
-                            )
+                            img: ({node, src, alt, ...props}) => {
+                              let finalSrc = src || '';
+                              if (finalSrc && !finalSrc.startsWith('http://') && !finalSrc.startsWith('https://') && !finalSrc.startsWith('data:')) {
+                                if (!finalSrc.startsWith('/')) {
+                                  finalSrc = `/uploads/images/${finalSrc}`;
+                                }
+                              }
+                              return (
+                                <img
+                                  src={finalSrc}
+                                  alt={alt || 'Illustration'}
+                                  onError={(e) => {
+                                    const current = e.currentTarget.src || '';
+                                    if (current.includes('/uploads/images/')) {
+                                      const filename = current.split('/uploads/images/').pop();
+                                      e.currentTarget.src = `/images/${filename}`;
+                                    } else if (!current.includes('/uploads/')) {
+                                      const filename = current.split('/').pop();
+                                      e.currentTarget.src = `/uploads/images/${filename}`;
+                                    }
+                                  }}
+                                  style={{
+                                    display: 'block',
+                                    maxWidth: '100%',
+                                    maxHeight: '300px',
+                                    height: 'auto',
+                                    margin: '1rem auto',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border-light)',
+                                    objectFit: 'contain'
+                                  }}
+                                  {...props}
+                                />
+                              );
+                            }
+
                           }}
                         >
                           {lesson.content}

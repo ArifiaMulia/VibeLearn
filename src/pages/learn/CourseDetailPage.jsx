@@ -487,19 +487,32 @@ export default function CourseDetailPage() {
     ]).then(([c, p, enrs]) => {
       setCourse(c);
       setProgress(p);
-      setEnrolled(enrs.some(e => e.course_id === parseInt(id)));
+
+      const targetId = Number(id);
+      const isEnrolledCheck = 
+        enrs.some(e => Number(e.course_id) === targetId || Number(e.enrolled_course_id) === targetId || Number(e.id) === targetId) ||
+        (Array.isArray(p) && p.length > 0) ||
+        ['super_admin', 'master'].includes(user?.role) ||
+        user?.plan === 'enterprise' ||
+        (user?.id && localStorage.getItem(`vl_enrolled_${user.id}_${targetId}`) === '1');
+
+      setEnrolled(isEnrolledCheck);
     }).finally(() => setLoading(false));
-  }, [id]);
+  }, [id, user]);
 
   const handleEnroll = async () => {
     setEnrolling(true);
     try {
       await authFetch(`/courses/${id}/enroll`, { method: 'POST' });
+      if (user?.id) {
+        localStorage.setItem(`vl_enrolled_${user.id}_${id}`, '1');
+      }
       setEnrolled(true);
       success(`${t('enroll_now')} 🎉 Start your first lesson`);
     } catch (e) { error(e.message); }
     setEnrolling(false);
   };
+
 
   const completedIds = new Set(progress.filter(p => p.status === 'completed').map(p => p.lesson_id));
   const totalXP = course?.lessons?.reduce((s, l) => s + (l.xp_reward || 0), 0) || 0;

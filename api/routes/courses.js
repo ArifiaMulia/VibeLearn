@@ -10,7 +10,7 @@ const requireRole = (...roles) => (req, res, next) =>
 router.get('/my/enrollments', auth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.*, e.enrolled_at, e.completed_at,
+      `SELECT c.*, c.id AS course_id, e.course_id AS enrolled_course_id, e.enrolled_at, e.completed_at,
         (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as total_lessons,
         (SELECT COUNT(*) FROM progress p WHERE p.user_id = $1 AND p.lesson_id IN (SELECT id FROM lessons WHERE course_id = c.id) AND p.status = 'completed') as completed_lessons
        FROM enrollments e JOIN courses c ON e.course_id = c.id WHERE e.user_id = $1`,
@@ -21,6 +21,7 @@ router.get('/my/enrollments', auth, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // GET /api/courses — all published, or all if admin/master
 router.get('/', auth, async (req, res) => {

@@ -600,10 +600,19 @@ export default function LessonPage() {
     setShowReviewMode(false);
     if (navTimerRef.current) clearTimeout(navTimerRef.current);
     authFetch(`/lessons/${id}`)
-      .then(data => { if (mountedRef.current) setLesson(data); })
+      .then(data => { 
+        if (mountedRef.current) {
+          setLesson(data);
+          if (data?.course_id && user?.id) {
+            localStorage.setItem(`vl_enrolled_${user.id}_${data.course_id}`, '1');
+            authFetch(`/courses/${data.course_id}/enroll`, { method: 'POST' }).catch(() => {});
+          }
+        }
+      })
       .catch(err => { if (mountedRef.current) { error(err.message); navigate('/courses'); } })
       .finally(() => { if (mountedRef.current) setLoading(false); });
-  }, [id]);
+  }, [id, user]);
+
 
   // Re-run mermaid whenever the lesson loads OR the language toggles
   useEffect(() => {
@@ -817,24 +826,42 @@ export default function LessonPage() {
                   ol: ({node, ...props}) => <ol style={{ marginLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'decimal' }} {...props} />,
                   li: ({node, ...props}) => <li style={{ marginBottom: '0.5rem' }} {...props} />,
                   blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '4px solid var(--primary)', color: 'var(--text-muted)', margin: '1rem 0', background: 'rgba(124,58,237,0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)' }} {...props} />,
-                  img: ({node, src, alt, ...props}) => (
-                    <img
-                      src={src}
-                      alt={alt || 'Lesson illustration'}
-                      loading="lazy"
-                      style={{
-                        display: 'block',
-                        maxWidth: '100%',
-                        height: 'auto',
-                        margin: '1.5rem auto',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border-light)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                        objectFit: 'contain',
-                      }}
-                      {...props}
-                    />
-                  ),
+                  img: ({node, src, alt, ...props}) => {
+                    let finalSrc = src || '';
+                    if (finalSrc && !finalSrc.startsWith('http://') && !finalSrc.startsWith('https://') && !finalSrc.startsWith('data:')) {
+                      if (!finalSrc.startsWith('/')) {
+                        finalSrc = `/uploads/images/${finalSrc}`;
+                      }
+                    }
+                    return (
+                      <img
+                        src={finalSrc}
+                        alt={alt || 'Lesson illustration'}
+                        loading="lazy"
+                        onError={(e) => {
+                          const current = e.currentTarget.src || '';
+                          if (current.includes('/uploads/images/')) {
+                            const filename = current.split('/uploads/images/').pop();
+                            e.currentTarget.src = `/images/${filename}`;
+                          } else if (!current.includes('/uploads/')) {
+                            const filename = current.split('/').pop();
+                            e.currentTarget.src = `/uploads/images/${filename}`;
+                          }
+                        }}
+                        style={{
+                          display: 'block',
+                          maxWidth: '100%',
+                          height: 'auto',
+                          margin: '1.5rem auto',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-light)',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                          objectFit: 'contain',
+                        }}
+                        {...props}
+                      />
+                    );
+                  },
                   code: ({node, inline, className, children, ...props}) => {
                     const match = /language-(\w+)/.exec(className || '');
                     if (!inline && match && match[1] === 'mermaid') {
