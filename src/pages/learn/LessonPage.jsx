@@ -839,15 +839,24 @@ export default function LessonPage() {
                         alt={alt || 'Lesson illustration'}
                         loading="lazy"
                         onError={(e) => {
+                          if (e.currentTarget.dataset.failed === 'true') {
+                            e.currentTarget.onerror = null;
+                            return;
+                          }
+                          e.currentTarget.dataset.failed = 'true';
+
                           const current = e.currentTarget.src || '';
                           if (current.includes('/uploads/images/')) {
                             const filename = current.split('/uploads/images/').pop();
                             e.currentTarget.src = `/images/${filename}`;
-                          } else if (!current.includes('/uploads/')) {
-                            const filename = current.split('/').pop();
+                          } else if (current.includes('/images/')) {
+                            const filename = current.split('/images/').pop();
                             e.currentTarget.src = `/uploads/images/${filename}`;
+                          } else {
+                            e.currentTarget.onerror = null;
                           }
                         }}
+
                         style={{
                           display: 'block',
                           maxWidth: '100%',

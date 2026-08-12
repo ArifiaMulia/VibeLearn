@@ -2,7 +2,7 @@
    Promptara Service Worker  — Cache-First for assets, Network-First for API
    ───────────────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'promptara-v1';
+const CACHE_NAME = 'promptara-v2';
 
 // App shell assets to cache on install
 const SHELL_ASSETS = [
@@ -11,6 +11,21 @@ const SHELL_ASSETS = [
   '/manifest.json',
   '/logo.png',
 ];
+
+// Helper to safely cache put without throwing errors for unsupported schemes
+function safeCachePut(request, response) {
+  if (!request || !request.url) return;
+  // Skip chrome-extension, moz-extension, file, etc.
+  if (!request.url.startsWith('http://') && !request.url.startsWith('https://')) return;
+  if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
+    try {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
+    } catch (e) {
+      // Ignore cache put errors
+    }
+  }
+}
 
 // ── Install: pre-cache shell ──────────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -35,7 +50,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   
   // Skip unsupported schemes (chrome-extension, moz-extension, etc.) and non-http(s)
-  if (!request.url.startsWith('http://') && !request.url.startsWith('https://')) return;
+  if (!request.url || (!request.url.startsWith('http://') && !request.url.startsWith('https://'))) return;
 
   const url = new URL(request.url);
 
@@ -43,14 +58,12 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.pathname.startsWith('/api')) return;  // Always network for API
 
-
   // For navigation requests (HTML pages) — Network first, fallback to cache
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          safeCachePut(request, response);
           return response;
         })
         .catch(() => caches.match('/index.html'))
@@ -64,8 +77,7 @@ self.addEventListener('fetch', (event) => {
       caches.match(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          safeCachePut(request, response);
           return response;
         });
       })
@@ -85,10 +97,7 @@ self.addEventListener('fetch', (event) => {
       caches.match(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
-          if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
-          }
+          safeCachePut(request, response);
           return response;
         });
       })
@@ -96,4 +105,3 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
-
