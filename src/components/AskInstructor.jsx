@@ -109,6 +109,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                   border: `1px solid ${msg.role === 'user' ? 'rgba(124,58,237,0.25)' : 'var(--border-light)'}`,
                   borderRadius: msg.role === 'user' ? '12px 3px 12px 12px' : '3px 12px 12px 12px',
                   fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)',
+                  whiteSpace: 'pre-wrap',
                 }}>
                   {msg.text}
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem', textAlign: msg.role === 'user' ? 'right' : 'left' }}>

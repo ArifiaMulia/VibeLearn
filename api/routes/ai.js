@@ -3,7 +3,11 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 
-// Smart contextual responses by topic detection
+const AI_GATEWAY_URL = process.env.AI_GATEWAY_URL || process.env.OPENAI_BASE_URL || 'http://ai-gateway:4000/v1';
+const AI_GATEWAY_KEY = process.env.AI_GATEWAY_KEY || process.env.OPENAI_API_KEY || 'sk-Pxsv90izxviJtrtTEyojQw';
+const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'dola-seed-2-1-turbo-260628';
+
+// Smart contextual responses by topic detection (Graceful fallback)
 function generateResponse(question, lessonTitle, lang) {
   const q = question.toLowerCase();
   const isId = lang === 'id';
@@ -60,6 +64,32 @@ function generateResponse(question, lessonTitle, lang) {
     : `Great question about **${lessonTitle}**! 🤔\n\nTo give you the best answer, could you be more specific? For example:\n• Which concept is confusing you?\n• What have you already tried?\n• Which part of the lesson is unclear?\n\nI'm here to help you master this material! 💪`;
 }
 
+// GET /api/ai/health
+router.get('/health', async (req, res) => {
+  const baseUrl = AI_GATEWAY_URL.replace(/\/+$/, '');
+  try {
+    const resp = await fetch(`${baseUrl}/models`, {
+      headers: { 'Authorization': `Bearer ${AI_GATEWAY_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    res.json({
+      status: resp.ok ? 'connected' : 'degraded',
+      gateway: baseUrl,
+      model: DEFAULT_MODEL,
+      provider: 'byteplus',
+      http_status: resp.status,
+    });
+  } catch (err) {
+    res.json({
+      status: 'offline',
+      gateway: baseUrl,
+      model: DEFAULT_MODEL,
+      provider: 'byteplus',
+      error: err.message,
+    });
+  }
+});
+
 // POST /api/ai/ask
 router.post('/ask', auth, async (req, res) => {
   try {
@@ -68,19 +98,90 @@ router.post('/ask', auth, async (req, res) => {
       return res.status(400).json({ error: 'Question is required' });
     }
 
+    const isId = lang === 'id';
+    let lessonTitle = isId ? 'pelajaran ini' : 'this lesson';
+    let lessonContent = '';
+
     // Get lesson context
-    let lessonTitle = 'this lesson';
     if (lesson_id) {
       try {
-        const result = await pool.query('SELECT title FROM lessons WHERE id = $1', [lesson_id]);
-        if (result.rows.length) lessonTitle = result.rows[0].title;
-      } catch {}
+        const result = await pool.query(
+          'SELECT title, title_id, content, content_id, transcript, transcript_id FROM lessons WHERE id = $1',
+          [lesson_id]
+        );
+        if (result.rows.length) {
+          const row = result.rows[0];
+          lessonTitle = (isId ? row.title_id : row.title) || row.title || (isId ? 'pelajaran ini' : 'this lesson');
+          lessonContent = (isId ? (row.content_id || row.content || row.transcript_id || row.transcript) : (row.content || row.transcript)) || '';
+        }
+      } catch (dbErr) {
+        console.warn('Failed to load lesson context:', dbErr.message);
+      }
     }
 
-    // Simulate AI thinking time (realistic UX)
-    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 600));
+    let answer = null;
+    let usedModel = DEFAULT_MODEL;
 
-    const answer = generateResponse(question.trim(), lessonTitle, lang);
+    // Connect to Central AI Gateway (LiteLLM) with BytePlus model
+    try {
+      const baseUrl = AI_GATEWAY_URL.replace(/\/+$/, '');
+      const systemPrompt = isId
+        ? `Kamu adalah Instruktur AI VibeLearn (Vibe Coding Academy), seorang mentor pemrograman dan AI yang ramah, jelas, dan berwawasan luas.
+Konteks materi saat ini: "${lessonTitle}".
+${lessonContent ? `Ringkasan/Konten Pelajaran:\n${lessonContent.slice(0, 3000)}\n` : ''}
+Instruksi:
+- Jawab pertanyaan siswa dengan ramah, jelas, edukatif, dan mudah dipahami.
+- Fokus pada konsep Vibe Coding, AI coding collaboration, arsitektur, dan best practices.
+- Gunakan bahasa Indonesia yang natural dan profesional.
+- Berikan contoh nyata atau analogi jika membantu.
+- Format teks menggunakan Markdown yang rapi.`
+        : `You are the VibeLearn AI Instructor (Vibe Coding Academy), an encouraging, knowledgeable, and practical coding mentor.
+Current lesson context: "${lessonTitle}".
+${lessonContent ? `Lesson Content/Summary:\n${lessonContent.slice(0, 3000)}\n` : ''}
+Instructions:
+- Answer the student's question clearly, constructively, and educationally.
+- Focus on Vibe Coding concepts, AI coding collaboration, architecture, and best practices.
+- Use clear and professional English.
+- Provide real-world examples or code snippets when relevant.
+- Format your response with clean Markdown.`;
+
+      const aiResponse = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AI_GATEWAY_KEY}`,
+        },
+        body: JSON.stringify({
+          model: DEFAULT_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: question.trim() }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500,
+        }),
+        signal: AbortSignal.timeout(45000),
+      });
+
+      if (aiResponse.ok) {
+        const data = await aiResponse.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text && text.trim()) {
+          answer = text.trim();
+        }
+      } else {
+        const errorText = await aiResponse.text();
+        console.warn(`[AI Gateway] Non-200 response (${aiResponse.status}):`, errorText);
+      }
+    } catch (aiErr) {
+      console.warn('[AI Gateway] Error calling AI Gateway, falling back to local responses:', aiErr.message);
+    }
+
+    // Fallback if AI Gateway failed or was empty
+    if (!answer) {
+      usedModel = 'fallback-local';
+      answer = generateResponse(question.trim(), lessonTitle, lang);
+    }
 
     // Log the question for analytics
     try {
@@ -90,7 +191,7 @@ router.post('/ask', auth, async (req, res) => {
       );
     } catch {}
 
-    res.json({ answer, lesson_title: lessonTitle });
+    res.json({ answer, lesson_title: lessonTitle, model: usedModel });
   } catch (err) {
     console.error('AI ask error:', err);
     res.status(500).json({ error: 'AI service unavailable' });
