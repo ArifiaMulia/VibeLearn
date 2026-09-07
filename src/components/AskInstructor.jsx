@@ -1,60 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, X, ChevronDown, ChevronUp, Loader2, Bot, User, Check, RefreshCw, Cpu, Layers, Zap } from 'lucide-react';
+import { Sparkles, Send, X, ChevronDown, ChevronUp, Loader2, Bot, User, Check, RefreshCw, Search, Shield, Cpu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-
-const DEFAULT_MODELS = [
-  {
-    id: 'dreamina-seedance-2-5',
-    name: 'dreamina-seedance-2-5',
-    displayName: 'Dreamina Seedance 2.5',
-    provider: 'BytePlus / Seedance',
-    color: '#f97316',
-    status: 'online',
-    tags: ['ACTIVATED', 'TEXT', 'IMAGE', 'VIDEO', 'CODE'],
-    description: 'BytePlus multimodal & generative coding model'
-  },
-  {
-    id: 'seedance-1-5-pro',
-    name: 'seedance-1-5-pro',
-    displayName: 'Seedance 1.5 Pro',
-    provider: 'BytePlus / Seedance',
-    color: '#10b981',
-    status: 'online',
-    tags: ['TEXT', 'CODE', 'REASONING'],
-    description: 'Advanced architecture reasoning & debugging'
-  },
-  {
-    id: 'doubao-pro-32k',
-    name: 'doubao-pro-32k',
-    displayName: 'Doubao Pro 32k',
-    provider: 'BytePlus ModelArk',
-    color: '#06b6d4',
-    status: 'online',
-    tags: ['TEXT', 'CODE', 'FAST'],
-    description: 'Flagship BytePlus model for rapid explanations'
-  },
-  {
-    id: 'doubao-seed-code',
-    name: 'doubao-seed-code',
-    displayName: 'Doubao Seed Code',
-    provider: 'BytePlus ModelArk',
-    color: '#8b5cf6',
-    status: 'online',
-    tags: ['TEXT', 'CODE'],
-    description: 'Specialized code generator & security auditor'
-  },
-  {
-    id: 'deepseek-v3',
-    name: 'deepseek-v3',
-    displayName: 'DeepSeek V3 (ModelArk)',
-    provider: 'DeepSeek / BytePlus Ark',
-    color: '#3b82f6',
-    status: 'online',
-    tags: ['TEXT', 'CODE', 'REASONING'],
-    description: 'High-efficiency open weights on BytePlus cloud'
-  }
-];
 
 export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
   const { authFetch } = useAuth();
@@ -63,35 +10,20 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [models, setModels] = useState(DEFAULT_MODELS);
+  const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState(() => {
     return localStorage.getItem('promptara_ai_model') || 'dreamina-seedance-2-5';
   });
   const [showModelPicker, setShowModelPicker] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState('ALL');
   const [activeFilterTag, setActiveFilterTag] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  const activeModelObj = models.find(m => m.id === selectedModel) || models[0];
-
-  const labels = {
-    title:       lang === 'id' ? 'Tanya Instruktur AI' : 'Ask AI Instructor',
-    subtitle:    lang === 'id' ? 'Didukung BytePlus Seeds & Multimodal Models' : 'Powered by BytePlus Seeds & Multimodal Models',
-    placeholder: lang === 'id' ? `Tanya ${activeModelObj.displayName} tentang materi ini...` : `Ask ${activeModelObj.displayName} about this lesson...`,
-    send:        lang === 'id' ? 'Kirim' : 'Send',
-    welcome:     lang === 'id'
-      ? `Halo! Saya asisten AI (${activeModelObj.displayName}). Tanyakan apa saja tentang **${lessonTitle}** dan saya siap membantu!`
-      : `Hi! I'm your AI tutor running **${activeModelObj.displayName}**. Ask me anything about **${lessonTitle}**!`,
-    thinking:    lang === 'id' ? `${activeModelObj.name} sedang memproses...` : `${activeModelObj.name} is thinking...`,
-    modelsCount: `${models.length} MODELS`,
-    suggestions: lang === 'id'
-      ? ['Jelaskan konsep intinya', 'Bisa beri contoh kode?', 'Bagaimana cara kerjanya?']
-      : ['Explain the core concept', 'Give me a code example', 'How does this work under the hood?'],
-  };
-
-  // Load dynamic models list if available
+  // Fetch all 29 models from backend
   useEffect(() => {
     authFetch('/ai/models')
       .then(res => {
@@ -101,6 +33,28 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
       })
       .catch(() => {});
   }, []);
+
+  const activeModelObj = models.find(m => m.id === selectedModel) || models[0] || {
+    id: 'dreamina-seedance-2-5',
+    name: 'dreamina-seedance-2-5',
+    displayName: 'Dreamina Seedance 2.5',
+    vendor: 'ByteDance',
+    color: '#f97316'
+  };
+
+  const labels = {
+    title:       lang === 'id' ? 'Tanya Instruktur AI' : 'Ask AI Instructor',
+    subtitle:    'BytePlus ModelArk (ap-southeast-1) • vibe.virtuenet.space',
+    placeholder: lang === 'id' ? `Tanya ${activeModelObj.displayName} tentang materi ini...` : `Ask ${activeModelObj.displayName} about this lesson...`,
+    send:        lang === 'id' ? 'Kirim' : 'Send',
+    welcome:     lang === 'id'
+      ? `Halo! Saya asisten AI (${activeModelObj.displayName}). Tanyakan apa saja tentang **${lessonTitle}** dan saya siap membantu!`
+      : `Hi! I'm your AI tutor running **${activeModelObj.displayName}** on BytePlus ModelArk. Ask me anything about **${lessonTitle}**!`,
+    thinking:    lang === 'id' ? `${activeModelObj.name} sedang menganalisis...` : `${activeModelObj.name} is thinking...`,
+    suggestions: lang === 'id'
+      ? ['Jelaskan konsep intinya', 'Bisa beri contoh kode?', 'Bagaimana alur deploymentnya?']
+      : ['Explain the core concept', 'Give me a code example', 'Explain the deployment pipeline'],
+  };
 
   // Close model picker on outside click
   useEffect(() => {
@@ -119,7 +73,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
     if (open && messages.length === 0) {
       setMessages([{ role: 'assistant', text: labels.welcome, model: activeModelObj.name, time: new Date() }]);
     }
-  }, [open]);
+  }, [open, activeModelObj.name]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -136,8 +90,8 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
     const chosen = models.find(m => m.id === id);
     if (chosen) {
       const notice = lang === 'id'
-        ? `🔄 Model dialihkan ke **${chosen.displayName}** (${chosen.provider}).`
-        : `🔄 Model switched to **${chosen.displayName}** (${chosen.provider}).`;
+        ? `🔄 Model dialihkan ke **${chosen.displayName}** (${chosen.vendor} • ap-southeast-1).`
+        : `🔄 Model switched to **${chosen.displayName}** (${chosen.vendor} • ap-southeast-1).`;
       setMessages(prev => [...prev, { role: 'system', text: notice, time: new Date() }]);
     }
   };
@@ -167,13 +121,14 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
         role: 'assistant',
         text: res.answer,
         model: res.model_name || activeModelObj.name,
+        vendor: res.vendor || activeModelObj.vendor,
         time: new Date()
       }]);
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant',
         text: lang === 'id'
-          ? 'Maaf, sistem AI sedang sibuk. Silakan coba sesaat lagi.'
+          ? 'Maaf, model AI sedang sibuk. Silakan coba lagi.'
           : "Sorry, the AI model is momentarily unavailable. Please try again.",
         model: activeModelObj.name,
         time: new Date(),
@@ -184,10 +139,16 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
 
   const formatTime = d => d?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Filter models by capability tag if selected
-  const filteredModels = activeFilterTag === 'ALL'
-    ? models
-    : models.filter(m => m.tags && m.tags.includes(activeFilterTag));
+  // Filter models by Vendor, Modality Tag, and Search Query
+  const filteredModels = models.filter(m => {
+    const matchesVendor = selectedVendor === 'ALL' || m.vendor === selectedVendor;
+    const matchesTag = activeFilterTag === 'ALL' || (m.tags && m.tags.includes(activeFilterTag));
+    const matchesQuery = !searchQuery.trim() ||
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (m.specialization && m.specialization.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesVendor && matchesTag && matchesQuery;
+  });
 
   return (
     <div style={{
@@ -204,18 +165,20 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
         justifyContent: 'space-between',
         padding: '0.75rem 1.1rem',
         borderBottom: open ? '1px solid var(--border-light)' : 'none',
-        background: 'var(--bg-card)'
+        background: 'var(--bg-card)',
+        flexWrap: 'wrap',
+        gap: '0.5rem'
       }}>
         <button
           onClick={() => setOpen(v => !v)}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: '0.65rem',
-            color: 'var(--text-primary)', flex: 1, textAlign: 'left'
+            color: 'var(--text-primary)', textAlign: 'left'
           }}
         >
           <div style={{
-            width: 30, height: 30, borderRadius: 8,
+            width: 32, height: 32, borderRadius: 8,
             background: 'linear-gradient(135deg, #f97316, #7c3aed)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 12px rgba(249,115,22,0.3)'
@@ -226,7 +189,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
             <div style={{ fontWeight: 700, fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               {labels.title}
               <span style={{
-                fontSize: '0.65rem',
+                fontSize: '0.62rem',
                 background: 'rgba(249,115,22,0.15)',
                 color: '#f97316',
                 border: '1px solid rgba(249,115,22,0.3)',
@@ -234,15 +197,15 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                 padding: '0.1rem 0.4rem',
                 fontWeight: 800
               }}>
-                SEEDS AI
+                BYTEPLUS ORCHESTRATOR
               </span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{labels.subtitle}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{labels.subtitle}</div>
           </div>
         </button>
 
-        {/* Model Selector Bar (Matching the user screenshot) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }} ref={dropdownRef}>
+        {/* Model Selector Trigger Button (Screenshot Style) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative' }} ref={dropdownRef}>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -267,7 +230,6 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
             onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
             onMouseLeave={e => e.currentTarget.style.borderColor = '#27272a'}
           >
-            {/* Green active dot */}
             <span style={{
               width: 8, height: 8, borderRadius: '50%',
               background: '#10b981',
@@ -296,38 +258,89 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
             <RefreshCw size={13} />
           </button>
 
-          {/* Model Selector Floating Menu (Screenshot replicated style) */}
+          {/* Model Selector Floating Menu (Screenshot replicated style for 29 models) */}
           {showModelPicker && (
             <div style={{
               position: 'absolute',
-              top: '110%',
+              top: '115%',
               right: 0,
-              width: 320,
+              width: 360,
+              maxWidth: '92vw',
               background: '#141416',
               border: '1px solid #27272a',
               borderRadius: '16px',
               padding: '0.85rem',
               zIndex: 1000,
-              boxShadow: '0 20px 48px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05)',
+              boxShadow: '0 20px 48px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06)',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.65rem',
-              backdropFilter: 'blur(20px)'
+              backdropFilter: 'blur(24px)'
             }}>
-              {/* Header */}
+              {/* Header + Vendor Filter Tabs */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  color: '#a1a1aa',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em'
+                }}>
+                  {filteredModels.length} / {models.length} MODELS (ap-southeast-1)
+                </div>
+                <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>● Connected</span>
+              </div>
+
+              {/* Vendor Selector Pill Tabs */}
+              <div style={{ display: 'flex', gap: '0.3rem', background: '#1c1c20', padding: '0.2rem', borderRadius: 8 }}>
+                {[
+                  { id: 'ALL', label: 'All (29)' },
+                  { id: 'ByteDance', label: 'ByteDance (22)' },
+                  { id: 'DeepSeek', label: 'DeepSeek (5)' },
+                  { id: 'Z.AI', label: 'Z.AI (2)' }
+                ].map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setSelectedVendor(v.id)}
+                    style={{
+                      flex: 1,
+                      padding: '0.28rem 0.4rem',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: selectedVendor === v.id ? '#27272a' : 'transparent',
+                      color: selectedVendor === v.id ? '#fff' : '#71717a',
+                      fontSize: '0.68rem',
+                      fontWeight: selectedVendor === v.id ? 700 : 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Bar */}
               <div style={{
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                color: '#71717a',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                padding: '0.2rem 0.4rem'
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                background: '#1c1c20', border: '1px solid #27272a',
+                borderRadius: 8, padding: '0.35rem 0.65rem'
               }}>
-                {labels.modelsCount}
+                <Search size={13} color="#71717a" />
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Filter model name or capability..."
+                  style={{
+                    background: 'transparent', border: 'none', outline: 'none',
+                    color: '#fff', fontSize: '0.75rem', width: '100%'
+                  }}
+                />
               </div>
 
               {/* Models List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: 240, overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: 260, overflowY: 'auto' }}>
                 {filteredModels.map(m => {
                   const isSelected = m.id === selectedModel;
                   return (
@@ -338,7 +351,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '0.6rem 0.75rem',
+                        padding: '0.55rem 0.75rem',
                         borderRadius: '10px',
                         background: isSelected ? 'rgba(249,115,22,0.1)' : 'transparent',
                         border: isSelected ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent',
@@ -352,30 +365,37 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                         if (!isSelected) e.currentTarget.style.background = 'transparent';
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
                         <span style={{
                           width: 8, height: 8, borderRadius: '50%',
                           background: '#10b981',
                           boxShadow: isSelected ? '0 0 8px #10b981' : 'none',
                           flexShrink: 0
                         }} />
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <div style={{
-                            fontSize: '0.85rem',
+                            fontSize: '0.82rem',
                             fontWeight: 700,
                             fontFamily: 'monospace',
-                            color: isSelected ? '#f97316' : '#e4e4e7'
+                            color: isSelected ? '#f97316' : '#e4e4e7',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
                           }}>
                             {m.name}
                           </div>
-                          <div style={{ fontSize: '0.68rem', color: '#71717a' }}>
-                            {m.provider}
+                          <div style={{ fontSize: '0.65rem', color: '#71717a', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                            <span>{m.vendor}</span>
+                            <span>•</span>
+                            <span>{m.category || m.provider}</span>
+                            <span>•</span>
+                            <span>{(m.capacity_tokens / 1024).toFixed(0)}k</span>
                           </div>
                         </div>
                       </div>
 
                       {isSelected && (
-                        <Check size={16} color="#f97316" strokeWidth={2.5} />
+                        <Check size={16} color="#f97316" strokeWidth={2.5} style={{ flexShrink: 0, marginLeft: '0.5rem' }} />
                       )}
                     </div>
                   );
@@ -385,12 +405,12 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
               {/* Modality & Capability Badges (Matching bottom pills in screenshot) */}
               <div style={{
                 borderTop: '1px solid #27272a',
-                paddingTop: '0.65rem',
+                paddingTop: '0.6rem',
                 display: 'flex',
                 gap: '0.35rem',
                 flexWrap: 'wrap'
               }}>
-                {['ACTIVATED', 'TEXT', 'IMAGE', 'VIDEO', 'AUDIO'].map(tag => {
+                {['ACTIVATED', 'TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'CODE', 'RAG', 'REASONING'].map(tag => {
                   const isActive = activeFilterTag === tag || (tag === 'ACTIVATED' && activeFilterTag === 'ALL');
                   return (
                     <button
@@ -402,7 +422,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                         border: `1px solid ${isActive ? '#10b98150' : '#27272a'}`,
                         borderRadius: '20px',
                         padding: '0.2rem 0.55rem',
-                        fontSize: '0.65rem',
+                        fontSize: '0.62rem',
                         fontWeight: 800,
                         letterSpacing: '0.04em',
                         cursor: 'pointer',
@@ -417,7 +437,6 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
             </div>
           )}
 
-          {/* Toggle Expand / Collapse */}
           <button
             onClick={() => setOpen(v => !v)}
             style={{
@@ -433,7 +452,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
       {/* Main Chat Interface */}
       {open && (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {/* Messages */}
+          {/* Messages Container */}
           <div style={{
             maxHeight: 340,
             overflowY: 'auto',
@@ -491,6 +510,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                       }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
                         {msg.model || activeModelObj.name}
+                        {msg.vendor && <span style={{ color: '#71717a', fontWeight: 500 }}>({msg.vendor})</span>}
                       </div>
                     )}
                     {msg.text}
