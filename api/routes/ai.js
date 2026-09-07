@@ -158,9 +158,9 @@ Instructions:
             { role: 'user', content: question.trim() }
           ],
           temperature: 0.7,
-          max_tokens: 1500,
+          max_tokens: 2500,
         }),
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(90000),
       });
 
       if (aiResponse.ok) {
