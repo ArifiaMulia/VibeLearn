@@ -1,7 +1,7 @@
 {
   "name": "vibelearn",
-  "version": "3.4.0",
-  "description": "VibeLearn — Interactive Vibe Coding LMS SaaS",
+  "version": "3.5.0",
+  "description": "VibeLearn / Promptara — BytePlus ModelArk Multi-LLM Orchestrator & LMS SaaS",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
