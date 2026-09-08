@@ -129,30 +129,117 @@ router.put('/:id', auth, requireRole('super_admin', 'master'), async (req, res) 
       return res.status(404).json({ error: 'Course not found' });
     }
 
-    // Sync lessons: delete and re-insert for simplicity in this version
+    // ─── Smart Lesson Sync: UPSERT instead of DELETE + re-insert ───
+    // This preserves lesson IDs so student progress, XP logs, and quiz references stay intact.
     if (lessons && Array.isArray(lessons)) {
-      await client.query('DELETE FROM lessons WHERE course_id = $1', [req.params.id]);
+      const incomingLessonIds = [];
+
       for (const lesson of lessons) {
-        const insertRes = await client.query(
-          `INSERT INTO lessons (course_id, lab_id, title, content, video_url, type, xp_reward, order_index) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-          [req.params.id, lesson.lab_id || null, lesson.title, lesson.content || '', lesson.video_url || null, lesson.type || 'text', lesson.xp_reward || 50, lesson.order_index || 0]
-        );
-        const newLessonId = insertRes.rows[0].id;
-        
+        let lessonId;
+
+        if (lesson.id && typeof lesson.id === 'number') {
+          // ── UPDATE existing lesson (preserve its ID) ──
+          await client.query(
+            `UPDATE lessons SET
+              title = $1,
+              content = $2,
+              video_url = $3,
+              type = $4,
+              xp_reward = $5,
+              order_index = $6,
+              lab_id = $7,
+              content_id = COALESCE($8, content_id),
+              title_id = COALESCE($9, title_id),
+              transcript = COALESCE($10, transcript),
+              transcript_id = COALESCE($11, transcript_id),
+              difficulty = COALESCE($12, difficulty),
+              resources = COALESCE($13, resources),
+              challenge_text = COALESCE($14, challenge_text),
+              challenge_text_id = COALESCE($15, challenge_text_id)
+            WHERE id = $16 AND course_id = $17`,
+            [
+              lesson.title,
+              lesson.content || '',
+              lesson.video_url || null,
+              lesson.type || 'text',
+              lesson.xp_reward || 50,
+              lesson.order_index || 0,
+              lesson.lab_id || null,
+              lesson.content_id || null,
+              lesson.title_id || null,
+              lesson.transcript || null,
+              lesson.transcript_id || null,
+              lesson.difficulty || null,
+              lesson.resources ? JSON.stringify(lesson.resources) : null,
+              lesson.challenge_text || null,
+              lesson.challenge_text_id || null,
+              lesson.id,
+              req.params.id
+            ]
+          );
+          lessonId = lesson.id;
+        } else {
+          // ── INSERT new lesson ──
+          const insertRes = await client.query(
+            `INSERT INTO lessons (course_id, lab_id, title, content, video_url, type, xp_reward, order_index, content_id, title_id, transcript, transcript_id, difficulty, resources, challenge_text, challenge_text_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`,
+            [
+              req.params.id,
+              lesson.lab_id || null,
+              lesson.title,
+              lesson.content || '',
+              lesson.video_url || null,
+              lesson.type || 'text',
+              lesson.xp_reward || 50,
+              lesson.order_index || 0,
+              lesson.content_id || null,
+              lesson.title_id || null,
+              lesson.transcript || null,
+              lesson.transcript_id || null,
+              lesson.difficulty || 'beginner',
+              JSON.stringify(lesson.resources || []),
+              lesson.challenge_text || '',
+              lesson.challenge_text_id || null
+            ]
+          );
+          lessonId = insertRes.rows[0].id;
+        }
+
+        incomingLessonIds.push(lessonId);
+
         // Save quizzes if present
         if (lesson.type === 'quiz' && lesson.quizzes && Array.isArray(lesson.quizzes)) {
           for (const q of lesson.quizzes) {
             await client.query(
-              `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation) VALUES ($1,$2,$3,$4,$5)`,
-              [newLessonId, q.question, JSON.stringify(q.options), q.correct_answer, q.explanation || '']
+              `INSERT INTO quizzes (lesson_id, question, options, correct_answer, explanation)
+               VALUES ($1,$2,$3,$4,$5)
+               ON CONFLICT (lesson_id, question) DO UPDATE
+               SET options=EXCLUDED.options, correct_answer=EXCLUDED.correct_answer, explanation=EXCLUDED.explanation`,
+              [lessonId, q.question, JSON.stringify(q.options), q.correct_answer, q.explanation || '']
             );
           }
         }
       }
+
+      // Remove only lessons that admin explicitly deleted (no longer in the save payload)
+      if (incomingLessonIds.length > 0) {
+        await client.query(
+          `DELETE FROM lessons WHERE course_id = $1 AND id != ALL($2::int[])`,
+          [req.params.id, incomingLessonIds]
+        );
+      }
     }
 
     await client.query('COMMIT');
-    res.json(result.rows[0]);
+
+    // Return full course with refreshed lessons for frontend state sync
+    const updatedLessons = await client.query(
+      'SELECT * FROM lessons WHERE course_id = $1 ORDER BY order_index ASC',
+      [req.params.id]
+    );
+    const courseOut = result.rows[0];
+    courseOut.lessons = updatedLessons.rows;
+    res.json(courseOut);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error updating course:', err);
@@ -161,6 +248,7 @@ router.put('/:id', auth, requireRole('super_admin', 'master'), async (req, res) 
     client.release();
   }
 });
+
 
 // DELETE /api/courses/:id
 router.delete('/:id', auth, requireRole('super_admin', 'master'), async (req, res) => {
