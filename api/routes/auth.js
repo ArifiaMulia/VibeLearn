@@ -61,19 +61,112 @@ router.post('/activity', require('../middleware/auth'), async (req, res) => {
   }
 });
 
+// Helper to parse cookies from header
+function parseCookieHeader(header = '') {
+  const out = {};
+  for (const part of String(header).split(';')) {
+    const idx = part.indexOf('=');
+    if (idx === -1) continue;
+    const key = part.slice(0, idx).trim();
+    if (!key) continue;
+    out[key] = decodeURIComponent(part.slice(idx + 1).trim());
+  }
+  return out;
+}
+
+// GET /api/auth/me
+router.get('/me', async (req, res) => {
+  const cookies = parseCookieHeader(req.headers.cookie);
+  const authHeader = req.headers['authorization'];
+  const bearerToken = authHeader && authHeader.split(' ')[1];
+  const ssoJwt = cookies['virtuenet_sso_jwt'] || req.query.sso_token;
+
+  // 1. Try existing local Bearer token
+  if (bearerToken) {
+    try {
+      const decoded = jwt.verify(bearerToken, jwtSecret);
+      const userRes = await pool.query('SELECT id, name, email, role, plan, avatar FROM users WHERE id = $1', [decoded.id]);
+      if (userRes.rows.length > 0) {
+        return res.json({ user: userRes.rows[0], token: bearerToken });
+      }
+    } catch {}
+  }
+
+  // 2. Try Virtuenet SSO JWT
+  if (ssoJwt) {
+    try {
+      const ssoVerifyUrl = process.env.SSO_VERIFY_URL || 'https://assistant.virtuenet.space/api/auth/sso/verify';
+      const verifyRes = await fetch(`${ssoVerifyUrl}?token=${encodeURIComponent(ssoJwt)}`, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (verifyRes.ok) {
+        const data = await verifyRes.json();
+        if (data?.valid && data?.user) {
+          const ssoUser = data.user;
+          let email = (ssoUser.email || '').toLowerCase().trim();
+          if (!email && ssoUser.open_id === 'ou_5978bc3e371ea20b33ddf24dc99acc95') {
+            email = 'ubai@prasetia.co.id';
+          }
+          if (email) {
+            let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+            let user;
+            const isSuper = email === 'ubai@prasetia.co.id' || ssoUser.role === 'administrator';
+            const targetRole = isSuper ? 'super_admin' : 'participant';
+
+            if (userResult.rows.length === 0) {
+              const randPassword = require('crypto').randomBytes(16).toString('hex');
+              const hashedPassword = await bcrypt.hash(randPassword, 10);
+              const insertResult = await pool.query(
+                `INSERT INTO users (name, email, password, role, plan, avatar)
+                 VALUES ($1, $2, $3, $4, 'pro', $5)
+                 RETURNING *`,
+                [ssoUser.name || 'Lark User', email, hashedPassword, targetRole, ssoUser.avatar_url || null]
+              );
+              user = insertResult.rows[0];
+              await pool.query(
+                `INSERT INTO subscriptions (user_id, plan, status)
+                 VALUES ($1, 'pro', 'active')
+                 ON CONFLICT (user_id) DO NOTHING`,
+                [user.id]
+              ).catch(() => {});
+            } else {
+              user = userResult.rows[0];
+              if (isSuper && user.role !== 'super_admin') {
+                await pool.query('UPDATE users SET role = $1 WHERE id = $2', ['super_admin', user.id]);
+                user.role = 'super_admin';
+              }
+            }
+
+            await pool.query('UPDATE users SET last_activity = NOW() WHERE id = $1', [user.id]).catch(() => {});
+            const token = generateToken(user);
+            return res.json({
+              user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                plan: user.plan,
+                avatar: user.avatar,
+              },
+              token,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('SSO verify error in VibeLearn:', err);
+    }
+  }
+
+  return res.status(401).json({ error: 'Unauthenticated' });
+});
+
 // GET /api/auth/lark/config
 router.get('/lark/config', (req, res) => {
-  const appId = process.env.LARK_APP_ID;
-  const redirectUri = req.query.redirect_uri;
-  if (!appId || appId === 'YOUR_APP_ID') {
-    return res.status(500).json({ error: 'Lark SSO is not configured on the server. Please set LARK_APP_ID in .env' });
-  }
-  if (!redirectUri) {
-    return res.status(400).json({ error: 'redirect_uri query parameter is required' });
-  }
-  const baseUrl = process.env.LARK_API_BASE_URL || 'https://open.larksuite.com';
-  const authUrl = `${baseUrl}/open-apis/authen/v1/index?app_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=lark_sso`;
-  res.json({ authUrl });
+  const redirectUri = req.query.redirect_uri || 'https://vibe.virtuenet.space/login';
+  const gatewayUrl = `https://assistant.virtuenet.space/api/auth/lark/login?return_to=${encodeURIComponent(redirectUri)}`;
+  res.json({ authUrl: gatewayUrl });
 });
 
 // POST /api/auth/lark/callback

@@ -15,8 +15,29 @@ export function AuthProvider({ children }) {
     if (token) {
       const saved = localStorage.getItem('vl_user');
       if (saved) { try { setUser(JSON.parse(saved)); } catch {} }
+      setLoading(false);
+    } else {
+      // Check Virtuenet SSO session
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const ssoToken = params ? params.get('sso_token') : null;
+      const ssoUrl = ssoToken ? `${API}/auth/me?sso_token=${encodeURIComponent(ssoToken)}` : `${API}/auth/me`;
+      fetch(ssoUrl, { credentials: 'include' })
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data && data.user && data.token) {
+            localStorage.setItem('vl_token', data.token);
+            localStorage.setItem('vl_user', JSON.stringify(data.user));
+            setToken(data.token);
+            setUser(data.user);
+            if (ssoToken && window.history?.replaceState) {
+              const cleanUrl = window.location.pathname;
+              window.history.replaceState({}, document.title, cleanUrl);
+            }
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
     }
-    setLoading(false);
   }, [token]);
 
   // Heartbeat every 3 min
