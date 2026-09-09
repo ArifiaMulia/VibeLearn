@@ -29,6 +29,7 @@ const CourseEditor = lazy(() => import('./pages/admin/CourseEditor'));
 const AnalyticsDashboard = lazy(() => import('./pages/admin/AnalyticsDashboard'));
 const CertificateBuilderPage = lazy(() => import('./pages/admin/CertificateBuilderPage'));
 const SubscriptionsPage = lazy(() => import('./pages/admin/SubscriptionsPage'));
+const AISettingsPage = lazy(() => import('./pages/admin/AISettingsPage'));
 const LarkCallbackPage = lazy(() => import('./pages/LarkCallbackPage'));
 
 // Public Verification Page (lazy-loaded)
@@ -77,6 +78,7 @@ export default function App() {
 
                       <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
                         <Route path="/admin/subscriptions" element={<SubscriptionsPage />} />
+                        <Route path="/admin/ai-settings" element={<AISettingsPage />} />
                       </Route>
                     </Route>
                   </Route>

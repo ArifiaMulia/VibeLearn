@@ -506,6 +506,49 @@ function generateModelSpecificResponse(question, lessonTitle, lessonContent, lan
   return response;
 }
 
+// Helper: load AI settings from system_settings table
+async function getAISettings() {
+  try {
+    const result = await pool.query(
+      `SELECT key, value FROM system_settings WHERE key LIKE 'ai_%'`
+    );
+    const settings = {};
+    result.rows.forEach(r => { settings[r.key] = r.value; });
+    return settings;
+  } catch {
+    return {};
+  }
+}
+
+// Helper: call real external LLM API
+async function callExternalLLM(apiKey, endpoint, modelId, systemPrompt, userPrompt) {
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      })
+    });
+    const data = await res.json();
+    if (data.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content;
+    }
+  } catch (err) {
+    console.warn('[AI External Call] Fallback to built-in engine:', err.message);
+  }
+  return null;
+}
+
 // POST /api/ai/ask
 router.post('/ask', auth, async (req, res) => {
   try {
@@ -529,9 +572,33 @@ router.post('/ask', auth, async (req, res) => {
       } catch {}
     }
 
-    // Dynamic thinking latency
-    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 400));
-    const answer = generateModelSpecificResponse(question.trim(), lessonTitle, lessonContent, lang, selectedModel.id);
+    // ─── Try real API call using DB settings first, then env vars ───
+    let answer = null;
+    const aiSettings = await getAISettings();
+    const aiEnabled = aiSettings.ai_enabled !== 'false'; // default true
+    const fallbackEnabled = aiSettings.ai_fallback_enabled !== 'false'; // default true
+    const apiKey = aiSettings.ai_byteplus_api_key || process.env.BYTEPLUS_API_KEY || process.env.ARK_API_KEY;
+    const endpoint = aiSettings.ai_byteplus_endpoint || process.env.BYTEPLUS_ARK_ENDPOINT || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+
+    if (aiEnabled && apiKey && apiKey.length > 10) {
+      const systemPrompt = `You are Promptara's AI Instructor running model ${selectedModel.displayName} (${selectedModel.vendor}).
+You are tutoring a student on the lesson: "${lessonTitle}".
+Reply in ${lang === 'id' ? 'Bahasa Indonesia' : 'English'}. Be educational, concise, and provide actionable coding guidance.
+Always format code examples with markdown code blocks.`;
+      answer = await callExternalLLM(apiKey, endpoint, selectedModel.id, systemPrompt, question.trim());
+    }
+
+    // ─── Fallback to built-in contextual engine ───
+    if (!answer && fallbackEnabled) {
+      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 400));
+      answer = generateModelSpecificResponse(question.trim(), lessonTitle, lessonContent, lang, selectedModel.id);
+    }
+
+    if (!answer) {
+      answer = lang === 'id'
+        ? 'Maaf, layanan AI sedang tidak tersedia. Silakan hubungi administrator.'
+        : 'Sorry, AI service is currently unavailable. Please contact your administrator.';
+    }
 
     // Audit log
     try {
@@ -549,6 +616,7 @@ router.post('/ask', auth, async (req, res) => {
       vendor: selectedModel.vendor,
       provider: selectedModel.provider,
       region: selectedModel.region || 'ap-southeast-1',
+      source: answer && apiKey ? 'live_api' : 'built_in_engine',
       audit_trail: {
         environment: 'vibe.virtuenet.space',
         source: 'BytePlus Console (ModelArk)',
@@ -562,3 +630,4 @@ router.post('/ask', auth, async (req, res) => {
 });
 
 module.exports = router;
+

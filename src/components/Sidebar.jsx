@@ -7,7 +7,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import {
   LayoutDashboard, BookOpen, FlaskConical, Users, BarChart3,
   CreditCard, Settings, LogOut, Shield, ChevronLeft, ChevronRight,
-  Award, X,
+  Award, X, Cpu,
 } from 'lucide-react';
 import pkg from '../../package.json';
 
@@ -49,6 +49,7 @@ export default function Sidebar() {
       { icon: CreditCard,       key: 'nav_subscriptions',      to: '/admin/subscriptions' },
       { icon: Settings,         key: 'nav_course_builder',     to: '/admin/courses' },
       { icon: Award,            key: 'nav_certificate_builder', to: '/admin/certificates' },
+      { icon: Cpu,              key: 'nav_ai_settings',        to: '/admin/ai-settings' },
     ],
     master: [
       { icon: LayoutDashboard, key: 'nav_dashboard',           to: '/dashboard' },
@@ -84,6 +85,7 @@ export default function Sidebar() {
     nav_subscriptions:       null,
     nav_course_builder:      null,
     nav_certificate_builder: null,
+    nav_ai_settings:         null,
   };
 
   // ── Mobile: sidebar is an overlay that slides in from the left ───────────

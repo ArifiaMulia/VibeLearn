@@ -67,6 +67,7 @@ app.use('/api/analytics', require('./routes/analytics'));
 
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/settings', require('./routes/settings'));
 
 
 // Serve static uploads
