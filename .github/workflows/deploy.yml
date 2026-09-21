@@ -1,0 +1,16 @@
+name: Deploy to K3s
+
+on:
+  push:
+    branches: [main, virtuenet]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: K3s App Deploy
+    uses: virtuenet-prasetia/.github/.github/workflows/k3s-app-deploy.yml@main
+    with:
+      app_name: vibelearn
+      port: 80
+      health_endpoint: /
+    secrets: inherit
