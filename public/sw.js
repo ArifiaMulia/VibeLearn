@@ -2,7 +2,7 @@
    Promptara Service Worker  — Cache-First for assets, Network-First for API
    ───────────────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'promptara-v2';
+const CACHE_NAME = 'promptara-v3';
 
 // App shell assets to cache on install
 const SHELL_ASSETS = [
@@ -14,9 +14,11 @@ const SHELL_ASSETS = [
 
 // Helper to safely cache put without throwing errors for unsupported schemes
 function safeCachePut(request, response) {
-  if (!request || !request.url) return;
-  // Skip chrome-extension, moz-extension, file, etc.
-  if (!request.url.startsWith('http://') && !request.url.startsWith('https://')) return;
+  if (!request) return;
+  const reqUrl = typeof request === 'string' ? request : request.url;
+  if (!reqUrl) return;
+  // Strictly allow only http: and https: schemes (reject chrome-extension:, data:, moz-extension:, etc.)
+  if (!reqUrl.startsWith('http://') && !reqUrl.startsWith('https://')) return;
   if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
     try {
       const clone = response.clone();
