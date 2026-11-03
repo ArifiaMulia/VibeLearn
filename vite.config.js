@@ -1,8 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const preventCloudflareRocketLoader = () => ({
+  name: 'prevent-cf-rocket-loader',
+  transformIndexHtml(html) {
+    return html.replace(/<script\s+type="module"/g, '<script data-cfasync="false" type="module"')
+  }
+})
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), preventCloudflareRocketLoader()],
   server: {
     proxy: {
       '/api': {
