@@ -11,12 +11,49 @@ const port = process.env.PORT || 3000;
 
 // Trust proxy if running behind Traefik / Nginx / Reverse Proxy
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+// Block HTTP TRACE / TRACK methods
+app.use((req, res, next) => {
+  if (req.method === 'TRACE' || req.method === 'TRACK') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+  next();
+});
 
 // Security Headers with Helmet
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images/uploads across origins
-  contentSecurityPolicy: false, // Managed by Nginx / tailored policy
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "https://*.virtuenet.space", "https://*.larksuite.com", "https://*.feishu.cn"],
+      workerSrc: ["'self'", "blob:"],
+      manifestSrc: ["'self'"],
+      frameAncestors: ["'self'", "https://*.larksuite.com", "https://*.feishu.cn"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  strictTransportSecurity: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
+
+// Permissions-Policy & RateLimit telemetry headers
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 
 // CORS Configuration — Restricted origins
 const allowedOrigins = [
@@ -40,6 +77,12 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ type: ['application/csp-report', 'application/reports+json'], limit: '64kb' }));
+
+// CSP Violation Report Endpoint (ASVS V14.4.3 / ISO 42001 Clause 9)
+app.post('/api/csp-report', (req, res) => {
+  res.status(204).end();
+});
 
 const path = require('path');
 
@@ -605,6 +648,7 @@ const fs = require('fs');
 const frontendDist = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist, {
+    dotfiles: 'allow',
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('index.html') || filePath.endsWith('sw.js')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -612,9 +656,23 @@ if (fs.existsSync(frontendDist)) {
     }
   }));
   app.get(/^(?!\/(api|uploads)).*$/, (req, res) => {
+    if (req.path.startsWith('/.well-known/')) {
+      return res.status(404).json({ error: 'Not found' });
+    }
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
+
+// Global error handler — prevent stack trace / internal path disclosure (ASVS V7.4.1 / ISO 42001 Clause 10)
+app.use((err, req, res, next) => {
+  if (err && err.message === 'Blocked by CORS policy') {
+    return res.status(403).json({ error: 'CORS origin denied' });
+  }
+  console.error('Unhandled API error:', err?.message || err);
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 initDb().then(() => {
   app.listen(port, () => console.log(`🚀 VibeLearn API running on port ${port}`));

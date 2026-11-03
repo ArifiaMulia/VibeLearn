@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "space.virtuenet.vibelearn.twa",
+      "sha256_cert_fingerprints": [
+        "2B:88:6A:F1:D4:C3:98:E2:10:7B:5E:89:FA:30:19:D8:52:0B:E4:91:78:E0:43:9C:C1:25:B8:31:AA:67:89:01"
+      ]
+    }
+  }
+]

@@ -2,7 +2,7 @@
    Promptara Service Worker  — Cache-First for assets, Network-First for API
    ───────────────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'promptara-v3';
+const CACHE_NAME = 'promptara-v4';
 
 // App shell assets to cache on install
 const SHELL_ASSETS = [
