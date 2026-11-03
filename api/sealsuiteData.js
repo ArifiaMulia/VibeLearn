@@ -2367,8 +2367,6 @@ SealSuite uses a strategy called **Zero Trust** (Never Trust, Always Verify). It
 2. **What are you carrying?** (Device health check): Walking through the metal detector.
 3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
 
-![SealSuite Airport Security Analogy](/images/sealsuite_airport_analogy.png)
-
 \`\`\`mermaid
 flowchart LR
   A["👤 Employee"] -->|"1. Show Boarding Pass"| B["🪪 Identity Check (IAM)"]
@@ -2413,8 +2411,6 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 1. **Siapa Anda?** (Pemeriksaan Identitas): Sama seperti memeriksa paspor dan tiket pesawat Anda.
 2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
 3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
-
-![Analogi Keamanan Bandara SealSuite](/images/sealsuite_airport_analogy.png)
 
 \`\`\`mermaid
 flowchart LR
@@ -2611,8 +2607,6 @@ SealSuite resolves this risk by building a **Virtual Private Network (VPN)** tun
 * **Public Internet is like a public highway.** Anyone sitting nearby can look at your car and see what you are carrying inside.
 * **SealSuite VPN is like a Private Underground Tunnel.** It connects your laptop directly to the office building. This tunnel is heavily guarded. No one on the public highway can see or touch the cars inside your tunnel.
 
-![SealSuite Security Gateway](/images/sealsuite_fundamental.png)
-
 With SealSuite, connecting to the VPN is built right into the client. With one click, your tunnel is active, allowing you to access office servers securely from anywhere.
 
 | Connection Type | Analogy | Who Can See Your Data? |
@@ -2634,8 +2628,6 @@ SealSuite mengatasi risiko ini dengan membangun terowongan **Virtual Private Net
 
 * **Internet Publik itu seperti jalan raya umum.** Siapa pun yang berada di sekitar jalan tersebut dapat melihat mobil Anda dan isi muatannya.
 * **SealSuite VPN itu seperti Terowongan Bawah Tanah Pribadi.** Terowongan ini menghubungkan laptop Anda secara langsung ke gedung kantor. Terowongan ini dijaga ketat. Tidak ada orang di jalan raya umum yang bisa melihat atau menyentuh mobil di dalam terowongan Anda.
-
-![Gerbang Keamanan SealSuite](/images/sealsuite_fundamental.png)
 
 Dengan SealSuite, akses VPN sudah terintegrasi langsung di aplikasi. Cukup dengan satu klik, terowongan aman Anda aktif dan Anda bisa mengakses server kantor dengan aman dari mana saja.
 
@@ -2673,8 +2665,6 @@ Just like a metal detector at the airport checks for dangerous items, SealSuite 
 3. **🧱 Firewall On:** Is your computer's built-in shield turned on?
 4. **🔒 Screen Lock:** Do you have a secure PIN or password set to unlock your screen?
 
-![Digital Gatekeeper Scanning Laptop](/images/gatekeeper_analogy.png)
-
 > **What happens if your device fails the check?**
 > The gate "beeps" and temporarily limits your connection. Once you turn your antivirus back on or run updates, SealSuite automatically lets you back in. This protects the company from compromised devices.`,
 
@@ -2694,8 +2684,6 @@ Sama seperti pintu detektor logam di bandara yang memeriksa benda berbahaya, Sea
 2. **🔄 Pembaruan OS:** Apakah sistem operasi Anda (Windows/Mac) sudah diperbarui?
 3. **🧱 Firewall Menyala:** Apakah dinding pelindung internal komputer Anda diaktifkan?
 4. **🔒 Kunci Layar:** Apakah Anda memasang PIN atau sandi aman untuk membuka kunci layar?
-
-![Pemindaian Keamanan Perangkat](/images/gatekeeper_analogy.png)
 
 > **Apa yang terjadi jika perangkat tidak lolos pemeriksaan?**
 > Gerbang akan "berbunyi bip" dan membatasi koneksi Anda sementara waktu. Begitu Anda mengaktifkan kembali antivirus atau memperbarui sistem, SealSuite otomatis mengizinkan Anda masuk kembali. Ini mencegah perangkat yang terinfeksi merusak jaringan kantor.`
@@ -2825,80 +2813,222 @@ SealSuite mencatat:
 Jika ada sesuatu yang tidak beres — pelanggaran akun, kebocoran file — log audit adalah tempat pertama yang diselidiki oleh tim keamanan IT. Ini adalah **CCTV digital perusahaan Anda**.`
     },
 
-    // ── Lesson 8: Antivirus ───────────────────────────────────────────────────
+    // ── Lesson 8: Know Your Enemy — Types of Digital Viruses ─────────────────
+    {
+      title: 'Know Your Enemy: Types of Digital Viruses & Malware',
+      title_id: 'Kenali Musuh Anda: Jenis-Jenis Virus Digital & Malware',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 8,
+      resources: [
+        { type: 'docs', label: 'SealSuite Endpoint Protection', url: 'https://docs.byteplus.com/en/docs/sealsuite/quickstart' }
+      ],
+      content: `# Know Your Enemy: Types of Digital Viruses & Malware
+
+Many people call every digital threat a "virus," but in cybersecurity, malicious software (**Malware**) comes in different disguises. Understanding how each type works helps you spot the danger before clicking!
+
+![Types of Digital Viruses Explained Simply](/images/sealsuite_virus_types.png)
+
+---
+
+## 🦠 The 4 Most Common Digital Viruses (Explained Simply)
+
+### 1. 🐴 Trojan Horse (The Fake Gift)
+* **Everyday Analogy:** A burglar hiding inside a giant birthday gift box delivered to your front door.
+* **How It Works:** It pretends to be a normal, useful file — like \`Invoice_Payment.pdf.exe\` or a "Free PDF Converter." Once you double-click it, it silently opens a backdoor for hackers to control your laptop.
+
+### 2. 🔒 Ransomware (The Digital Kidnapper)
+* **Everyday Analogy:** A criminal who sneaks into your office, puts a heavy steel padlock on your filing cabinet, and demands \$10,000 for the key.
+* **How It Works:** It scrambles (encrypts) all your work documents and photos in seconds so you cannot open them, then displays a countdown timer demanding ransom money.
+
+### 3. 🕵️ Spyware & Keylogger (The Secret Peeker)
+* **Everyday Analogy:** A hidden camera pointed directly at your keyboard and notebook.
+* **How It Works:** It stays completely invisible in the background, recording every key you press (**Keylogger**) to steal your banking logins, corporate passwords, and private chats.
+
+### 4. 🐛 Computer Worm (The Self-Copying Cloner)
+* **Everyday Analogy:** A flu virus that spreads automatically through the air to everyone in the same room.
+* **How It Works:** Unlike a Trojan (which needs you to click it), a **Worm** automatically duplicates itself and jumps across office Wi-Fi from one unprotected laptop to dozens of others!
+
+| Virus Type | Disguise / Trick | Main Goal | How SealSuite Stops It |
+|------------|------------------|-----------|------------------------|
+| **🐴 Trojan** | Fake invoice or free app | Open secret backdoor | Real-time file signature scan |
+| **🔒 Ransomware** | Urgent email attachment | Lock files & demand money | Blocks suspicious mass file encryption |
+| **🕵️ Spyware** | Hidden background program | Steal typed passwords | Endpoint process monitoring + MFA |
+| **🐛 Worm** | Network security gap | Infect all office laptops | Isolates non-compliant devices instantly |`,
+
+      content_id: `# Kenali Musuh Anda: Jenis-Jenis Virus Digital & Malware
+
+Banyak orang menyebut setiap ancaman digital sebagai "virus", namun dalam dunia keamanan siber, program jahat (**Malware**) hadir dalam berbagai penyamaran. Memahami cara kerja masing-masing jenis akan membantu Anda mengenali bahaya sebelum mengklik!
+
+![Jenis-Jenis Virus Digital Dijelaskan Secara Sederhana](/images/sealsuite_virus_types.png)
+
+---
+
+## 🦠 4 Jenis Virus Digital Paling Umum (Analogi Sehari-hari)
+
+### 1. 🐴 Trojan Horse / Kuda Troya (Hadiah Palsu)
+* **Analogi Sehari-hari:** Pencuri yang bersembunyi di dalam kotak kado besar yang dikirim ke depan pintu rumah Anda.
+* **Cara Kerjanya:** Menyamar sebagai file normal yang tampak penting — seperti \`Tagihan_Faktur.pdf.exe\` atau aplikasi gratis. Begitu Anda membukanya, program ini diam-diam membuka pintu belakang bagi peretas untuk mengendalikan laptop Anda.
+
+### 2. 🔒 Ransomware (Penculik Digital)
+* **Analogi Sehari-hari:** Penjahat yang menyelinap ke kantor Anda, memasang gembok baja raksasa di lemari arsip, lalu meminta uang tebusan agar gemboknya dibuka.
+* **Cara Kerjanya:** Mengunci (mengenkripsi) seluruh dokumen kerja dan foto Anda dalam hitungan detik sehingga tidak bisa dibuka, lalu menampilkan layar tuntutan uang tebusan.
+
+### 3. 🕵️ Spyware & Keylogger (Pengintip Rahasia)
+* **Analogi Sehari-hari:** Kamera tersembunyi yang diarahkan tepat ke jari-jari Anda saat mengetik di papan ketik.
+* **Cara Kerjanya:** Bekerja tanpa terlihat di latar belakang, merekam setiap tombol keyboard yang Anda tekan (**Keylogger**) untuk mencuri kata sandi email, rekening bank, dan percakapan rahasia.
+
+### 4. 🐛 Computer Worm / Cacing Komputer (Pengganda Otomatis)
+* **Analogi Sehari-hari:** Virus flu yang menular otomatis lewat udara ke semua orang di dalam satu ruangan.
+* **Cara Kerjanya:** Berbeda dengan Trojan yang menunggu diklik, **Worm** menggandakan dirinya secara otomatis dan melompat melalui jaringan Wi-Fi kantor dari satu laptop ke seluruh laptop lain yang tidak terlindungi!
+
+| Jenis Virus | Penyamaran / Trik | Tujuan Utama | Cara SealSuite Menghentikannya |
+|-------------|-------------------|--------------|--------------------------------|
+| **🐴 Trojan** | Tagihan palsu / aplikasi bajakan | Membuka pintu belakang | Pemindaian file real-time saat diunduh |
+| **🔒 Ransomware** | Lampiran email mendesak | Mengunci file & minta tebusan | Memblokir aktivitas penguncian file massal |
+| **🕵️ Spyware** | Program tersembunyi di belakang | Mencuri ketikan password | Pemantauan proses endpoint + perlindungan MFA |
+| **🐛 Worm** | Celah jaringan Wi-Fi | Menulari seluruh laptop kantor | Mengisolasi perangkat yang terinfeksi secara otomatis |`
+    },
+
+    // ── Lesson 9: Antivirus Protection ───────────────────────────────────────
     {
       title: 'Antivirus Protection: The Real-Time Threat Hunter',
       title_id: 'Perlindungan Antivirus: Pemburu Ancaman Real-Time',
       type: 'text',
       difficulty: 'beginner',
       xp_reward: 75,
-      order_index: 8,
+      order_index: 9,
       resources: [
         { type: 'docs', label: 'Endpoint Security', url: 'https://docs.byteplus.com/en/docs/sealsuite/quickstart' }
       ],
       content: `# Antivirus Protection: The Real-Time Threat Hunter
 
-Even with a strong password and VPN, a single infected file can compromise your entire laptop — and through it, the entire company network. SealSuite integrates **Antivirus protection** as a core requirement for every endpoint.
+Now that you know how Trojans, Ransomware, Spyware, and Worms operate, how does your laptop catch them before they cause damage? SealSuite integrates **Antivirus protection** as a core requirement for every endpoint.
 
 ![Antivirus Protection Analogy](/images/sealsuite_antivirus.png)
 
 ---
 
-## 🦠 What Is a Virus (In Simple Terms)?
+## 🛡️ How SealSuite Antivirus Hunts Threats
 
-A computer virus is a malicious program that hides inside a file or download. When you open it, the virus:
-- Steals your saved passwords or files
-- Encrypts your data and demands payment (**Ransomware**)
-- Turns your laptop into a spy tool (sending your screen & keystrokes to an attacker)
+SealSuite enforces that every connected device must have a **compliant, active antivirus** working like a 24/7 digital Hazmat team:
 
-## 🛡️ How SealSuite Antivirus Works
+1. **🔍 Signature Scanning (Wanted Poster Check):** Every file you download is instantly compared against millions of known virus "fingerprints."
+2. **🧠 Behavioral Detection (Catching New Viruses):** Even if a hacker creates a brand-new Ransomware never seen before, SealSuite spots its suspicious behavior (like trying to lock 100 files at once) and freezes it immediately.
+3. **🚧 Quarantine Chamber:** Infected files are locked inside an isolated digital vault so they cannot harm your system.
+4. **🚪 Compliance Gate:** If your antivirus is turned off, SealSuite temporarily pauses your access to corporate servers until protection is back on.
 
-SealSuite enforces that every connected device must have a **compliant, active antivirus** installed:
-
-1. **Real-Time Scanning:** Every file you open or download is instantly checked against a database of known threats.
-2. **Behavioral Detection:** Even unknown viruses are caught if they behave suspiciously (like trying to secretly encrypt files).
-3. **Compliance Gate:** If your antivirus is turned off or outdated, SealSuite **blocks your access** to corporate resources until it is re-enabled.
-
-![Device Health Compliance Checklist](/images/sealsuite_device_baseline.png)
-
-> **Analogy:** Think of Antivirus as the Hazmat Team at the airport. Even if you have a valid boarding pass, if a detector senses a dangerous chemical in your bag, the hazmat team intercepts it before it boards the plane.`,
+> **Analogy:** Think of Antivirus as the Hazmat Team at the airport. Even if a passenger has a valid boarding pass, if a sensor detects a dangerous biological sample in their luggage, the hazmat team neutralizes it before it ever reaches the plane.`,
 
       content_id: `# Perlindungan Antivirus: Pemburu Ancaman Real-Time
 
-Bahkan dengan kata sandi yang kuat dan VPN aktif, satu file yang terinfeksi saja sudah cukup untuk membahayakan seluruh laptop Anda — dan melaluinya, seluruh jaringan perusahaan. SealSuite mengintegrasikan **perlindungan Antivirus** sebagai syarat utama bagi setiap perangkat.
+Setelah Anda mengenal cara kerja Trojan, Ransomware, Spyware, dan Worm, bagaimana laptop Anda menangkap mereka sebelum menimbulkan kerusakan? SealSuite mengintegrasikan **perlindungan Antivirus** sebagai syarat utama bagi setiap perangkat kerja.
 
 ![Analogi Perlindungan Antivirus](/images/sealsuite_antivirus.png)
 
 ---
 
-## 🦠 Apa itu Virus (dengan Bahasa Sederhana)?
+## 🛡️ Cara Antivirus SealSuite Memburu Ancaman
 
-Virus komputer adalah program jahat yang bersembunyi di dalam file atau unduhan. Saat Anda membukanya, virus tersebut akan:
-- Mencuri kata sandi atau file tersimpan Anda
-- Mengenkripsi data Anda dan meminta tebusan (**Ransomware**)
-- Mengubah laptop Anda menjadi alat mata-mata (mengirim layar & ketikan Anda ke penyerang)
+SealSuite memastikan setiap perangkat yang terhubung memiliki **antivirus aktif** yang bekerja seperti tim Hazmat digital 24 jam sehari:
 
-## 🛡️ Cara Kerja Antivirus SealSuite
+1. **🔍 Pemindaian Sidik Jari (Daftar Buronan):** Setiap file yang Anda unduh langsung dicocokkan dengan jutaan database "sidik jari" virus yang sudah dikenal.
+2. **🧠 Deteksi Perilaku (Menangkap Virus Baru):** Bahkan jika peretas membuat virus Ransomware baru yang belum pernah tercatat sebelumnya, SealSuite mengenali gelagat mencurigakannya (seperti mencoba mengunci ratusan file sekaligus) dan langsung menghentikannya.
+3. **🚧 Ruang Karantina:** File yang terinfeksi dikurung di ruang isolasi digital agar tidak bisa menyebar ke file lain.
+4. **🚪 Gerbang Kepatuhan:** Jika antivirus Anda dimatikan, SealSuite menahan akses ke jaringan kantor sampai pelindung Anda diaktifkan kembali.
 
-SealSuite mewajibkan setiap perangkat yang terhubung harus memiliki **antivirus aktif yang patuh** terpasang:
-
-1. **Pemindaian Real-Time:** Setiap file yang Anda buka atau unduh langsung diperiksa terhadap basis data ancaman yang dikenal.
-2. **Deteksi Perilaku:** Virus yang belum dikenal pun tetap tertangkap jika berperilaku mencurigakan (seperti mencoba mengenkripsi file secara diam-diam).
-3. **Gerbang Kepatuhan:** Jika antivirus Anda dimatikan atau kadaluarsa, SealSuite **memblokir akses** Anda ke sumber daya perusahaan hingga antivirus diaktifkan kembali.
-
-![Daftar Periksa Kepatuhan Kesehatan Perangkat](/images/sealsuite_device_baseline.png)
-
-> **Analogi:** Bayangkan Antivirus seperti Tim Hazmat di bandara. Meskipun Anda punya tiket boarding yang sah, jika detektor mendeteksi bahan kimia berbahaya di tas Anda, tim hazmat akan menahannya sebelum naik ke pesawat.`
+> **Analogi:** Bayangkan Antivirus seperti Tim Hazmat di bandara. Meskipun penumpang memiliki tiket yang sah, jika sensor mendeteksi bahan berbahaya di dalam koper, tim hazmat langsung mengamankannya sebelum masuk ke pesawat.`
     },
 
-    // ── Lesson 9: MDM ────────────────────────────────────────────────────────
+    // ── Lesson 10: Hacker Tricks & Hacking Tools ─────────────────────────────
+    {
+      title: 'Hacker Tricks & Tools: How Attackers Try to Break In',
+      title_id: 'Trik & Alat Peretas: Cara Hacker Mencoba Menyusup',
+      type: 'text',
+      difficulty: 'beginner',
+      xp_reward: 75,
+      order_index: 10,
+      resources: [
+        { type: 'docs', label: 'SealSuite Zero Trust Defense', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-product-advantages' }
+      ],
+      content: `# Hacker Tricks & Tools: How Attackers Try to Break In
+
+Hackers rarely "break" into companies like Hollywood movie geniuses typing green code. Instead, they use automated **hacking tools** and psychological tricks designed to fool everyday employees. Let's look at the 4 most common tools in a hacker's toolkit — and how SealSuite blocks every single one!
+
+![Common Hacker Tricks & Tools vs SealSuite Shield](/images/sealsuite_hacking_tools.png)
+
+---
+
+## 🧰 The 4 Most Common Hacking Tools & Tricks
+
+### 1. 🎣 Phishing Kits (The Fake Login Trap)
+* **What the Hacker Uses:** Automated **Phishing Toolkits** that clone your company's login page or send urgent emails (*"Your salary account is suspended! Click here to login"*).
+* **How SealSuite Protects You:** Even if you accidentally type your password into a fake website, the hacker is stopped cold by **SealSuite MFA** (they don't have the 6-digit code on your phone) and **Device Verification** (their hacker laptop is not registered in SealSuite!).
+
+### 2. 📡 Evil Twin Wi-Fi & Packet Sniffers (The Cafe Wiretap)
+* **What the Hacker Uses:** A portable antenna (**Wi-Fi Pineapple / Evil Twin**) in a coffee shop or airport named \`Free_Starbucks_WiFi\`, paired with a **Packet Sniffer** (like Wireshark) to read everything people send over the air.
+* **How SealSuite Protects You:** **SealSuite VPN** wraps all your internet traffic inside a military-grade encrypted tunnel. Even if you connect to a hacker's fake Wi-Fi, all the hacker sees is unreadable scrambled gibberish!
+
+### 3. 🤖 Password Crackers (Brute-Force & Credential Stuffing Bots)
+* **What the Hacker Uses:** Automated software robots that test **10,000 stolen passwords per second** until the door unlocks.
+* **How SealSuite Protects You:** SealSuite's **Dynamic Control Engine** detects rapid failed login attempts, immediately locks out the attacker's IP, alerts IT security, and enforces MFA.
+
+### 4. 💾 BadUSB / Infected Flash Drives (The Parking Lot Trap)
+* **What the Hacker Uses:** Hackers leave a normal-looking USB flash drive labeled *"Employee_Bonuses_2026"* on a reception desk. Inside, it's a **BadUSB** hacking tool that acts like a super-fast hidden keyboard typing malicious commands the moment you plug it in.
+* **How SealSuite Protects You:** **SealSuite DLP Peripheral Control** automatically blocks unauthorized USB drives from running or copying files on work laptops!
+
+---
+
+## ✅ Golden Rules for Every Employee
+
+1. **Never plug in an unknown USB drive** or charging cable found in public.
+2. **Always turn on SealSuite VPN** when working from cafes, hotels, or airports.
+3. **Never approve an MFA prompt** on your phone if you weren't the one logging in!`,
+
+      content_id: `# Trik & Alat Peretas: Cara Hacker Mencoba Menyusup
+
+Peretas jarang membobol perusahaan seperti di film Hollywood dengan mengetik kode rumit. Sebaliknya, mereka menggunakan **alat peretas (hacking tools)** otomatis dan jebakan psikologis yang dirancang untuk mengelabui karyawan sehari-hari. Mari kenali 4 alat paling umum di tas kerja seorang hacker — dan bagaimana SealSuite mematahkan semuanya!
+
+![Trik & Alat Hacker vs Perisai SealSuite](/images/sealsuite_hacking_tools.png)
+
+---
+
+## 🧰 4 Hacking Tools & Trik Paling Umum
+
+### 1. 🎣 Phishing Kit (Jebakan Halaman Login Palsu)
+* **Alat yang Digunakan Hacker:** **Phishing Toolkit** otomatis yang meniru persis tampilan halaman login kantor atau mengirim email mendesak (*"Akun gaji Anda dibekukan! Klik di sini untuk login"*).
+* **Cara SealSuite Melindungi Anda:** Bahkan jika seseorang tidak sengaja mengetik password di situs palsu, hacker tetap tidak bisa masuk karena terhalang **MFA SealSuite** (kode 6-digit di HP Anda) serta **Verifikasi Perangkat** (laptop milik hacker tidak terdaftar sebagai perangkat resmi kantor!).
+
+### 2. 📡 Evil Twin Wi-Fi & Penyadap Jaringan (Jebakan Wi-Fi Kafe)
+* **Alat yang Digunakan Hacker:** Pemancar sinyal Wi-Fi palsu (**Evil Twin / Wi-Fi Pineapple**) di kafe atau bandara dengan nama seperti \`Free_Cafe_WiFi\`, dikombinasikan dengan **Packet Sniffer** (alat penyadap data udara) untuk mengintip semua data yang lewat.
+* **Cara SealSuite Melindungi Anda:** **VPN SealSuite** membungkus seluruh koneksi Anda di dalam terowongan terenkripsi tingkat militer. Meskipun Anda terhubung ke Wi-Fi palsu milik hacker, mereka hanya akan melihat huruf acak yang mustahil dibaca!
+
+### 3. 🤖 Mesin Pembobol Sandi (Brute-Force & Credential Stuffing Bot)
+* **Alat yang Digunakan Hacker:** Robot program otomatis yang mencoba **10.000 kombinasi password per detik** untuk mendobrak akun.
+* **Cara SealSuite Melindungi Anda:** Mesin **Dynamic Control SealSuite** langsung mendeteksi percobaan login beruntun yang tidak wajar, memblokir akses penyerang secara otomatis, dan memberi peringatan ke tim IT.
+
+### 4. 💾 BadUSB / Flashdisk Jebakan (Jebakan Meja Kantor)
+* **Alat yang Digunakan Hacker:** Hacker sengaja meninggalkan flashdisk bertuliskan *"Daftar_Bonus_Karyawan_2026"* di lobi atau meja kerja. Di dalamnya terdapat chip **BadUSB** yang otomatis mengetikkan perintah peretasan super cepat begitu dicolokkan ke laptop.
+* **Cara SealSuite Melindungi Anda:** Fitur **Kontrol Periferal DLP SealSuite** secara otomatis memblokir port USB dari flashdisk asing yang tidak memiliki izin resmi perusahaan!
+
+---
+
+## ✅ Aturan Emas bagi Setiap Karyawan
+
+1. **Jangan pernah mencolokkan flashdisk (USB) asing** yang Anda temukan di tempat umum.
+2. **Selalu nyalakan VPN SealSuite** saat bekerja dari kafe, hotel, atau bandara.
+3. **Jangan pernah memberikan kode MFA** kepada siapa pun, termasuk yang mengaku dari tim IT!`
+    },
+
+    // ── Lesson 11: MDM & BYOD Privacy ────────────────────────────────────────
     {
       title: 'Mobile Device Management (MDM): Remote Control Tower',
       title_id: 'Manajemen Perangkat Mobile (MDM): Menara Kendali Jarak Jauh',
       type: 'text',
       difficulty: 'beginner',
       xp_reward: 75,
-      order_index: 9,
+      order_index: 11,
       resources: [
         { type: 'docs', label: 'MDM and Device Management', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-operation-instructions' }
       ],
@@ -2913,11 +3043,9 @@ Modern employees use phones, tablets, and personal laptops to access company res
 ## 🗼 The Air Traffic Control Analogy
 
 Think of MDM as an **Air Traffic Control Tower**. Dozens of planes (devices) are in the air. The control tower:
-- Knows exactly where every plane is at all times
-- Can redirect a plane to a different runway
-- In an emergency, can instruct a plane to land immediately — or even remotely disable it
-
-SealSuite MDM works the same way for your corporate devices.
+- Knows the safety status of every plane at all times
+- Can push updated flight rules remotely
+- In an emergency (if a phone is stolen), can lock or wipe the corporate cabin remotely
 
 ## 📱 What IT Can Do with MDM
 
@@ -2929,14 +3057,19 @@ SealSuite MDM works the same way for your corporate devices.
 | **App Management** | Approve or block specific apps on work phones |
 | **Compliance Check** | Verify device health without touching it physically |
 
-![Centralized Admin Control](/images/sealsuite_admin.png)
+---
 
-## 🔐 For Personal Devices (BYOD)
-Don't worry — on personal phones, MDM only manages the **corporate work container** (SealSuite app area). Your personal photos, chats, and apps remain completely private and untouched.`,
+## 🔐 For Personal Devices (BYOD): Your Privacy Is 100% Protected!
+
+Many employees ask: *"If I install SealSuite on my personal phone, can IT see my family photos or WhatsApp chats?"*
+
+**The answer is NO!** On personal phones, MDM creates an isolated **Corporate Work Container** (a separate digital room just for work apps). Your personal photos, chats, games, and banking apps stay on your private side of the wall — completely invisible and untouched by IT.
+
+![BYOD Privacy: Work Container vs Personal Space](/images/sealsuite_byod_container.png)`,
 
       content_id: `# Manajemen Perangkat Mobile (MDM): Menara Kendali Jarak Jauh
 
-Karyawan modern menggunakan ponsel, tablet, dan laptop pribadi untuk mengakses sumber daya perusahaan. Ini menimbulkan tantangan: **bagaimana tim IT mengontrol keamanan perangkat yang bukan milik mereka?** Jawabannya adalah **MDM — Mobile Device Management**.
+Karyawan modern menggunakan ponsel, tablet, dan laptop pribadi untuk mengakses sumber daya perusahaan. Ini menimbulkan tantangan: **bagaimana tim IT mengontrol keamanan perangkat yang bukan mereka pegang secara fisik?** Jawabannya adalah **MDM — Mobile Device Management**.
 
 ![Analogi Menara Kendali MDM](/images/sealsuite_mdm.png)
 
@@ -2945,11 +3078,9 @@ Karyawan modern menggunakan ponsel, tablet, dan laptop pribadi untuk mengakses s
 ## 🗼 Analogi Menara Pengatur Lalu Lintas Udara
 
 Bayangkan MDM seperti **Menara Pengatur Lalu Lintas Udara (ATC)**. Puluhan pesawat (perangkat) sedang mengudara. Menara pengendali:
-- Mengetahui persis di mana setiap pesawat berada setiap saat
-- Dapat mengarahkan pesawat ke landasan yang berbeda
-- Dalam keadaan darurat, dapat memerintahkan pesawat untuk mendarat segera — atau bahkan menonaktifkannya dari jarak jauh
-
-MDM SealSuite bekerja dengan cara yang sama untuk perangkat-perangkat perusahaan Anda.
+- Memantau status keselamatan setiap perangkat dari jarak jauh
+- Dapat mengirimkan pembaruan aturan keamanan secara otomatis
+- Dalam keadaan darurat (jika HP dicuri), dapat mengunci atau menghapus data kantor dari jarak jauh
 
 ## 📱 Apa yang Bisa Dilakukan IT dengan MDM
 
@@ -2961,28 +3092,31 @@ MDM SealSuite bekerja dengan cara yang sama untuk perangkat-perangkat perusahaan
 | **Manajemen Aplikasi** | Setujui atau blokir aplikasi tertentu di HP kerja |
 | **Pemeriksaan Kepatuhan** | Verifikasi kesehatan perangkat tanpa menyentuhnya secara fisik |
 
-![Kontrol Admin Terpusat](/images/sealsuite_admin.png)
+---
 
-## 🔐 Untuk Perangkat Pribadi (BYOD)
-Jangan khawatir — pada ponsel pribadi, MDM hanya mengelola **area wadah kerja perusahaan** (area aplikasi SealSuite). Foto pribadi, chat, dan aplikasi Anda tetap sepenuhnya privat dan tidak tersentuh.`
+## 🔐 Untuk HP Pribadi (BYOD): Privasi Anda 100% Terlindungi!
+
+Banyak karyawan bertanya: *"Jika saya menginstal SealSuite di HP pribadi saya, apakah tim IT bisa melihat foto keluarga atau chat pribadi saya?"*
+
+**Jawabannya TIDAK!** Pada ponsel pribadi, MDM hanya membuat **Wadah Kerja Perusahaan (Work Container)** yang terpisah dinding keamanan. Foto pribadi, chat keluarga, game, dan aplikasi pribadi Anda berada di zona privat yang sama sekali tidak bisa dilihat atau disentuh oleh tim IT.
+
+![Privasi BYOD: Wadah Kerja vs Ruang Pribadi](/images/sealsuite_byod_container.png)`
     },
 
-    // ── Lesson 10: Assessment & Quiz ──────────────────────────────────────────
+    // ── Lesson 12: Assessment & Quiz ──────────────────────────────────────────
     {
       title: 'SealSuite Fundamentals Assessment',
       title_id: 'Evaluasi Dasar SealSuite',
       type: 'quiz',
       difficulty: 'beginner',
       xp_reward: 150,
-      order_index: 10,
+      order_index: 12,
       resources: [],
       content: `# SealSuite Fundamentals Assessment
 
-You have completed all 9 core lessons of SealSuite Fundamentals! Now let's test your understanding with a comprehensive scenario-based quiz covering Zero Trust, IAM, VPN, Antivirus, MDM, and Data Protection.
+Congratulations on completing all 11 lessons of **SealSuite Fundamentals**! Now let's test your understanding with a scenario-based quiz covering Zero Trust, IAM, VPN, Virus Types, Hacker Tools, MDM, and Data Protection.
 
-![SealSuite Fundamentals Overview](/images/sealsuite_fundamental.png)
-
-![The 3 Core Pillars Review](/images/sealsuite_pillars.png)
+![SealSuite Cybersecurity Ready](/images/sealsuite_graduation_shield.png)
 
 ---
 
@@ -2990,11 +3124,9 @@ Answer each question using the everyday analogies you've learned throughout this
 
       content_id: `# Evaluasi Dasar SealSuite
 
-Anda telah menyelesaikan 9 pelajaran inti SealSuite Fundamentals! Sekarang mari uji pemahaman Anda dengan kuis skenario komprehensif yang mencakup Zero Trust, IAM, VPN, Antivirus, MDM, dan Perlindungan Data.
+Selamat Anda telah menyelesaikan seluruh 11 pelajaran **SealSuite Fundamentals**! Sekarang mari uji pemahaman Anda dengan kuis berbasis skenario yang mencakup Zero Trust, IAM, VPN, Jenis Virus, Alat Peretas, MDM, dan Perlindungan Data.
 
-![Ringkasan Dasar SealSuite](/images/sealsuite_fundamental.png)
-
-![Ulasan 3 Pilar Utama](/images/sealsuite_pillars.png)
+![Siap Keamanan Siber SealSuite](/images/sealsuite_graduation_shield.png)
 
 ---
 
@@ -3054,6 +3186,28 @@ Jawab setiap pertanyaan menggunakan analogi sehari-hari yang telah Anda pelajari
           ],
           correct_answer: 2,
           explanation: 'Digital watermarking overlays user details on corporate files so that if someone attempts to capture a photo of sensitive data to leak it, the source of the leak can be instantly traced.'
+        },
+        {
+          question: 'Which type of malware disguises itself as a harmless gift (like a fake invoice PDF) to trick you into opening it, and what malware locks all your files demanding money?',
+          options: [
+            'Spyware disguises itself as a gift; Worm demands money',
+            'Trojan Horse disguises itself as a harmless file; Ransomware locks your files and demands ransom money',
+            'Firewall disguises itself as a gift; Antivirus locks your files',
+            'Keylogger locks your files; Phishing duplicates itself across Wi-Fi'
+          ],
+          correct_answer: 1,
+          explanation: 'A Trojan Horse hides inside a seemingly harmless file (like the wooden horse gift), while Ransomware kidnaps and encrypts your files until a ransom is paid.'
+        },
+        {
+          question: 'A hacker sets up a fake "Free_Airport_WiFi" (Evil Twin) to spy on travelers and also drops an infected "BadUSB" flash drive on a table. How does SealSuite protect you from both hacking tools?',
+          options: [
+            'SealSuite boosts your Wi-Fi speed and formats the USB drive automatically',
+            'SealSuite VPN encrypts your network traffic so the Evil Twin Wi-Fi sees nothing, and SealSuite DLP blocks unauthorized USB drives from running',
+            'SealSuite turns off your laptop screen when you are at the airport',
+            'SealSuite changes your email address every time you connect to Wi-Fi'
+          ],
+          correct_answer: 1,
+          explanation: 'SealSuite VPN creates an encrypted tunnel that prevents Evil Twin Wi-Fi sniffers from reading your data, while SealSuite DLP Peripheral Control blocks unknown/unauthorized BadUSB drives.'
         }
       ]
     }
