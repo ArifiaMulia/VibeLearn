@@ -5,6 +5,9 @@ on:
     branches: [main, virtuenet]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   provision-backend:
     name: Provision PostgreSQL & Backend Secrets
@@ -111,31 +114,13 @@ jobs:
           echo "⏳ Waiting for vibelearn-db to be ready..."
           kubectl -n "$NAMESPACE" rollout status deployment/vibelearn-db --timeout=120s
 
-  deploy-api-Prod:
-    name: K3s API Deploy (Prod)
+  deploy-api:
+    name: K3s API Deploy
     needs: provision-backend
-    if: github.ref == 'refs/heads/main'
     uses: virtuenet-prasetia/.github/.github/workflows/k3s-app-deploy.yml@main
     with:
       app_name: vibelearn-api
-      target_namespace: vibelearn-prod
-      target_deployment: vibelearn-api
-      target_service: vibelearn-api
-      port: 3000
-      health_endpoint: /api/health
-      dockerfile: api/Dockerfile
-      context: ./api
-      replicas: 1
-    secrets: inherit
-
-  deploy-api-dev:
-    name: K3s API Deploy (Dev)
-    needs: provision-backend
-    if: github.ref != 'refs/heads/main'
-    uses: virtuenet-prasetia/.github/.github/workflows/k3s-app-deploy.yml@main
-    with:
-      app_name: vibelearn-api
-      target_namespace: vibelearn-dev
+      target_namespace: ${{ github.ref == 'refs/heads/main' && 'vibelearn-prod' || 'vibelearn-dev' }}
       target_deployment: vibelearn-api
       target_service: vibelearn-api
       port: 3000
@@ -147,8 +132,7 @@ jobs:
 
   ensure-api-port:
     name: Ensure API Service Port 3000
-    if: always() && (needs.deploy-api-Prod.result == 'success' || needs.deploy-api-dev.result == 'success')
-    needs: [deploy-api-Prod, deploy-api-dev]
+    needs: deploy-api
     runs-on: [self-hosted, in-cluster, k3s]
     steps:
       - name: Expose Port 3000 on vibelearn-api Service
