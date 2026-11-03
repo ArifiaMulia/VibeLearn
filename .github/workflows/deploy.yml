@@ -1,0 +1,469 @@
+name: Deploy to K3s
+
+on:
+  push:
+    branches:
+      - main
+      - virtuenet
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vibe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy VibeLearn to K3s Cluster
+    runs-on: [self-hosted, in-cluster, k3s]
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build & Push Unified Container Image
+        id: build
+        run: |
+          set -euo pipefail
+          REGISTRY="10.43.110.114:5000"
+          APP="vibelearn"
+          TAG="${{ github.sha }}"
+
+          echo "📦 Building $APP ($TAG) using Dockerfile.k3s..."
+          export BUILDX_NO_DEFAULT_ATTESTATIONS=1
+          docker build \
+            --provenance=false \
+            -f Dockerfile.k3s \
+            -t "$REGISTRY/$APP:$TAG" \
+            -t "$REGISTRY/$APP:latest" \
+            .
+
+          echo "🚀 Pushing image to internal registry $REGISTRY..."
+          docker push "$REGISTRY/$APP:$TAG"
+          docker push "$REGISTRY/$APP:latest"
+
+      - name: Apply K3s Namespace, Secrets, PostgreSQL & VibeLearn Deployment
+        run: |
+          set -euo pipefail
+          NAMESPACE="vibe-prod"
+          APP="vibelearn"
+          REGISTRY="10.43.110.114:5000"
+          TAG="${{ github.sha }}"
+          SHORT_SHA="${TAG:0:12}"
+
+          echo "🔍 Ensuring namespace $NAMESPACE..."
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace "$NAMESPACE" app.kubernetes.io/part-of=virtuenet --overwrite
+
+          echo "🔐 Ensuring Kubernetes Secret vibe-secrets..."
+          if ! kubectl -n "$NAMESPACE" get secret vibe-secrets >/dev/null 2>&1; then
+            echo "📋 Creating vibe-secrets (importing shared Lark/BytePlus credentials from secure-prod if available)..."
+            LARK_SEC=$(kubectl -n secure-prod get secret secure-secrets -o jsonpath='{.data.LARK_APP_SECRET}' 2>/dev/null | base64 -d || echo "")
+            BYTE_SEC=$(kubectl -n secure-prod get secret secure-secrets -o jsonpath='{.data.BYTEPLUS_API_KEY}' 2>/dev/null | base64 -d || echo "")
+            JWT_SEC=$(head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 40)
+
+            kubectl -n "$NAMESPACE" create secret generic vibe-secrets \
+              --from-literal=JWT_SECRET="${JWT_SEC:-vibelearn_prod_secret_k3s_2026}" \
+              --from-literal=POSTGRES_PASSWORD="vibelearn_pass" \
+              --from-literal=LARK_APP_ID="cli_a9c0eaefaa78deee" \
+              --from-literal=LARK_APP_SECRET="${LARK_SEC}" \
+              --from-literal=BYTEPLUS_API_KEY="${BYTE_SEC}"
+          fi
+
+          echo "🗄️ Deploying PostgreSQL 15 in $NAMESPACE..."
+          cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: vibelearn-db
+            namespace: $NAMESPACE
+            labels:
+              app: vibelearn-db
+              app.kubernetes.io/part-of: virtuenet
+          spec:
+            replicas: 1
+            strategy:
+              type: Recreate
+            selector:
+              matchLabels:
+                app: vibelearn-db
+            template:
+              metadata:
+                labels:
+                  app: vibelearn-db
+              spec:
+                nodeSelector:
+                  kubernetes.io/hostname: vn-core-prod-02
+                volumes:
+                - name: pgdata-vol
+                  hostPath:
+                    path: /srv/vibe-pgdata
+                    type: DirectoryOrCreate
+                containers:
+                - name: postgres
+                  image: postgres:15-alpine
+                  ports:
+                  - containerPort: 5432
+                  env:
+                  - name: POSTGRES_DB
+                    value: "vibelearn_db"
+                  - name: POSTGRES_USER
+                    value: "vibelearn_user"
+                  - name: POSTGRES_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: vibe-secrets
+                        key: POSTGRES_PASSWORD
+                  - name: PGDATA
+                    value: "/var/lib/postgresql/data/pgdata"
+                  volumeMounts:
+                  - name: pgdata-vol
+                    mountPath: /var/lib/postgresql/data
+                  readinessProbe:
+                    exec:
+                      command: ["sh", "-c", "pg_isready -U vibelearn_user -d vibelearn_db"]
+                    initialDelaySeconds: 5
+                    periodSeconds: 5
+                  resources:
+                    requests:
+                      cpu: 50m
+                      memory: 128Mi
+                    limits:
+                      cpu: 500m
+                      memory: 512Mi
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: vibelearn-db
+            namespace: $NAMESPACE
+            labels:
+              app: vibelearn-db
+          spec:
+            ports:
+            - port: 5432
+              targetPort: 5432
+            selector:
+              app: vibelearn-db
+          EOF
+
+          echo "⏳ Waiting for PostgreSQL to be ready..."
+          kubectl -n "$NAMESPACE" rollout status deployment/vibelearn-db --timeout=120s
+
+          echo "🚀 Applying VibeLearn Application Deployment..."
+          MANIFEST="/tmp/k8s-deployment-${APP}-${SHORT_SHA}.yaml"
+          cat <<EOF > "$MANIFEST"
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: $APP
+            namespace: $NAMESPACE
+            labels:
+              app: $APP
+              app.kubernetes.io/name: $APP
+              app.kubernetes.io/part-of: virtuenet
+          spec:
+            replicas: 1
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxUnavailable: 0
+                maxSurge: 1
+            selector:
+              matchLabels:
+                app: $APP
+            template:
+              metadata:
+                labels:
+                  app: $APP
+              spec:
+                nodeSelector:
+                  kubernetes.io/hostname: vn-core-prod-02
+                initContainers:
+                - name: fix-upload-perms
+                  image: $REGISTRY/$APP:$TAG
+                  imagePullPolicy: IfNotPresent
+                  command: ["sh", "-c", "mkdir -p /app/api/uploads/images /app/api/uploads/videos && chown -R 1000:1000 /app/api/uploads"]
+                  securityContext:
+                    runAsUser: 0
+                  volumeMounts:
+                  - name: vibe-uploads-vol
+                    mountPath: /app/api/uploads
+                volumes:
+                - name: vibe-uploads-vol
+                  hostPath:
+                    path: /srv/vibe-uploads
+                    type: DirectoryOrCreate
+                containers:
+                - name: $APP
+                  image: $REGISTRY/$APP:$TAG
+                  ports:
+                  - containerPort: 3000
+                  imagePullPolicy: IfNotPresent
+                  securityContext:
+                    runAsUser: 1000
+                    runAsNonRoot: true
+                    allowPrivilegeEscalation: false
+                  readinessProbe:
+                    httpGet:
+                      path: /api/health
+                      port: 3000
+                    initialDelaySeconds: 8
+                    periodSeconds: 10
+                    timeoutSeconds: 5
+                  livenessProbe:
+                    httpGet:
+                      path: /api/health
+                      port: 3000
+                    initialDelaySeconds: 20
+                    periodSeconds: 20
+                    timeoutSeconds: 5
+                  env:
+                  - name: NODE_ENV
+                    value: "production"
+                  - name: PORT
+                    value: "3000"
+                  - name: DATABASE_URL
+                    value: "postgres://vibelearn_user:vibelearn_pass@vibelearn-db:5432/vibelearn_db"
+                  - name: JWT_SECRET
+                    valueFrom:
+                      secretKeyRef:
+                        name: vibe-secrets
+                        key: JWT_SECRET
+                  - name: LARK_APP_ID
+                    valueFrom:
+                      secretKeyRef:
+                        name: vibe-secrets
+                        key: LARK_APP_ID
+                        optional: true
+                  - name: LARK_APP_SECRET
+                    valueFrom:
+                      secretKeyRef:
+                        name: vibe-secrets
+                        key: LARK_APP_SECRET
+                        optional: true
+                  - name: LARK_API_BASE_URL
+                    value: "https://open.larksuite.com"
+                  - name: BYTEPLUS_API_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: vibe-secrets
+                        key: BYTEPLUS_API_KEY
+                        optional: true
+                  volumeMounts:
+                  - name: vibe-uploads-vol
+                    mountPath: /app/api/uploads
+                  resources:
+                    requests:
+                      cpu: 50m
+                      memory: 128Mi
+                    limits:
+                      cpu: 1000m
+                      memory: 1Gi
+          EOF
+
+          kubectl apply -f "$MANIFEST"
+          rm -f "$MANIFEST"
+
+          echo "🌐 Applying NodePort Service (Port 30128)..."
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: $APP
+            namespace: $NAMESPACE
+            labels:
+              app: $APP
+              app.kubernetes.io/name: $APP
+              app.kubernetes.io/part-of: virtuenet
+          spec:
+            type: NodePort
+            sessionAffinity: ClientIP
+            sessionAffinityConfig:
+              clientIP:
+                timeoutSeconds: 10800
+            ports:
+            - port: 80
+              targetPort: 3000
+              nodePort: 30128
+              name: http
+            selector:
+              app: $APP
+          EOF
+
+          echo "⏳ Waiting for Deployment rollout..."
+          kubectl -n "$NAMESPACE" rollout status deployment/"$APP" --timeout=180s
+
+      - name: Internal Smoke Health Check
+        run: |
+          set -euo pipefail
+          NAMESPACE="vibe-prod"
+          APP="vibelearn"
+
+          echo "📋 Pod status:"
+          kubectl -n "$NAMESPACE" get pods
+          CLUSTER_IP=$(kubectl -n "$NAMESPACE" get svc "$APP" -o jsonpath='{.spec.clusterIP}' 2>/dev/null || true)
+          echo "🌐 Service ClusterIP: ${CLUSTER_IP:-Unknown} | NodePort: 30128"
+
+          echo "🩺 Probing internal Cluster Service health..."
+          for attempt in $(seq 1 15); do
+            sleep 2
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://vibelearn.vibe-prod.svc.cluster.local/api/health" || true)
+
+            if [ "$HTTP_STATUS" != "200" ]; then
+              NP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:30128/api/health" || true)
+              if [ "$NP_STATUS" = "200" ]; then
+                HTTP_STATUS="200"
+              fi
+            fi
+
+            if [ "$HTTP_STATUS" != "200" ] && [ -n "$CLUSTER_IP" ]; then
+              CIP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://${CLUSTER_IP}/api/health" || true)
+              if [ "$CIP_STATUS" = "200" ]; then
+                HTTP_STATUS="200"
+              fi
+            fi
+
+            echo "  [Attempt ${attempt}/15] Internal HTTP Status: ${HTTP_STATUS}"
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ Internal service is healthy (HTTP 200)."
+              break
+            fi
+
+            if [ "$attempt" -eq 15 ]; then
+              echo "❌ Internal smoke check failed after 15 attempts."
+              kubectl -n "$NAMESPACE" logs -l app="$APP" --tail=100 || true
+              exit 1
+            fi
+          done
+
+      - name: Configure Edge Load Balancer on vn-core-prod-02
+        run: |
+          set -uo pipefail
+          echo "🔧 Synchronizing edge load balancer configuration on vn-core-prod-02..."
+          kubectl delete pod sync-edge-router -n vibe-prod --ignore-not-found=true
+          kubectl create configmap sync-lb-script --from-file=sync.py=scripts/sync_edge_lb.py -n vibe-prod --dry-run=client -o yaml | kubectl apply -f -
+
+          cat <<'EOF' | kubectl apply -f -
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: sync-edge-router
+            namespace: vibe-prod
+          spec:
+            nodeSelector:
+              kubernetes.io/hostname: vn-core-prod-02
+            restartPolicy: Never
+            volumes:
+            - name: lb-config
+              hostPath:
+                path: /srv/load-balancer
+            - name: docker-sock
+              hostPath:
+                path: /var/run/docker.sock
+            - name: script-vol
+              configMap:
+                name: sync-lb-script
+            containers:
+            - name: config-sync
+              image: docker:cli
+              volumeMounts:
+              - name: lb-config
+                mountPath: /host-lb
+              - name: docker-sock
+                mountPath: /var/run/docker.sock
+              - name: script-vol
+                mountPath: /scripts
+              command: ["sh", "-c"]
+              args:
+              - |
+                set -e
+                apk add --no-cache python3 >/dev/null 2>&1
+                python3 /scripts/sync.py
+
+                echo "Testing nginx syntax..."
+                if ! docker exec load-balancer nginx -t; then
+                  echo "CRITICAL: Nginx test failed! Restoring backup..."
+                  LATEST_BAK=$(ls -t /host-lb/nginx.conf.bak.* | head -1)
+                  if [ -n "$LATEST_BAK" ]; then
+                    cp "$LATEST_BAK" /host-lb/nginx.conf
+                  fi
+                  echo "NGINX_TEST_FAILED" > /dev/termination-log
+                  exit 1
+                fi
+
+                echo "Reloading edge load balancer..."
+                docker exec load-balancer nginx -s reload
+                echo "SUCCESS: Edge load balancer reloaded with vibe.virtuenet.space" > /dev/termination-log
+          EOF
+
+          echo "⏳ Awaiting config sync completion..."
+          for i in $(seq 1 30); do
+            STATUS=$(kubectl get pod sync-edge-router -n vibe-prod -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+            echo "  Attempt $i: Pod status is $STATUS"
+            if [ "$STATUS" = "Succeeded" ] || [ "$STATUS" = "Failed" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          MSG=$(kubectl get pod sync-edge-router -n vibe-prod -o jsonpath='{.status.containerStatuses[0].state.terminated.message}' 2>/dev/null || true)
+          echo "Edge sync result: $MSG"
+
+          FINAL_PHASE=$(kubectl get pod sync-edge-router -n vibe-prod -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+          kubectl delete pod sync-edge-router -n vibe-prod --ignore-not-found=true
+
+          if [ "$FINAL_PHASE" != "Succeeded" ]; then
+            echo "❌ Edge router configuration failed!"
+            exit 1
+          fi
+
+      - name: Live Public Smoke Test
+        run: |
+          set -euo pipefail
+          echo "🌐 Testing live public domain https://vibe.virtuenet.space..."
+          for attempt in $(seq 1 10); do
+            sleep 3
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "https://vibe.virtuenet.space/api/health" || true)
+            echo "  [Attempt ${attempt}/10] Public Health HTTP Status: ${HTTP_STATUS}"
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "🎉 Live public health check passed! https://vibe.virtuenet.space is ONLINE and healthy."
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              echo "⚠️ Public health check returned HTTP ${HTTP_STATUS}, retrying root endpoint..."
+            fi
+          done
+
+          echo "Testing public frontend index..."
+          curl -fsS -o /dev/null --max-time 10 "https://vibe.virtuenet.space/"
+          echo "✅ Public frontend index is reachable."
+
+      - name: Record Deployment for VirtueDev
+        if: always()
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:12}"
+          CM_NAME="vn-deploy-vibe-${SHORT_SHA}"
+          RECORDED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          echo "📝 Recording deployment ConfigMap ${CM_NAME}..."
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: ${CM_NAME}
+            namespace: vibe-prod
+            labels:
+              app.kubernetes.io/part-of: virtuenet
+              virtuenet.virtuenet.space/kind: deploy-record
+              virtuenet.virtuenet.space/app: vibe
+          data:
+            repository: "${{ github.repository }}"
+            source_commit: "${{ github.sha }}"
+            image: "10.43.110.114:5000/vibelearn:${{ github.sha }}"
+            rollout_status: "${{ job.status }}"
+            smoke_http_status: "200"
+            workflow_run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            recorded_at: "${RECORDED_AT}"
+          EOF

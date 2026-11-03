@@ -577,6 +577,22 @@ const initDb = async (retries = 10, delay = 3000) => {
   }
 };
 
+// Serve frontend SPA build in unified K3s container
+const fs = require('fs');
+const frontendDist = path.join(__dirname, '..', 'dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html') || filePath.endsWith('sw.js')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      }
+    }
+  }));
+  app.get(/^(?!\/(api|uploads)).*$/, (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 initDb().then(() => {
   app.listen(port, () => console.log(`🚀 VibeLearn API running on port ${port}`));
 });
