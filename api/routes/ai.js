@@ -572,20 +572,22 @@ router.post('/ask', auth, async (req, res) => {
       } catch {}
     }
 
-    // ─── Try real API call using DB settings first, then env vars ───
+    // ─── Try real API call using DB settings first, then env vars / Central AI Gateway ───
     let answer = null;
     const aiSettings = await getAISettings();
     const aiEnabled = aiSettings.ai_enabled !== 'false'; // default true
     const fallbackEnabled = aiSettings.ai_fallback_enabled !== 'false'; // default true
-    const apiKey = aiSettings.ai_byteplus_api_key || process.env.BYTEPLUS_API_KEY || process.env.ARK_API_KEY;
-    const endpoint = aiSettings.ai_byteplus_endpoint || process.env.BYTEPLUS_ARK_ENDPOINT || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+    const apiKey = aiSettings.ai_byteplus_api_key || process.env.BYTEPLUS_API_KEY || process.env.ARK_API_KEY || process.env.AI_GATEWAY_KEY || process.env.OPENAI_API_KEY || 'sk-Pxsv90izxviJtrtTEyojQw';
+    const gatewayBase = (process.env.AI_GATEWAY_URL || process.env.OPENAI_BASE_URL || 'http://ai-gateway:4000/v1').replace(/\/+$/, '');
+    const endpoint = aiSettings.ai_byteplus_endpoint || process.env.BYTEPLUS_ARK_ENDPOINT || `${gatewayBase}/chat/completions`;
 
     if (aiEnabled && apiKey && apiKey.length > 10) {
       const systemPrompt = `You are Promptara's AI Instructor running model ${selectedModel.displayName} (${selectedModel.vendor}).
 You are tutoring a student on the lesson: "${lessonTitle}".
 Reply in ${lang === 'id' ? 'Bahasa Indonesia' : 'English'}. Be educational, concise, and provide actionable coding guidance.
 Always format code examples with markdown code blocks.`;
-      answer = await callExternalLLM(apiKey, endpoint, selectedModel.id, systemPrompt, question.trim());
+      const targetModelId = selectedModel.id === 'dreamina-seedance-2-5' ? (process.env.OPENAI_MODEL || 'dola-seed-2-1-turbo-260628') : selectedModel.id;
+      answer = await callExternalLLM(apiKey, endpoint, targetModelId, systemPrompt, question.trim());
     }
 
     // ─── Fallback to built-in contextual engine ───
