@@ -27,6 +27,11 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('reset_token');
     if (token) setResetToken(token);
+
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vl_logout_reason') === 'idle') {
+      sessionStorage.removeItem('vl_logout_reason');
+      showError('Sesi Anda telah berakhir otomatis karena tidak ada aktivitas selama 30 menit demi keamanan akun.');
+    }
   }, []);
 
   const handleForgotSubmit = async (e) => {

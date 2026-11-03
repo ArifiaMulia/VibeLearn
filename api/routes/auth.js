@@ -22,6 +22,8 @@ router.post('/login', async (req, res) => {
     await pool.query('INSERT INTO usage_logs (user_id, action, resource_type) VALUES ($1, $2, $3)', [user.id, 'login', 'auth']);
     await pool.query('UPDATE users SET last_activity = NOW() WHERE id = $1', [user.id]);
     const token = generateToken(user);
+    res.clearCookie('vl_logged_out', { path: '/' });
+    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
     res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, plan: user.plan, avatar: user.avatar }, token });
   } catch (err) {
     console.error('Login error:', err);
@@ -61,6 +63,8 @@ router.post('/register', async (req, res) => {
     const { sendWelcomeEmail } = require('../services/emailService');
     sendWelcomeEmail(user.email, user.name).catch(() => {});
 
+    res.clearCookie('vl_logged_out', { path: '/' });
+    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
     res.status(201).json({ user, token });
 
   } catch (err) {
@@ -99,7 +103,14 @@ router.get('/me', async (req, res) => {
   const cookies = parseCookieHeader(req.headers.cookie);
   const authHeader = req.headers['authorization'];
   const bearerToken = authHeader && authHeader.split(' ')[1];
-  const ssoJwt = cookies['virtuenet_sso_jwt'] || req.query.sso_token;
+  const explicitSsoToken = req.query.sso_token;
+  const isLoggedOut = cookies['vl_logged_out'] === '1';
+  const ssoJwt = explicitSsoToken || (!isLoggedOut ? cookies['virtuenet_sso_jwt'] : null);
+
+  if (explicitSsoToken) {
+    res.clearCookie('vl_logged_out', { path: '/' });
+    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
+  }
 
   // 1. Try existing local Bearer token
   if (bearerToken) {
@@ -180,6 +191,14 @@ router.get('/me', async (req, res) => {
   }
 
   return res.status(401).json({ error: 'Unauthenticated' });
+});
+
+// POST /api/auth/logout
+router.post('/logout', (req, res) => {
+  res.clearCookie('virtuenet_sso_jwt', { path: '/' });
+  res.clearCookie('virtuenet_sso_jwt', { path: '/', domain: '.virtuenet.space' });
+  res.cookie('vl_logged_out', '1', { path: '/', maxAge: 30 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
+  return res.json({ message: 'Logged out successfully' });
 });
 
 // GET /api/auth/lark/config
@@ -284,6 +303,8 @@ router.post('/lark/callback', async (req, res) => {
 
     // 4. Generate JWT
     const token = generateToken(user);
+    res.clearCookie('vl_logged_out', { path: '/' });
+    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
     res.json({
       user: {
         id: user.id,
