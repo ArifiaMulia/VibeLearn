@@ -11,6 +11,13 @@ const TYPE_ICONS = { text: BookOpen, video: Play, quiz: Zap, lab: Lock };
 const TYPE_LABELS = { text: 'Reading', video: 'Video', quiz: 'Quiz', lab: 'Lab' };
 const TYPE_COLORS = { text: 'var(--accent)', video: 'var(--primary)', quiz: 'var(--warning)', lab: 'var(--text-muted)' };
 
+// Extract first markdown image from lesson content for visual preview
+function extractFirstImage(content, content_id) {
+  const src = content || content_id || '';
+  const match = src.match(/!\[[^\]]*\]\(([^)]+)\)/);
+  return match ? match[1] : null;
+}
+
 // Estimate reading time from content length
 function estimateTime(type, content) {
   if (type === 'video') return '~10 min';
@@ -549,7 +556,21 @@ export default function CourseDetailPage() {
 
       {/* Hero */}
       <div style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.1))', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '1.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {course.thumbnail && (
+            <div style={{
+              width: 200, height: 200, borderRadius: 'var(--radius-lg)', overflow: 'hidden', flexShrink: 0,
+              border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+              background: 'var(--bg-card)',
+            }}>
+              <img
+                src={course.thumbnail}
+                alt={course.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={e => { e.currentTarget.parentElement.style.display = 'none'; }}
+              />
+            </div>
+          )}
           <div style={{ flex: 1, minWidth: 240 }}>
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
               <span className={`badge diff-${course.level}`}>{course.level}</span>
@@ -602,6 +623,7 @@ export default function CourseDetailPage() {
             const isLocked = !enrolled || (!done && !isActive);
             const TypeIcon = TYPE_ICONS[lesson.type] || BookOpen;
             const color = TYPE_COLORS[lesson.type] || 'var(--primary)';
+            const lessonThumb = extractFirstImage(lesson.content, lesson.content_id);
 
             return (
               <div key={lesson.id} style={{ display: 'flex', gap: '0', position: 'relative' }}>
@@ -640,16 +662,34 @@ export default function CourseDetailPage() {
                     onMouseEnter={e => !isLocked && (e.currentTarget.style.transform = 'translateX(4px)')}
                     onMouseLeave={e => (e.currentTarget.style.transform = 'translateX(0)')}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
-                          <span style={{ fontSize: '0.7rem', color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            {i + 1}. {TYPE_LABELS[lesson.type] || 'Lesson'}
-                          </span>
-                          {isActive && <span style={{ fontSize: '0.65rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('up_next')}</span>}
-                          {done && <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('done')}</span>}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 200 }}>
+                        {lessonThumb && (
+                          <div style={{
+                            width: 56, height: 56, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
+                            border: '1px solid var(--border-light)', background: 'var(--bg-card)',
+                          }}>
+                            <img
+                              src={lessonThumb}
+                              alt={lesson.title}
+                              loading="lazy"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                              onError={e => { e.currentTarget.parentElement.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
+                            <span style={{ fontSize: '0.7rem', color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              {i + 1}. {TYPE_LABELS[lesson.type] || 'Lesson'}
+                            </span>
+                            {isActive && <span style={{ fontSize: '0.65rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('up_next')}</span>}
+                            {done && <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('done')}</span>}
+                          </div>
+                          <div style={{ fontWeight: 600, fontSize: '0.88rem', color: done ? 'var(--success)' : 'var(--text-primary)' }}>
+                            {lang === 'id' && lesson.title_id ? lesson.title_id : lesson.title}
+                          </div>
                         </div>
-                        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: done ? 'var(--success)' : 'var(--text-primary)' }}>{lesson.title}</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{estimateTime(lesson.type, lesson.content)}</span>

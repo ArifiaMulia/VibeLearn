@@ -919,8 +919,56 @@ export default function LessonPage() {
 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div className="markdown-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+            <div className="card markdown-content" style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  img: ({node, src, alt, ...props}) => {
+                    let finalSrc = src || '';
+                    if (finalSrc && !finalSrc.startsWith('http://') && !finalSrc.startsWith('https://') && !finalSrc.startsWith('data:')) {
+                      if (!finalSrc.startsWith('/')) {
+                        finalSrc = `/uploads/images/${finalSrc}`;
+                      }
+                    }
+                    return (
+                      <img
+                        src={finalSrc}
+                        alt={alt || 'Lesson illustration'}
+                        loading="lazy"
+                        onError={(e) => {
+                          if (e.currentTarget.dataset.failed === 'true') {
+                            e.currentTarget.onerror = null;
+                            return;
+                          }
+                          e.currentTarget.dataset.failed = 'true';
+                          const current = e.currentTarget.src || '';
+                          if (current.includes('/uploads/images/')) {
+                            const filename = current.split('/uploads/images/').pop();
+                            e.currentTarget.src = `/images/${filename}`;
+                          } else if (current.includes('/images/')) {
+                            const filename = current.split('/images/').pop();
+                            e.currentTarget.src = `/uploads/images/${filename}`;
+                          } else {
+                            e.currentTarget.onerror = null;
+                          }
+                        }}
+                        style={{
+                          display: 'block',
+                          maxWidth: '100%',
+                          height: 'auto',
+                          margin: '1.5rem auto',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--border-light)',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                          objectFit: 'contain',
+                        }}
+                        {...props}
+                      />
+                    );
+                  },
+                }}
+              >
                 {injectGlossaryTooltips(
                   (lang === 'id' && lesson.content_id) ? lesson.content_id : (lesson.content || ''),
                   lang

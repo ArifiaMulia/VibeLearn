@@ -31,9 +31,13 @@ module.exports = {
 
 SealSuite is a **unified digital office security platform** by BytePlus, built on a **Zero Trust architecture**. It replaces the patchwork of fragmented security tools (separate VPN clients, antivirus software, device managers, SSO portals) with a single, integrated solution.
 
+![SealSuite for Administrators](/images/sealsuite_admin.png)
+
 ## The Problem SealSuite Solves
 
 Traditional enterprise security relies on a "castle and moat" model — once inside the network, users are trusted. This is dangerous in the modern era of remote work, BYOD devices, and sophisticated phishing attacks.
+
+![Office vs Airport Security](/images/office_vs_airport_security.png)
 
 \`\`\`mermaid
 graph LR
@@ -92,9 +96,13 @@ flowchart TD
 
 SealSuite adalah **platform keamanan kantor digital terpadu** dari BytePlus, dibangun di atas **arsitektur Zero Trust**. Ia menggantikan kumpulan alat keamanan yang terfragmentasi (klien VPN terpisah, antivirus, manajer perangkat, portal SSO) dengan satu solusi terintegrasi.
 
+![SealSuite untuk Administrator](/images/sealsuite_admin.png)
+
 ## Masalah yang Diselesaikan SealSuite
 
 Keamanan enterprise tradisional bergantung pada model "kastil dan parit" — begitu berada di dalam jaringan, pengguna dipercaya. Ini berbahaya di era modern kerja jarak jauh, perangkat BYOD, dan serangan phishing yang canggih.
+
+![Perbandingan Keamanan Kantor vs Bandara](/images/office_vs_airport_security.png)
 
 \`\`\`mermaid
 graph LR
@@ -165,6 +173,8 @@ flowchart TD
       transcript: `In this lesson, we dive into the core architectural concepts that power SealSuite. Understanding these concepts is essential for administrators who need to design, configure, and troubleshoot the platform. We will cover Authorization Rules, the Application Gateway, IAM, and Device Baselines — the four pillars that make Zero Trust access decisions possible.`,
       transcript_id: `Dalam pelajaran ini, kita mendalami konsep arsitektur inti yang mendukung SealSuite. Memahami konsep-konsep ini sangat penting bagi administrator yang perlu merancang, mengkonfigurasi, dan memecahkan masalah platform. Kita akan membahas Authorization Rules, Application Gateway, IAM, dan Device Baselines — empat pilar yang membuat keputusan akses Zero Trust menjadi mungkin.`,
       content: `# SealSuite Architecture & Zero Trust Concepts
+
+![SealSuite Zero Trust Pillars](/images/sealsuite_pillars.png)
 
 ## Core Architectural Components
 
@@ -266,6 +276,8 @@ sequenceDiagram
 
       content_id: `# Arsitektur SealSuite & Konsep Zero Trust
 
+![Pilar Zero Trust SealSuite](/images/sealsuite_pillars.png)
+
 ## Komponen Arsitektur Utama
 
 ### 1. Authorization Rules (Aturan Otorisasi)
@@ -325,6 +337,8 @@ graph TD
       content: `# The SealSuite Admin Console
 
 The Admin Console is your **command center** for the entire SealSuite platform. Every configuration, policy, and audit log is accessible from here.
+
+![Admin Console & Audit Logs](/images/sealsuite_audit_logs.png)
 
 ## Accessing the Admin Console
 
@@ -402,6 +416,8 @@ sequenceDiagram
 
 Admin Console adalah **pusat komando** Anda untuk seluruh platform SealSuite. Setiap konfigurasi, kebijakan, dan log audit dapat diakses dari sini.
 
+![Admin Console & Log Audit](/images/sealsuite_audit_logs.png)
+
 ## Mengakses Admin Console
 
 1. Masuk ke BytePlus SealSuite Console dengan kredensial admin Anda
@@ -453,6 +469,8 @@ Halaman beranda Admin Console terdiri dari tiga bagian:
       transcript: `Identity Management is the foundation of SealSuite. Before you can configure VPN access, endpoint policies, or DLP rules, you need to have a properly structured directory — your organizational hierarchy, your users, and your roles. In this lesson, we cover how to add departments, create and manage users, assign roles, and handle the important but often overlooked topic of managing resigned members.`,
       transcript_id: `Manajemen Identitas adalah fondasi SealSuite. Sebelum Anda dapat mengkonfigurasi akses VPN, kebijakan endpoint, atau aturan DLP, Anda perlu memiliki direktori yang terstruktur dengan baik — hierarki organisasi, pengguna, dan peran Anda. Dalam pelajaran ini, kita membahas cara menambahkan departemen, membuat dan mengelola pengguna, menetapkan peran, dan menangani topik penting manajemen anggota yang mengundurkan diri.`,
       content: `# Identity Management — Users, Departments & Roles
+
+![Identity Check at the Gate](/images/sealsuite_airport_analogy.png)
 
 ## Step 1: Build Your Organizational Structure (Directory)
 
@@ -558,6 +576,8 @@ stateDiagram-v2
 
       content_id: `# Manajemen Identitas — Pengguna, Departemen & Peran
 
+![Pemeriksaan Identitas di Gerbang](/images/sealsuite_airport_analogy.png)
+
 ## Langkah 1: Bangun Struktur Organisasi (Direktori)
 
 Navigasikan ke **Identity > Directory > Departments** untuk membuat bagan org Anda. Cerminkan struktur organisasi nyata Anda karena aturan otorisasi SealSuite menggunakan keanggotaan departemen sebagai faktor akses utama.
@@ -618,6 +638,8 @@ stateDiagram-v2
       transcript: `Authentication is the gatekeeper of your entire platform. In this lesson, we cover how to configure the authentication layer in SealSuite, from basic username/password, to multi-factor authentication, to integrating enterprise identity providers like LDAP, OIDC, and SAML. We also cover how to configure SSO applications so employees can access all their tools with a single login.`,
       transcript_id: `Autentikasi adalah penjaga gerbang seluruh platform Anda. Dalam pelajaran ini, kita membahas cara mengkonfigurasi lapisan autentikasi di SealSuite, mulai dari username/password dasar, hingga autentikasi multi-faktor, hingga mengintegrasikan penyedia identitas enterprise seperti LDAP, OIDC, dan SAML. Kita juga membahas cara mengkonfigurasi aplikasi SSO agar karyawan dapat mengakses semua alat mereka dengan satu login.`,
       content: `# Authentication, MFA & Single Sign-On (SSO)
+
+![MFA and SSO Combined](/images/sealsuite_mfa_sso.png)
 
 ## Authentication Architecture
 
@@ -714,6 +736,8 @@ Navigate to: **Identity > SSO > Application Group**
 
       content_id: `# Autentikasi, MFA & Single Sign-On (SSO)
 
+![Kombinasi MFA dan SSO](/images/sealsuite_mfa_sso.png)
+
 ## Arsitektur Autentikasi
 
 SealSuite mendukung berbagai metode autentikasi: akun native (username/password), LDAP/Active Directory, OIDC (Google/Azure AD), SAML, RADIUS, dan CAS. Semua metode ini dapat dikombinasikan dengan MFA untuk keamanan berlapis.
@@ -764,6 +788,8 @@ Protokol SSO yang didukung: SAML 2.0, OIDC/OAuth 2.0, dan Password Autofill untu
       transcript: `VPN is one of the most critical components for organizations with remote workers. In SealSuite, VPN goes far beyond a traditional IP tunnel — it is identity-aware, fine-grained, and policy-driven. In this lesson, we walk through adding a VPN gateway, configuring server prerequisites, and setting up ACL policies to control exactly which users can access which internal resources.`,
       transcript_id: `VPN adalah salah satu komponen paling kritis bagi organisasi dengan pekerja jarak jauh. Di SealSuite, VPN jauh melampaui tunnel IP tradisional — ia sadar identitas, terperinci, dan berbasis kebijakan. Dalam pelajaran ini, kita menelusuri penambahan VPN gateway, mengkonfigurasi prasyarat server, dan menyiapkan ACL policy untuk mengontrol tepat siapa yang dapat mengakses sumber daya internal mana.`,
       content: `# Network Security — Configuring VPN Access
+
+![Secure VPN Tunnel](/images/sealsuite_vpn.png)
 
 ## VPN Architecture in SealSuite
 
@@ -868,6 +894,8 @@ flowchart TD
 
       content_id: `# Keamanan Jaringan — Konfigurasi Akses VPN
 
+![Terowongan VPN Aman](/images/sealsuite_vpn.png)
+
 ## Arsitektur VPN di SealSuite
 
 Berbeda dengan VPN tradisional (yang memberikan akses jaringan penuh setelah terhubung), SealSuite VPN menggunakan **Zero Trust Network Access (ZTNA)** — pengguna hanya mendapatkan akses ke sumber daya spesifik yang mereka otorisasi.
@@ -920,6 +948,8 @@ Buat kebijakan yang mendefinisikan: Siapa yang mendapat akses (per departemen/pe
       transcript: `Endpoint Security and Data Loss Prevention are two of the most important features for organizations dealing with sensitive data — healthcare records, financial data, intellectual property, or personal information. In this lesson, we cover device baseline policies, the asset management system, DLP data collection policies, and outbound control rules. By the end, you will be able to design a comprehensive endpoint and data security strategy.`,
       transcript_id: `Keamanan Endpoint dan Data Loss Prevention adalah dua fitur terpenting bagi organisasi yang menangani data sensitif — catatan kesehatan, data keuangan, kekayaan intelektual, atau informasi pribadi. Dalam pelajaran ini, kita membahas kebijakan device baseline, sistem manajemen aset, kebijakan pengumpulan data DLP, dan aturan kontrol keluar. Di akhir pelajaran, Anda akan dapat merancang strategi keamanan endpoint dan data yang komprehensif.`,
       content: `# Endpoint Security & Data Loss Prevention (DLP)
+
+![Device Baseline Checklist](/images/sealsuite_device_baseline.png)
 
 ## Part 1: Endpoint Security — Asset Management
 
@@ -1051,6 +1081,8 @@ Key reports available:
 
       content_id: `# Keamanan Endpoint & Pencegahan Kehilangan Data (DLP)
 
+![Daftar Periksa Device Baseline](/images/sealsuite_device_baseline.png)
+
 ## Bagian 1: Manajemen Aset Endpoint
 
 Saat pengguna menginstal klien SealSuite dan masuk, perangkat mereka otomatis terdaftar sebagai **Aset**. Navigasikan ke: **Endpoint > Assets > Asset List** untuk melihat semua perangkat terdaftar dengan informasi sistem, inventaris software, dan status kepatuhan baseline.
@@ -1099,6 +1131,8 @@ Buat aturan dengan mendefinisikan kondisi pemicu, tindakan (audit/peringatan/blo
       transcript: `The Dynamic Control Engine is SealSuite's most powerful capability — an AI-native, real-time risk response system that continuously monitors all platform signals and automatically takes action when threats are detected. This is what transforms SealSuite from a passive security product into an active, self-defending security platform. In this lesson, we cover how to create control policies, configure trigger conditions, and set automated response actions.`,
       transcript_id: `Mesin Dynamic Control adalah kemampuan SealSuite yang paling kuat — sistem respons risiko real-time berbasis AI yang terus memantau semua sinyal platform dan secara otomatis mengambil tindakan ketika ancaman terdeteksi. Inilah yang mengubah SealSuite dari produk keamanan pasif menjadi platform keamanan aktif dan self-defending. Dalam pelajaran ini, kita membahas cara membuat control policies, mengkonfigurasi kondisi pemicu, dan menetapkan tindakan respons otomatis.`,
       content: `# Dynamic Control — Automated Risk Response
+
+![AI-Driven Dynamic Control](/images/sealsuite_ai_dlp.png)
 
 ## How the Dynamic Control Engine Works
 
@@ -1211,6 +1245,8 @@ This means the system gets smarter over time as it learns what is normal for you
 
       content_id: `# Dynamic Control — Respons Risiko Otomatis
 
+![Dynamic Control Berbasis AI](/images/sealsuite_ai_dlp.png)
+
 ## Cara Kerja Mesin Dynamic Control
 
 Mesin Dynamic Control terus mengagregasi data dari semua modul SealSuite: peristiwa identitas, kesehatan perangkat, aktivitas jaringan, peristiwa DLP, dan aktivitas endpoint. Berdasarkan data ini, ia menghitung skor risiko dan mengambil tindakan yang sesuai secara otomatis.
@@ -1248,6 +1284,8 @@ Log remediasi menampilkan setiap tindakan otomatis yang diambil: timestamp, kebi
         { type: 'docs', label: 'Quick Start Guide - Workflow', url: 'https://docs.byteplus.com/en/docs/sealsuite/quickstart' },
       ],
       content: `# Workflow Management — Onboarding, Transfers & Offboarding
+
+![MDM & Lifecycle Management](/images/sealsuite_mdm.png)
 
 Employee lifecycle management is one of the most operationally critical functions for an IT administrator. SealSuite provides **automated workflow capabilities** through its **Enterprise Settings > Workflow** module.
 
@@ -1364,6 +1402,8 @@ SealSuite can integrate with HRIS (Human Resources Information Systems) to autom
 
       content_id: `# Manajemen Workflow — Onboarding, Transfer & Offboarding
 
+![MDM & Manajemen Siklus Hidup](/images/sealsuite_mdm.png)
+
 SealSuite menyediakan kemampuan **workflow otomatis** melalui modul **Enterprise Settings > Workflow** untuk mengelola siklus hidup karyawan secara efisien.
 
 ## Onboarding Workflow
@@ -1407,7 +1447,16 @@ Tindakan pasca-keberangkatan: Arsipkan log aktivitas, tinjau akses akun bersama,
       difficulty: 'intermediate',
       xp_reward: 200,
       order_index: 10,
-      content: '### SealSuite Administrator Certification\n\nThis final assessment tests your knowledge across all administrator topics covered in this course. You must demonstrate understanding of Zero Trust concepts, platform configuration, and security best practices.',
+      content: `### SealSuite Administrator Certification
+
+![SealSuite for Administrators](/images/sealsuite_admin.png)
+
+This final assessment tests your knowledge across all administrator topics covered in this course. You must demonstrate understanding of Zero Trust concepts, platform configuration, and security best practices.`,
+      content_id: `### Sertifikasi Administrator SealSuite
+
+![SealSuite untuk Administrator](/images/sealsuite_admin.png)
+
+Penilaian akhir ini menguji pengetahuan Anda di seluruh topik administrator yang dibahas dalam kursus ini. Anda harus menunjukkan pemahaman tentang konsep Zero Trust, konfigurasi platform, dan praktik terbaik keamanan.`,
       quizzes: [
         {
           question: 'In SealSuite\'s Zero Trust model, which combination of factors is evaluated before granting network access?',
@@ -1491,6 +1540,8 @@ Tindakan pasca-keberangkatan: Arsipkan log aktivitas, tinjau akses akun bersama,
       transcript_id: `Selamat datang! Kursus ini dirancang untuk karyawan — orang-orang seperti Anda yang menggunakan SealSuite setiap hari sebagai bagian dari pekerjaan mereka. Anda tidak perlu menjadi ahli IT untuk memahami SealSuite. Faktanya, SealSuite dirancang untuk membuat kehidupan kerja Anda lebih mudah dan lebih aman. Dalam pelajaran ini, kita akan menjelaskan apa itu SealSuite, mengapa organisasi Anda menggunakannya, dan apa artinya bagi Anda sehari-hari.`,
       content: `# Welcome to SealSuite
 
+![SealSuite for End Users](/images/sealsuite_user.png)
+
 ## What is SealSuite?
 
 SealSuite is the **security app your organization has installed** to protect company data and make your digital work life simpler. Think of it as your **all-in-one digital key** to your company's resources.
@@ -1534,6 +1585,8 @@ Your organization handles sensitive information — customer data, financial rec
 4. **Providing secure remote access** (so you can work from anywhere safely)`,
 
       content_id: `# Selamat Datang di SealSuite
+
+![SealSuite untuk Pengguna Akhir](/images/sealsuite_user.png)
 
 ## Apa itu SealSuite?
 
@@ -1579,6 +1632,8 @@ Organisasi Anda menangani informasi sensitif. SealSuite melindungi data ini deng
       transcript: `In this lesson, we walk through the very first steps of setting up SealSuite on your device. We cover downloading the client, logging in for the first time with your corporate credentials, setting up multi-factor authentication, and navigating the user portal.`,
       transcript_id: `Dalam pelajaran ini, kita menelusuri langkah pertama pengaturan SealSuite di perangkat Anda. Kita membahas mengunduh klien, masuk untuk pertama kali dengan kredensial perusahaan Anda, menyiapkan autentikasi multi-faktor, dan menavigasi portal pengguna.`,
       content: `# Getting Started: Login & First Setup
+
+![Digital Security Gatekeeper](/images/gatekeeper_analogy.png)
 
 ## Step 1: Download the SealSuite Client
 
@@ -1643,6 +1698,8 @@ After logging in, open the **SealSuite User Portal** (URL provided by IT):
 
       content_id: `# Mulai: Login & Pengaturan Pertama
 
+![Penjaga Pintu Keamanan Digital](/images/gatekeeper_analogy.png)
+
 ## Langkah 1: Unduh Klien SealSuite
 
 Departemen IT Anda akan memberikan tautan unduhan, atau kunjungi: **https://www.sealsuite.com/download/**
@@ -1682,6 +1739,8 @@ Portal Pengguna SealSuite memiliki empat bagian utama:
       xp_reward: 50,
       order_index: 3,
       content: `# Accessing Work Apps with Single Sign-On (SSO)
+
+![Single Sign-On and MFA](/images/sealsuite_mfa_sso.png)
 
 ## What is Single Sign-On?
 
@@ -1752,6 +1811,8 @@ SSO is better than a password manager for work apps because:
 
       content_id: `# Mengakses Aplikasi Kerja dengan Single Sign-On (SSO)
 
+![Single Sign-On dan MFA](/images/sealsuite_mfa_sso.png)
+
 ## Apa itu Single Sign-On?
 
 **Single Sign-On (SSO)** berarti Anda login ke SealSuite SEKALI, dan kemudian Anda dapat mengakses semua aplikasi kerja yang diotorisasi tanpa mengetik password lagi.
@@ -1790,6 +1851,8 @@ Untuk aplikasi yang dikonfigurasi dengan SSO SealSuite, saat Anda menavigasi ke 
       xp_reward: 50,
       order_index: 4,
       content: `# Using VPN for Secure Remote Access
+
+![Secure VPN Tunnel](/images/sealsuite_vpn.png)
 
 ## Why Use VPN?
 
@@ -1866,6 +1929,8 @@ In addition to VPN, SealSuite also manages **corporate Wi-Fi** connections in th
 
       content_id: `# Menggunakan VPN untuk Akses Jarak Jauh yang Aman
 
+![Terowongan VPN Aman](/images/sealsuite_vpn.png)
+
 ## Mengapa Menggunakan VPN?
 
 VPN (**Virtual Private Network**) menciptakan koneksi terenkripsi yang aman antara perangkat Anda dan jaringan internal perusahaan — bahkan saat Anda bekerja dari rumah, kafe, atau hotel.
@@ -1903,6 +1968,8 @@ Anda TIDAK memerlukan VPN saat: menggunakan aplikasi cloud (Microsoft 365, Googl
       xp_reward: 50,
       order_index: 5,
       content: `# Device Security — Understanding What SealSuite Monitors
+
+![Device Baseline Compliance](/images/sealsuite_device_baseline.png)
 
 ## What is "Device Security" in SealSuite?
 
@@ -1983,6 +2050,8 @@ Here you can see:
 
       content_id: `# Keamanan Perangkat — Memahami Apa yang Dipantau SealSuite
 
+![Kepatuhan Device Baseline](/images/sealsuite_device_baseline.png)
+
 ## Apa itu "Keamanan Perangkat" di SealSuite?
 
 Saat Anda menginstal SealSuite di perangkat Anda, ia dapat melakukan **pemeriksaan Device Baseline** — pemindaian otomatis yang memverifikasi perangkat Anda memenuhi standar keamanan minimum perusahaan. Ini bukan tentang memantau Anda secara pribadi — ini tentang memastikan perangkat yang mengakses data perusahaan tidak dikompromikan.
@@ -2022,6 +2091,8 @@ Jika menggunakan perangkat pribadi:
       xp_reward: 50,
       order_index: 6,
       content: `# Data Security — Your Responsibilities as an Employee
+
+![DLP & Document Watermarking](/images/sealsuite_dlp_watermark.png)
 
 ## Understanding Data Loss Prevention (DLP)
 
@@ -2109,6 +2180,8 @@ If you believe you've accidentally shared sensitive data:
 
       content_id: `# Keamanan Data — Tanggung Jawab Anda sebagai Karyawan
 
+![DLP & Watermark Dokumen](/images/sealsuite_dlp_watermark.png)
+
 ## Memahami Data Loss Prevention (DLP)
 
 Organisasi Anda menggunakan teknologi **Data Loss Prevention (DLP)** di dalam SealSuite untuk melindungi data sensitif perusahaan dan pelanggan. Sebagai karyawan, Anda memainkan peran penting dalam keamanan data.
@@ -2146,6 +2219,8 @@ Jika Anda percaya telah secara tidak sengaja berbagi data sensitif: Jangan tungg
       order_index: 7,
       content: `# Managing Your Account in SealSuite
 
+![Security Activity Logbook](/images/sealsuite_audit_logs.png)
+
 ## Self-Service Account Features
 
 The SealSuite User Portal gives you control over your own account. Navigate to: **User Portal > My Account**
@@ -2179,6 +2254,30 @@ This is useful to review periodically to check for any unauthorized activity.
 ## Final Assessment
 
 Test your knowledge of SealSuite as an end user.`,
+      content_id: `# Mengelola Akun Anda di SealSuite
+
+![Buku Log Aktivitas Keamanan](/images/sealsuite_audit_logs.png)
+
+## Fitur Akun Layanan Mandiri
+
+Portal Pengguna SealSuite memberi Anda kendali penuh atas akun Anda sendiri. Navigasikan ke: **User Portal > My Account**
+
+### 1. Mengubah Password Anda
+1. Buka **My Account > Security Settings**
+2. Klik **Change Password**
+3. Masukkan password Anda saat ini dan password baru yang kuat
+
+### 2. Mengelola Perangkat Anda
+Navigasikan ke: **My Account > Devices** untuk melihat semua perangkat yang terdaftar pada akun Anda dan keluar dari perangkat yang tidak dikenal secara jarak jauh.
+
+### 3. Melihat Log Aktivitas
+Navigasikan ke: **My Account > Activity Log** untuk memeriksa riwayat waktu login, lokasi, dan aplikasi yang diakses.
+
+---
+
+## Penilaian Akhir
+
+Uji pemahaman Anda tentang SealSuite sebagai pengguna akhir.`,
       quizzes: [
         {
           question: 'You need to access an internal company server from home tonight. What should you do FIRST before trying to connect?',
@@ -2249,6 +2348,8 @@ Imagine entering an airport. Before you can board a plane, you must go through a
 
 This is exactly how **SealSuite** works for your company's digital office, even if you don't have an IT or cybersecurity background!
 
+![Digital Security Gatekeeper](/images/gatekeeper_analogy.png)
+
 ---
 
 ## 🏢 Traditional Security vs. SealSuite (Zero Trust)
@@ -2257,6 +2358,8 @@ Historically, offices secured data like a fortress: a large wall (called a firew
 
 But what if a bad actor snuck in disguised as an employee? Or what if a trusted employee's laptop got infected by a virus? They would have free access to everything!
 
+![Office vs Airport Security](/images/office_vs_airport_security.png)
+
 ### ✈️ The Airport Security Approach
 SealSuite uses a strategy called **Zero Trust** (Never Trust, Always Verify). It acts like continuous airport security:
 
@@ -2264,7 +2367,20 @@ SealSuite uses a strategy called **Zero Trust** (Never Trust, Always Verify). It
 2. **What are you carrying?** (Device health check): Walking through the metal detector.
 3. **Continuous inspection:** Even after passing the gate, security guards ensure you stay in your designated zone.
 
-![Office vs Airport Security](/images/office_vs_airport_security.png)
+![SealSuite Airport Security Analogy](/images/sealsuite_airport_analogy.png)
+
+\`\`\`mermaid
+flowchart LR
+  A["👤 Employee"] -->|"1. Show Boarding Pass"| B["🪪 Identity Check (IAM)"]
+  B -->|"2. Walk Through Gate"| C["🚪 Metal Detector (Device Health)"]
+  C -->|"3. Scan Baggage"| D["📦 X-Ray Scanner (DLP)"]
+  D -->|"✅ All Clear"| E["🏢 Safe Digital Office"]
+  style A fill:#7c3aed,color:#fff
+  style B fill:#f59e0b,color:#fff
+  style C fill:#3b82f6,color:#fff
+  style D fill:#10b981,color:#fff
+  style E fill:#06b6d4,color:#fff
+\`\`\`
 
 ---
 
@@ -2279,6 +2395,8 @@ Bayangkan ketika Anda memasuki area bandara. Sebelum Anda dapat naik ke pesawat,
 
 Ini adalah cara kerja dari **SealSuite** untuk mengamankan kantor digital perusahaan Anda, meskipun Anda tidak memiliki latar belakang IT atau keamanan siber!
 
+![Analogi Penjaga Pintu Digital](/images/gatekeeper_analogy.png)
+
 ---
 
 ## 🏢 Keamanan Tradisional vs. SealSuite (Zero Trust)
@@ -2287,6 +2405,8 @@ Di masa lalu, kantor mengamankan data seperti sebuah benteng: dinding besar (dis
 
 Namun, bagaimana jika ada orang jahat menyelinap masuk menyamar sebagai karyawan? Atau bagaimana jika laptop karyawan tepercaya terkena virus? Mereka akan mendapatkan akses bebas ke semua dokumen penting!
 
+![Perbandingan Kantor vs Bandara](/images/office_vs_airport_security.png)
+
 ### ✈️ Pendekatan Keamanan Bandara
 SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Selalu Verifikasi). Ini bertindak seperti pemeriksaan keamanan bandara yang terus-menerus:
 
@@ -2294,7 +2414,20 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
 2. **Apa yang Anda Bawa?** (Pemeriksaan Kesehatan Perangkat): Berjalan melewati pintu metal detector.
 3. **Pemeriksaan Berkelanjutan:** Bahkan setelah Anda lolos dari gerbang, petugas keamanan tetap memastikan Anda berada di area yang sesuai dengan tiket Anda.
 
-![Konsep Penjaga Pintu](/images/office_vs_airport_security.png)
+![Analogi Keamanan Bandara SealSuite](/images/sealsuite_airport_analogy.png)
+
+\`\`\`mermaid
+flowchart LR
+  A["👤 Karyawan"] -->|"1. Tunjukkan Boarding Pass"| B["🪪 Cek Identitas (IAM)"]
+  B -->|"2. Lewati Gerbang"| C["🚪 Detektor Logam (Kesehatan Perangkat)"]
+  C -->|"3. Pindai Tas"| D["📦 Sinar-X Bagasi (DLP)"]
+  D -->|"✅ Aman"| E["🏢 Kantor Digital Aman"]
+  style A fill:#7c3aed,color:#fff
+  style B fill:#f59e0b,color:#fff
+  style C fill:#3b82f6,color:#fff
+  style D fill:#10b981,color:#fff
+  style E fill:#06b6d4,color:#fff
+\`\`\`
 
 ---
 
@@ -2317,7 +2450,7 @@ SealSuite menggunakan strategi bernama **Zero Trust** (Jangan Pernah Percaya, Se
       ],
       content: `# The 3 Pillars of SealSuite Office Security
 
-To protect your company's data, SealSuite relies on three main pillars working side-by-side. Think of them as the three main safety measures at any major event or location.
+To protect your company's data, SealSuite relies on three main pillars working side-by-side. Think of them as the three main safety measures at any major event or airport terminal.
 
 ![The 3 Pillars of SealSuite](/images/sealsuite_pillars.png)
 
@@ -2335,11 +2468,19 @@ To protect your company's data, SealSuite relies on three main pillars working s
 
 ### 🛡️ Pillar 3: Data Loss Prevention (DLP)
 * **What it is:** Scanning and controlling outgoing files to prevent data leaks.
-* **Easy Analogy:** **The Bag Check / X-Ray scanner.** Before you leave, security guards scan your bags to ensure you are not carrying away sensitive company files.`,
+* **Easy Analogy:** **The Bag Check / X-Ray scanner.** Before you leave, security guards scan your bags to ensure you are not carrying away sensitive company files.
+
+![How the 3 Pillars Work Together at the Airport](/images/sealsuite_airport_analogy.png)
+
+| Pillar | Real-Life Analogy | What It Checks in Your Workday |
+|--------|-------------------|-------------------------------|
+| **1. Identity (IAM)** | 🎫 Boarding Pass & ID | Your username, password, and phone verification code (MFA) |
+| **2. Endpoint Security** | 🚪 Metal Detector Gate | Whether your laptop has active Antivirus, updated OS, and screen lock |
+| **3. Data Protection (DLP)** | 🧳 Baggage X-Ray Scanner | Whether outgoing files contain confidential company data |`,
 
       content_id: `# 3 Pilar Utama Keamanan Kantor SealSuite
 
-Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama yang bekerja saling berdampingan. Bayangkan ini sebagai tiga tindakan pengamanan utama di setiap acara atau lokasi besar.
+Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama yang bekerja saling berdampingan. Bayangkan ini sebagai tiga tindakan pengamanan utama di setiap acara besar atau terminal bandara.
 
 ![3 Pilar Utama SealSuite](/images/sealsuite_pillars.png)
 
@@ -2357,7 +2498,15 @@ Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama 
 
 ### 🛡️ Pilar 3: Pencegahan Kebocoran Data (DLP)
 * **Apa fungsinya:** Memantau dan mengontrol pengiriman file ke luar untuk mencegah kebocoran data.
-* **Analogi Sederhana:** **Pemeriksaan Tas / Sinar-X.** Sebelum Anda pergi, petugas keamanan memindai tas Anda untuk memastikan Anda tidak membawa keluar berkas rahasia milik perusahaan.`
+* **Analogi Sederhana:** **Pemeriksaan Tas / Sinar-X.** Sebelum Anda pergi, petugas keamanan memindai tas Anda untuk memastikan Anda tidak membawa keluar berkas rahasia milik perusahaan.
+
+![Cara Ketiga Pilar Bekerja Bersama](/images/sealsuite_airport_analogy.png)
+
+| Pilar | Analogi Sehari-hari | Apa yang Diperiksa Saat Anda Bekerja |
+|-------|---------------------|--------------------------------------|
+| **1. Identitas (IAM)** | 🎫 Tiket Pesawat & KTP | Username, password, dan kode verifikasi HP (MFA) Anda |
+| **2. Keamanan Endpoint** | 🚪 Pintu Detektor Logam | Apakah laptop Anda memiliki Antivirus aktif, OS terbaru, dan kunci layar |
+| **3. Perlindungan Data (DLP)** | 🧳 Pemindai Sinar-X Bagasi | Apakah file yang dikirim keluar mengandung data rahasia perusahaan |`
     },
 
     // ── Lesson 3: Authentication (SSO & MFA) ─────────────────────────────────
@@ -2384,10 +2533,24 @@ Normally, you need 20 different usernames and passwords for email, HR software, 
 
 * **SSO is like a Golden Master Key.** Once you unlock the main SealSuite client, that single key unlocks all your corporate web apps. You do not need to sign in repeatedly.
 
+![One Key to All Work Apps](/images/sealsuite_user.png)
+
 ## 📱 Multi-Factor Authentication (MFA): The Double Lock
 A master key is powerful, so it needs extra protection. If someone steals your password, they could access everything.
 
-* **MFA is like a Double Lock.** When you login, SealSuite asks for a password, but also sends a temporary 6-digit verification code to your phone app. Even if a thief knows your password, they cannot enter because they don't have your physical phone!`,
+* **MFA is like a Double Lock.** When you login, SealSuite asks for a password, but also sends a temporary 6-digit verification code to your phone app. Even if a thief knows your password, they cannot enter because they don't have your physical phone!
+
+\`\`\`mermaid
+flowchart LR
+  A["🔑 Step 1: Enter Password"] --> B["📱 Step 2: 6-Digit Phone Code (MFA)"]
+  B --> C["🚪 SealSuite Unlocked!"]
+  C --> D["📧 Email"]
+  C --> E["👥 HR Portal"]
+  C --> F["📁 Cloud Drive"]
+  style A fill:#7c3aed,color:#fff
+  style B fill:#f59e0b,color:#fff
+  style C fill:#10b981,color:#fff
+\`\`\``,
 
       content_id: `# Pemeriksaan Identitas: Single Sign-On (SSO) & Multi-Factor Authentication (MFA)
 
@@ -2402,10 +2565,24 @@ Biasanya, Anda memerlukan 20 nama pengguna dan kata sandi yang berbeda untuk ema
 
 * **SSO itu seperti Kunci Emas Utama.** Begitu Anda masuk ke dalam aplikasi SealSuite, kunci tunggal tersebut otomatis membukakan akses ke semua aplikasi kerja perusahaan Anda. Anda tidak perlu login berulang-ulang.
 
+![Satu Kunci untuk Semua Aplikasi Kerja](/images/sealsuite_user.png)
+
 ## 📱 Multi-Factor Authentication (MFA): Kunci Ganda Pengaman
 Karena kunci utama sangat kuat, ia membutuhkan perlindungan ekstra. Jika ada orang yang mencuri kata sandi Anda, mereka bisa membuka semuanya.
 
-* **MFA itu seperti Gembok Kunci Ganda.** Saat Anda login, SealSuite meminta kata sandi, tetapi juga mengirimkan kode verifikasi 6-digit sementara ke aplikasi ponsel Anda. Bahkan jika pencuri tahu kata sandi Anda, mereka tetap tidak bisa masuk karena mereka tidak memegang ponsel fisik Anda!`
+* **MFA itu seperti Gembok Kunci Ganda.** Saat Anda login, SealSuite meminta kata sandi, tetapi juga mengirimkan kode verifikasi 6-digit sementara ke aplikasi ponsel Anda. Bahkan jika pencuri tahu kata sandi Anda, mereka tetap tidak bisa masuk karena mereka tidak memegang ponsel fisik Anda!
+
+\`\`\`mermaid
+flowchart LR
+  A["🔑 Langkah 1: Masukkan Password"] --> B["📱 Langkah 2: Kode 6-Digit di HP (MFA)"]
+  B --> C["🚪 SealSuite Terbuka!"]
+  C --> D["📧 Email"]
+  C --> E["👥 Portal HR"]
+  C --> F["📁 Cloud Drive"]
+  style A fill:#7c3aed,color:#fff
+  style B fill:#f59e0b,color:#fff
+  style C fill:#10b981,color:#fff
+\`\`\``
     },
 
     // ── Lesson 4: Network Security (VPN) ─────────────────────────────────────
@@ -2434,7 +2611,14 @@ SealSuite resolves this risk by building a **Virtual Private Network (VPN)** tun
 * **Public Internet is like a public highway.** Anyone sitting nearby can look at your car and see what you are carrying inside.
 * **SealSuite VPN is like a Private Underground Tunnel.** It connects your laptop directly to the office building. This tunnel is heavily guarded. No one on the public highway can see or touch the cars inside your tunnel.
 
-With SealSuite, connecting to the VPN is built right into the client. With one click, your tunnel is active, allowing you to access office servers securely from anywhere.`,
+![SealSuite Security Gateway](/images/sealsuite_fundamental.png)
+
+With SealSuite, connecting to the VPN is built right into the client. With one click, your tunnel is active, allowing you to access office servers securely from anywhere.
+
+| Connection Type | Analogy | Who Can See Your Data? |
+|-----------------|---------|------------------------|
+| **Public Wi-Fi (No VPN)** | 🛣️ Open public highway | Anyone on the same Wi-Fi network |
+| **SealSuite VPN** | 🚇 Armored underground tunnel | **Nobody** — 100% encrypted end-to-end |`,
 
       content_id: `# Kerja Remote yang Aman: Terhubung ke VPN Kantor
 
@@ -2451,7 +2635,14 @@ SealSuite mengatasi risiko ini dengan membangun terowongan **Virtual Private Net
 * **Internet Publik itu seperti jalan raya umum.** Siapa pun yang berada di sekitar jalan tersebut dapat melihat mobil Anda dan isi muatannya.
 * **SealSuite VPN itu seperti Terowongan Bawah Tanah Pribadi.** Terowongan ini menghubungkan laptop Anda secara langsung ke gedung kantor. Terowongan ini dijaga ketat. Tidak ada orang di jalan raya umum yang bisa melihat atau menyentuh mobil di dalam terowongan Anda.
 
-Dengan SealSuite, akses VPN sudah terintegrasi langsung di aplikasi. Cukup dengan satu klik, terowongan aman Anda aktif dan Anda bisa mengakses server kantor dengan aman dari mana saja.`
+![Gerbang Keamanan SealSuite](/images/sealsuite_fundamental.png)
+
+Dengan SealSuite, akses VPN sudah terintegrasi langsung di aplikasi. Cukup dengan satu klik, terowongan aman Anda aktif dan Anda bisa mengakses server kantor dengan aman dari mana saja.
+
+| Jenis Koneksi | Analogi | Siapa yang Bisa Melihat Data Anda? |
+|---------------|---------|------------------------------------|
+| **Wi-Fi Publik (Tanpa VPN)** | 🛣️ Jalan raya terbuka | Siapa saja di jaringan Wi-Fi yang sama |
+| **SealSuite VPN** | 🚇 Terowongan bawah tanah berlapis baja | **Tidak ada** — 100% terenkripsi penuh |`
     },
 
     // ── Lesson 5: Device Baseline ────────────────────────────────────────────
@@ -2482,6 +2673,8 @@ Just like a metal detector at the airport checks for dangerous items, SealSuite 
 3. **🧱 Firewall On:** Is your computer's built-in shield turned on?
 4. **🔒 Screen Lock:** Do you have a secure PIN or password set to unlock your screen?
 
+![Digital Gatekeeper Scanning Laptop](/images/gatekeeper_analogy.png)
+
 > **What happens if your device fails the check?**
 > The gate "beeps" and temporarily limits your connection. Once you turn your antivirus back on or run updates, SealSuite automatically lets you back in. This protects the company from compromised devices.`,
 
@@ -2501,6 +2694,8 @@ Sama seperti pintu detektor logam di bandara yang memeriksa benda berbahaya, Sea
 2. **🔄 Pembaruan OS:** Apakah sistem operasi Anda (Windows/Mac) sudah diperbarui?
 3. **🧱 Firewall Menyala:** Apakah dinding pelindung internal komputer Anda diaktifkan?
 4. **🔒 Kunci Layar:** Apakah Anda memasang PIN atau sandi aman untuk membuka kunci layar?
+
+![Pemindaian Keamanan Perangkat](/images/gatekeeper_analogy.png)
 
 > **Apa yang terjadi jika perangkat tidak lolos pemeriksaan?**
 > Gerbang akan "berbunyi bip" dan membatasi koneksi Anda sementara waktu. Begitu Anda mengaktifkan kembali antivirus atau memperbarui sistem, SealSuite otomatis mengizinkan Anda masuk kembali. Ini mencegah perangkat yang terinfeksi merusak jaringan kantor.`
@@ -2532,7 +2727,15 @@ When you transfer a file externally (like uploading to a drive or sharing via me
 
 ### 2. 📝 The Tracking Overlay (Digital Watermarks)
 SealSuite overlays a faint, transparent watermark containing your name, email, and IP address onto sensitive company applications and files.
-* **Why it is helpful:** It discourages anyone from taking photos of the screen with their phone to leak information. If a photo is leaked, the watermark instantly traces who leaked it.`,
+* **Why it is helpful:** It discourages anyone from taking photos of the screen with their phone to leak information. If a photo is leaked, the watermark instantly traces who leaked it.
+
+---
+
+## 🤖 AI-Powered Smart Detection
+
+What if someone tries to trick the system by renaming a secret blueprint from \`secret_design.dwg\` to \`vacation_photo.png\`? SealSuite's **AI DLP Inspector** looks inside the file structure itself and checks whether the action matches the employee's normal job role!
+
+![AI DLP Smart Inspection](/images/sealsuite_ai_dlp.png)`,
 
       content_id: `# Mencegah Kebocoran Data: Pemindai Sinar-X & Watermark
 
@@ -2549,7 +2752,15 @@ Saat Anda mengirimkan file ke luar (seperti mengunggah ke cloud drive atau berba
 
 ### 2. 📝 Pelacak Gambar (Watermark Digital)
 SealSuite menempelkan tanda watermark transparan tipis yang berisi nama Anda, email, dan alamat IP Anda pada aplikasi dan dokumen kerja yang penting.
-* **Mengapa ini berguna:** Ini mencegah orang mengambil foto layar komputer menggunakan kamera ponsel mereka untuk membocorkan informasi. Jika foto tersebut bocor, watermark akan melacak siapa pemilik akses tersebut.`
+* **Mengapa ini berguna:** Ini mencegah orang mengambil foto layar komputer menggunakan kamera ponsel mereka untuk membocorkan informasi. Jika foto tersebut bocor, watermark akan melacak siapa pemilik akses tersebut.
+
+---
+
+## 🤖 Deteksi Cerdas Berbasis AI
+
+Bagaimana jika seseorang mencoba mengelabui sistem dengan mengganti nama file cetak biru rahasia dari \`desain_rahasia.dwg\` menjadi \`foto_liburan.png\`? **Inspektur AI DLP** SealSuite memindai struktur asli di dalam file tersebut dan memeriksa apakah aktivitas tersebut wajar untuk peran pekerjaan karyawan itu!
+
+![Inspeksi Cerdas AI DLP](/images/sealsuite_ai_dlp.png)`
     },
 
     // ── Lesson 7: Audit Logs (text) ──────────────────────────────────────────
@@ -2582,6 +2793,8 @@ SealSuite records:
 3. **⚠️ Anomaly Alerts:** Unusual logins like a login from two countries at the same time.
 4. **📂 File Access:** Which documents were viewed or transferred.
 
+![AI Security Guard Inspecting Logs](/images/super_security_guard.png)
+
 ## 🔍 Why It Matters
 
 If something goes wrong — an account breach, a file leak — the audit log is the first place IT security investigates. It is the **digital CCTV of your company**.`,
@@ -2604,6 +2817,8 @@ SealSuite mencatat:
 2. **📱 Perangkat yang Digunakan:** Perangkat (HP/laptop) mana yang terhubung ke akun.
 3. **⚠️ Peringatan Anomali:** Login mencurigakan seperti login dari dua negara sekaligus.
 4. **📂 Akses File:** Dokumen mana yang dibuka atau dipindahkan.
+
+![Penjaga Keamanan AI Memeriksa Log](/images/super_security_guard.png)
 
 ## 🔍 Mengapa Ini Penting
 
@@ -2644,6 +2859,8 @@ SealSuite enforces that every connected device must have a **compliant, active a
 2. **Behavioral Detection:** Even unknown viruses are caught if they behave suspiciously (like trying to secretly encrypt files).
 3. **Compliance Gate:** If your antivirus is turned off or outdated, SealSuite **blocks your access** to corporate resources until it is re-enabled.
 
+![Device Health Compliance Checklist](/images/sealsuite_device_baseline.png)
+
 > **Analogy:** Think of Antivirus as the Hazmat Team at the airport. Even if you have a valid boarding pass, if a detector senses a dangerous chemical in your bag, the hazmat team intercepts it before it boards the plane.`,
 
       content_id: `# Perlindungan Antivirus: Pemburu Ancaman Real-Time
@@ -2668,6 +2885,8 @@ SealSuite mewajibkan setiap perangkat yang terhubung harus memiliki **antivirus 
 1. **Pemindaian Real-Time:** Setiap file yang Anda buka atau unduh langsung diperiksa terhadap basis data ancaman yang dikenal.
 2. **Deteksi Perilaku:** Virus yang belum dikenal pun tetap tertangkap jika berperilaku mencurigakan (seperti mencoba mengenkripsi file secara diam-diam).
 3. **Gerbang Kepatuhan:** Jika antivirus Anda dimatikan atau kadaluarsa, SealSuite **memblokir akses** Anda ke sumber daya perusahaan hingga antivirus diaktifkan kembali.
+
+![Daftar Periksa Kepatuhan Kesehatan Perangkat](/images/sealsuite_device_baseline.png)
 
 > **Analogi:** Bayangkan Antivirus seperti Tim Hazmat di bandara. Meskipun Anda punya tiket boarding yang sah, jika detektor mendeteksi bahan kimia berbahaya di tas Anda, tim hazmat akan menahannya sebelum naik ke pesawat.`
     },
@@ -2710,6 +2929,8 @@ SealSuite MDM works the same way for your corporate devices.
 | **App Management** | Approve or block specific apps on work phones |
 | **Compliance Check** | Verify device health without touching it physically |
 
+![Centralized Admin Control](/images/sealsuite_admin.png)
+
 ## 🔐 For Personal Devices (BYOD)
 Don't worry — on personal phones, MDM only manages the **corporate work container** (SealSuite app area). Your personal photos, chats, and apps remain completely private and untouched.`,
 
@@ -2740,6 +2961,8 @@ MDM SealSuite bekerja dengan cara yang sama untuk perangkat-perangkat perusahaan
 | **Manajemen Aplikasi** | Setujui atau blokir aplikasi tertentu di HP kerja |
 | **Pemeriksaan Kepatuhan** | Verifikasi kesehatan perangkat tanpa menyentuhnya secara fisik |
 
+![Kontrol Admin Terpusat](/images/sealsuite_admin.png)
+
 ## 🔐 Untuk Perangkat Pribadi (BYOD)
 Jangan khawatir — pada ponsel pribadi, MDM hanya mengelola **area wadah kerja perusahaan** (area aplikasi SealSuite). Foto pribadi, chat, dan aplikasi Anda tetap sepenuhnya privat dan tidak tersentuh.`
     },
@@ -2757,7 +2980,9 @@ Jangan khawatir — pada ponsel pribadi, MDM hanya mengelola **area wadah kerja 
 
 You have completed all 9 core lessons of SealSuite Fundamentals! Now let's test your understanding with a comprehensive scenario-based quiz covering Zero Trust, IAM, VPN, Antivirus, MDM, and Data Protection.
 
-![Audit Logs Analogy](/images/sealsuite_audit_logs.png)
+![SealSuite Fundamentals Overview](/images/sealsuite_fundamental.png)
+
+![The 3 Core Pillars Review](/images/sealsuite_pillars.png)
 
 ---
 
@@ -2767,7 +2992,9 @@ Answer each question using the everyday analogies you've learned throughout this
 
 Anda telah menyelesaikan 9 pelajaran inti SealSuite Fundamentals! Sekarang mari uji pemahaman Anda dengan kuis skenario komprehensif yang mencakup Zero Trust, IAM, VPN, Antivirus, MDM, dan Perlindungan Data.
 
-![Analogi Riwayat Aktivitas](/images/sealsuite_audit_logs.png)
+![Ringkasan Dasar SealSuite](/images/sealsuite_fundamental.png)
+
+![Ulasan 3 Pilar Utama](/images/sealsuite_pillars.png)
 
 ---
 

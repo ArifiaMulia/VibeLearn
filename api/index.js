@@ -485,14 +485,40 @@ const initDb = async (retries = 10, delay = 3000) => {
         
         for (const l of lessonSeeds) {
           const existingLesson = await pool.query(
-            `SELECT id FROM lessons WHERE course_id=$1 AND (title=$2 OR title_id=$3)`,
+            `SELECT id, content, content_id FROM lessons WHERE course_id=$1 AND (title=$2 OR title_id=$3)`,
             [courseId, l.title, l.title_id || null]
           );
           
           let lessonId;
           if (existingLesson.rows.length) {
-            // ✅ LESSON ALREADY EXISTS — skip update to preserve any admin edits
-            lessonId = existingLesson.rows[0].id;
+            // ✅ LESSON ALREADY EXISTS — preserve admin custom uploads (/uploads/),
+            //    but automatically sync new seed illustrations if seed has more images!
+            const dbLesson = existingLesson.rows[0];
+            lessonId = dbLesson.id;
+
+            const countImages = (str) => ((str || '').match(/!\[[^\]]*\]\([^)]+\)/g) || []).length;
+            const hasCustomUpload = (str) => (str || '').includes('/uploads/');
+
+            const seedEnImgs = countImages(l.content);
+            const dbEnImgs   = countImages(dbLesson.content);
+            const seedIdImgs = countImages(l.content_id);
+            const dbIdImgs   = countImages(dbLesson.content_id);
+
+            const shouldUpdateEn = seedEnImgs > dbEnImgs && !hasCustomUpload(dbLesson.content);
+            const shouldUpdateId = seedIdImgs > dbIdImgs && !hasCustomUpload(dbLesson.content_id);
+
+            if (shouldUpdateEn || shouldUpdateId) {
+              await pool.query(
+                `UPDATE lessons SET
+                  content    = CASE WHEN $1 THEN $2 ELSE content END,
+                  content_id = CASE WHEN $3 THEN $4 ELSE content_id END,
+                  title_id   = COALESCE($5, title_id)
+                 WHERE id = $6`,
+                [shouldUpdateEn, l.content, shouldUpdateId, l.content_id || null, l.title_id || null, lessonId]
+              );
+              console.log(`  🖼️ Enriched lesson illustrations: "${l.title}"`);
+            }
+
             // Ensure type is updated to 'quiz' if seed data specifies 'quiz'
             if (l.type === 'quiz') {
               await pool.query(`UPDATE lessons SET type='quiz' WHERE id=$1`, [lessonId]);
