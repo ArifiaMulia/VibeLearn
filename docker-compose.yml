@@ -27,6 +27,7 @@ services:
       dockerfile: Dockerfile
     container_name: vibelearn_api
     restart: unless-stopped
+    init: true
     depends_on:
       db:
         condition: service_healthy
@@ -40,6 +41,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:-vibelearn_super_secret_key_change_in_prod}
       NODE_ENV: production
       PORT: 3000
+      AI_GATEWAY_URL: ${AI_GATEWAY_URL:-http://ai-gateway:4000/v1}
+      AI_GATEWAY_KEY: ${AI_GATEWAY_KEY:-sk-Pxsv90izxviJtrtTEyojQw}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-http://ai-gateway:4000/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-Pxsv90izxviJtrtTEyojQw}
+      OPENAI_MODEL: ${OPENAI_MODEL:-dola-seed-2-1-turbo-260628}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
@@ -56,6 +62,7 @@ services:
       dockerfile: Dockerfile
     container_name: vibelearn_frontend
     restart: unless-stopped
+    init: true
     depends_on:
       - api
     networks:

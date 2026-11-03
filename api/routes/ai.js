@@ -549,6 +549,32 @@ async function callExternalLLM(apiKey, endpoint, modelId, systemPrompt, userProm
   return null;
 }
 
+// GET /api/ai/health
+router.get('/health', async (req, res) => {
+  const baseUrl = AI_GATEWAY_URL.replace(/\/+$/, '');
+  try {
+    const resp = await fetch(`${baseUrl}/models`, {
+      headers: { 'Authorization': `Bearer ${AI_GATEWAY_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    res.json({
+      status: resp.ok ? 'connected' : 'degraded',
+      gateway: baseUrl,
+      model: DEFAULT_MODEL,
+      provider: 'byteplus',
+      http_status: resp.status,
+    });
+  } catch (err) {
+    res.json({
+      status: 'offline',
+      gateway: baseUrl,
+      model: DEFAULT_MODEL,
+      provider: 'byteplus',
+      error: err.message,
+    });
+  }
+});
+
 // POST /api/ai/ask
 router.post('/ask', auth, async (req, res) => {
   try {
