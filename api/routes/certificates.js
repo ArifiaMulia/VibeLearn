@@ -27,7 +27,7 @@ router.get('/verify/:cert_id', async (req, res) => {
     const [userRes, courseRes, enrollRes] = await Promise.all([
       pool.query('SELECT id, name, email FROM users WHERE id = $1', [userId]),
       pool.query('SELECT id, title, description, category FROM courses WHERE id = $1', [courseId]),
-      pool.query('SELECT completed_at, created_at FROM enrollments WHERE user_id = $1 AND course_id = $2', [userId, courseId])
+      pool.query('SELECT completed_at, enrolled_at AS created_at FROM enrollments WHERE user_id = $1 AND course_id = $2', [userId, courseId])
     ]);
 
     if (!userRes.rows.length || !courseRes.rows.length) {

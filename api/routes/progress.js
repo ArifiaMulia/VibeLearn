@@ -15,7 +15,7 @@ router.get('/me', auth, async (req, res) => {
     // Daily goal stats
     const lessonsToday = await pool.query(`
       SELECT COUNT(*) FROM progress 
-      WHERE user_id=$1 AND status='completed' AND created_at >= CURRENT_DATE
+      WHERE user_id=$1 AND status='completed' AND completed_at >= CURRENT_DATE
     `, [req.user.id]);
 
     // Activity history (last 7 days) for the dashboard chart
