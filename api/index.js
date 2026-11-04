@@ -117,9 +117,9 @@ app.use('/api/settings', require('./routes/settings'));
 // Serve static uploads from disk first, then fallback to PostgreSQL uploaded_files table
 const fs = require('fs');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.get('/uploads/*', async (req, res) => {
+app.use('/uploads', async (req, res) => {
   try {
-    const requestedPath = req.path;
+    const requestedPath = req.originalUrl.split('?')[0];
     const result = await pool.query(
       'SELECT filename, mimetype, data FROM uploaded_files WHERE filepath = $1 OR filename = $2 LIMIT 1',
       [requestedPath, path.basename(requestedPath)]
@@ -138,12 +138,19 @@ app.get('/uploads/*', async (req, res) => {
       return res.send(file.data);
     }
 
-    // Graceful fallback for older missing logo images uploaded before DB persistence
-    const fallbackLogo = path.join(__dirname, '..', 'dist', 'logo.png');
-    const publicLogo = path.join(__dirname, '..', 'public', 'logo.png');
-    if (requestedPath.startsWith('/uploads/images/') && (fs.existsSync(fallbackLogo) || fs.existsSync(publicLogo))) {
+    // Graceful fallback for older missing logo images uploaded before DB persistence (1x1 transparent or default icon PNG)
+    if (requestedPath.startsWith('/uploads/images/')) {
+      const fallbackLogo = path.join(__dirname, '..', 'dist', 'logo.png');
+      const publicLogo = path.join(__dirname, '..', 'public', 'logo.png');
+      if (fs.existsSync(fallbackLogo) || fs.existsSync(publicLogo)) {
+        res.setHeader('Cache-Control', 'no-cache');
+        return res.sendFile(fs.existsSync(fallbackLogo) ? fallbackLogo : publicLogo);
+      }
+      // Serve clean SVG Promptara emblem as PNG/SVG fallback if running in standalone API container
+      const svgFallback = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#g)"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="800" font-size="32">P</text></svg>`;
+      res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'no-cache');
-      return res.sendFile(fs.existsSync(fallbackLogo) ? fallbackLogo : publicLogo);
+      return res.status(200).send(svgFallback);
     }
   } catch (err) {
     console.error('Error serving upload from DB fallback:', err.message);
