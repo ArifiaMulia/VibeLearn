@@ -166,6 +166,100 @@ jobs:
     uses: virtuenet-prasetia/.github/.github/workflows/k3s-app-deploy.yml@main
     with:
       app_name: vibelearn
+      target_namespace: ${{ github.ref == 'refs/heads/main' && 'vibelearn-prod' || 'vibelearn-dev' }}
+      target_deployment: vibelearn
+      target_service: vibelearn
       port: 80
       health_endpoint: /
+      ingress_host: ${{ github.ref == 'refs/heads/main' && 'vibe.virtuenet.space' || '' }}
     secrets: inherit
+
+  ensure-ingress-routing:
+    name: Ensure Production Ingress Routing
+    needs: deploy-frontend
+    runs-on: [self-hosted, in-cluster, k3s]
+    steps:
+      - name: Inspect and Ensure Ingress Points to vibelearn-prod & Verify All Endpoints
+        run: |
+          set -euo pipefail
+          echo "🔍 Current Ingresses matching vibe:"
+          kubectl get ingress -A -o wide | grep -i vibe || true
+          for ns in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}'); do
+            for ing in $(kubectl -n "$ns" get ingress -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true); do
+              hosts=$(kubectl -n "$ns" get ingress "$ing" -o jsonpath='{.spec.rules[*].host}' 2>/dev/null || true)
+              if echo "$hosts" | grep -q "vibe.virtuenet.space"; then
+                echo "--- Ingress $ns/$ing ---"
+                kubectl -n "$ns" get ingress "$ing" -o yaml
+              fi
+            done
+          done
+
+          echo "🔍 Ensuring vibelearn-prod pods are scaled up and ready:"
+          kubectl -n vibelearn-prod scale deployment/vibelearn-db --replicas=1
+          kubectl -n vibelearn-prod scale deployment/vibelearn-api --replicas=1
+          kubectl -n vibelearn-prod scale deployment/vibelearn --replicas=1
+          kubectl -n vibelearn-prod rollout status deployment/vibelearn-api --timeout=60s
+          kubectl -n vibelearn-prod rollout status deployment/vibelearn --timeout=60s
+
+          echo "🧪 Running In-Cluster E2E Module & Upload Verification..."
+          API_URL="http://vibelearn.vibelearn-prod.svc.cluster.local"
+          curl -fsS "${API_URL}/api/health" | head -c 300 && echo ""
+          curl -fsS "${API_URL}/api/config" | head -c 300 && echo ""
+          curl -fsS -I "${API_URL}/uploads/images/1793776302191-658592852.png" | head -n 5
+          curl -fsS -I "${API_URL}/uploads/images/1793776549788-625074971.png" | head -n 5
+
+          echo "🧪 Testing Full API & Upload Persistence via vibelearn-api..."
+          kubectl -n vibelearn-prod exec deployment/vibelearn-api -- node -e "
+          (async () => {
+            const base = 'http://vibelearn.vibelearn-prod.svc.cluster.local';
+            const check = async (name, url, opts = {}) => {
+              const res = await fetch(base + url, opts);
+              if (res.status >= 400) throw new Error(name + ' failed with ' + res.status);
+              console.log('✅', name, res.status, res.headers.get('content-type'));
+              return res;
+            };
+            await check('Health', '/api/health');
+            await check('Public Config', '/api/config');
+            await check('Fallback Logo 1', '/uploads/images/1793776302191-658592852.png');
+            await check('Fallback Logo 2', '/uploads/images/1793776549788-625074971.png');
+
+            const loginRes = await fetch(base + '/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: 'admin@vibelearn.id', password: 'Admin@2026!' })
+            });
+            const loginData = await loginRes.json();
+            if (!loginRes.ok) throw new Error('Login failed');
+            console.log('✅ Admin Login:', loginData.user.email);
+            const headers = { 'Authorization': 'Bearer ' + loginData.token, 'Content-Type': 'application/json' };
+
+            await check('Auth Me', '/api/auth/me', { headers });
+            await check('Courses', '/api/courses', { headers });
+            await check('Labs', '/api/labs', { headers });
+            await check('Users', '/api/users', { headers });
+            await check('Leaderboard', '/api/users/leaderboard/top', { headers });
+            await check('Progress', '/api/progress', { headers });
+            await check('Analytics Overview', '/api/analytics/overview', { headers });
+            await check('Subscription Plans', '/api/subscriptions/plans', { headers });
+            await check('Subscription Verifications', '/api/subscriptions/verifications', { headers });
+            await check('Subscription Settings', '/api/subscriptions/settings', { headers });
+            await check('System Settings', '/api/settings', { headers });
+            await check('AI Settings', '/api/settings/ai', { headers });
+            await check('AI Models', '/api/ai/models', { headers });
+            await check('Certificate Verify', '/api/certificates/verify/CERT-1-1');
+
+            const fs = require('fs');
+            const pngBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+            const form = new FormData();
+            form.append('file', new Blob([pngBytes], { type: 'image/png' }), 'test-logo.png');
+            const upRes = await fetch(base + '/api/upload', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + loginData.token },
+              body: form
+            });
+            const upData = await upRes.json();
+            if (!upRes.ok) throw new Error('Upload failed: ' + JSON.stringify(upData));
+            console.log('✅ Upload POST /api/upload ->', upData.url);
+            await check('Fetch Uploaded Image via Nginx ' + upData.url, upData.url);
+          })();
+          "
