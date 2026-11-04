@@ -229,7 +229,8 @@ jobs:
             await check('Labs', '/api/labs', { headers });
             await check('Users', '/api/users', { headers });
             await check('Leaderboard', '/api/users/leaderboard', { headers });
-            await check('Progress', '/api/progress', { headers });
+            await check('Progress Me', '/api/progress/me', { headers });
+            await check('Progress Recent', '/api/progress/recent', { headers });
             await check('Analytics Overview', '/api/analytics/overview', { headers });
             await check('Subscription Plans', '/api/subscriptions/plans', { headers });
             await check('Subscription Verifications', '/api/subscriptions/verifications', { headers });
