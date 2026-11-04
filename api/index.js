@@ -27,13 +27,13 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      scriptSrcElem: ["'self'", "https://static.cloudflareinsights.com"],
+      scriptSrc: ["'self'", "'sha256-DoV8KnfUG2+x3vis4HWFdbbBixVOrbbb14jS4hNU/xI='"],
+      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
       connectSrc: ["'self'", "https://*.virtuenet.space", "https://*.larksuite.com", "https://*.feishu.cn", "https://cloudflareinsights.com", "https://*.cloudflareinsights.com"],
-      workerSrc: ["'self'", "blob:"],
+      workerSrc: ["'self'", "blob:", "https://cdnjs.cloudflare.com"],
       manifestSrc: ["'self'"],
       frameAncestors: ["'self'", "https://*.larksuite.com", "https://*.feishu.cn"],
       objectSrc: ["'none'"],
@@ -114,8 +114,42 @@ app.use('/api/upload', require('./routes/upload'));
 app.use('/api/settings', require('./routes/settings'));
 
 
-// Serve static uploads
+// Serve static uploads from disk first, then fallback to PostgreSQL uploaded_files table
+const fs = require('fs');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.get('/uploads/*', async (req, res) => {
+  try {
+    const requestedPath = req.path;
+    const result = await pool.query(
+      'SELECT filename, mimetype, data FROM uploaded_files WHERE filepath = $1 OR filename = $2 LIMIT 1',
+      [requestedPath, path.basename(requestedPath)]
+    );
+    if (result.rows.length > 0) {
+      const file = result.rows[0];
+      // Write back to local container disk cache for subsequent requests
+      try {
+        const localFilePath = path.join(__dirname, requestedPath);
+        const localDir = path.dirname(localFilePath);
+        if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
+        fs.writeFileSync(localFilePath, file.data);
+      } catch {}
+      res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
+      res.setHeader('Cache-Control', 'public, max-age=2592000');
+      return res.send(file.data);
+    }
+
+    // Graceful fallback for older missing logo images uploaded before DB persistence
+    const fallbackLogo = path.join(__dirname, '..', 'dist', 'logo.png');
+    const publicLogo = path.join(__dirname, '..', 'public', 'logo.png');
+    if (requestedPath.startsWith('/uploads/images/') && (fs.existsSync(fallbackLogo) || fs.existsSync(publicLogo))) {
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.sendFile(fs.existsSync(fallbackLogo) ? fallbackLogo : publicLogo);
+    }
+  } catch (err) {
+    console.error('Error serving upload from DB fallback:', err.message);
+  }
+  res.status(404).json({ error: 'Uploaded file not found' });
+});
 
 // Health check
 app.get('/api/health', async (req, res) => {
@@ -375,6 +409,15 @@ const initDb = async (retries = 10, delay = 3000) => {
         CREATE TABLE IF NOT EXISTS system_settings (
           key VARCHAR(100) PRIMARY KEY,
           value TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS uploaded_files (
+          filepath VARCHAR(255) PRIMARY KEY,
+          filename VARCHAR(255) NOT NULL,
+          mimetype VARCHAR(100) NOT NULL,
+          size INTEGER NOT NULL,
+          data BYTEA NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
@@ -645,7 +688,6 @@ const initDb = async (retries = 10, delay = 3000) => {
 };
 
 // Serve frontend SPA build in unified K3s container
-const fs = require('fs');
 const frontendDist = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist, {

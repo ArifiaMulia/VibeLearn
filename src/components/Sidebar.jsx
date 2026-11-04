@@ -128,7 +128,14 @@ export default function Sidebar() {
               <img src={(branding.app_logo_url || '/logo.png').startsWith('http') || (branding.app_logo_url || '/logo.png').startsWith('data:') ? (branding.app_logo_url || '/logo.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/logo.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/logo.png'}`} alt={branding.app_name || 'Promptara'} style={{
                 width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0,
                 boxShadow: '0 0 12px var(--primary-glow)',
-              }} onError={e => e.target.style.display = 'none'} />
+              }} onError={e => {
+                if (!e.target.dataset.fallback) {
+                  e.target.dataset.fallback = '1';
+                  e.target.src = '/logo.png';
+                } else {
+                  e.target.style.display = 'none';
+                }
+              }} />
               <div>
                 <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em' }}>{branding.app_name || 'Promptara'}</div>
                 <div style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600 }}>{branding.app_tagline || 'AI Coding Academy'}</div>
@@ -246,8 +253,13 @@ export default function Sidebar() {
             boxShadow: '0 0 16px var(--primary-glow)',
           }}
             onError={e => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
+              if (!e.target.dataset.fallback) {
+                e.target.dataset.fallback = '1';
+                e.target.src = '/logo.png';
+              } else {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }
             }}
           />
           {/* Fallback */}

@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const pool = require('../db');
 const auth = require('../middleware/auth');
 
 // Ensure upload directories exist
@@ -66,7 +67,7 @@ const upload = multer({
 
 
 // POST /api/upload
-router.post('/', auth, upload.single('file'), (req, res) => {
+router.post('/', auth, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
@@ -77,6 +78,20 @@ router.post('/', auth, upload.single('file'), (req, res) => {
     publicPath = `/uploads/videos/${req.file.filename}`;
   } else if (req.file.mimetype.startsWith('image/')) {
     publicPath = `/uploads/images/${req.file.filename}`;
+  }
+
+  // Persist uploaded file in PostgreSQL so it survives container restarts / K3s redeployments
+  try {
+    const fileBuffer = fs.readFileSync(req.file.path);
+    await pool.query(
+      `INSERT INTO uploaded_files (filepath, filename, mimetype, size, data)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (filepath) DO UPDATE
+       SET mimetype = EXCLUDED.mimetype, size = EXCLUDED.size, data = EXCLUDED.data`,
+      [publicPath, req.file.filename, req.file.mimetype, req.file.size, fileBuffer]
+    );
+  } catch (dbErr) {
+    console.error('Warning: Failed to persist upload to database:', dbErr.message);
   }
 
   res.json({ 

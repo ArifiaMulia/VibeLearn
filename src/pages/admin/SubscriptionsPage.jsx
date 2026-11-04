@@ -131,32 +131,45 @@ export default function SubscriptionsPage() {
       error('Please select an image file (PNG, JPG, SVG, etc.)');
       return;
     }
-    // Validate size: max 2MB to prevent browser freeze
-    if (file.size > 2 * 1024 * 1024) {
-      error('Image file is too large. Please use an image under 2MB.');
-      return;
-    }
+      // Validate size: max 5MB to prevent browser freeze
+      if (file.size > 5 * 1024 * 1024) {
+        error('Image file is too large. Please use an image under 5MB.');
+        return;
+      }
 
-    setUploadingLogo(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+      setUploadingLogo(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('vl_token')}` },
-        body: formData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
+        const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${localStorage.getItem('vl_token')}` },
+          body: formData,
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-      setBankSettings(prev => ({ ...prev, app_logo_url: data.url }));
-      success('Logo uploaded! Click "Save Branding" to apply.');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        setBankSettings(prev => ({ ...prev, app_logo_url: data.url }));
+
+        // Auto-save logo URL into system_settings and refresh global Sidebar/Header branding immediately
+        await authFetch('/subscriptions/settings', {
+          method: 'PUT',
+          body: JSON.stringify({
+            app_name: bankSettings.app_name,
+            app_tagline: bankSettings.app_tagline,
+            app_logo_url: data.url,
+          }),
+        }).catch(() => {});
+        if (branding && branding.refreshBranding) {
+          branding.refreshBranding();
+        }
+        success('Logo uploaded and applied!');
     } catch (err) {
       if (err.name === 'AbortError') {
         error('Upload timed out. Please check your connection and try again.');
@@ -1142,6 +1155,7 @@ export default function SubscriptionsPage() {
                       <img
                         src={bankSettings.app_logo_url.startsWith('http') || bankSettings.app_logo_url.startsWith('data:') ? bankSettings.app_logo_url : `${import.meta.env.VITE_API_URL || ''}${bankSettings.app_logo_url.startsWith('/') ? '' : '/'}${bankSettings.app_logo_url}`}
                         alt="Logo Preview"
+                        onError={e => { if (!e.target.src.endsWith('/logo.png')) e.target.src = '/logo.png'; }}
                         style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover', border: '2px solid var(--border-light)', background: 'var(--bg-input)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
                       />
                     ) : (
