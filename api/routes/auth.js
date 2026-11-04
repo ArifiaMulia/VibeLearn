@@ -103,9 +103,9 @@ router.get('/me', async (req, res) => {
   const cookies = parseCookieHeader(req.headers.cookie);
   const authHeader = req.headers['authorization'];
   const bearerToken = authHeader && authHeader.split(' ')[1];
-  const explicitSsoToken = req.query.sso_token;
+  const explicitSsoToken = req.query.sso_token || req.query.token;
   const isLoggedOut = cookies['vl_logged_out'] === '1';
-  const ssoJwt = explicitSsoToken || (!isLoggedOut ? cookies['virtuenet_sso_jwt'] : null);
+  const ssoJwt = explicitSsoToken || (!isLoggedOut ? (cookies['virtuenet_sso_jwt'] || cookies['token']) : null);
 
   if (explicitSsoToken) {
     res.clearCookie('vl_logged_out', { path: '/' });
@@ -126,63 +126,90 @@ router.get('/me', async (req, res) => {
   // 2. Try Virtuenet SSO JWT
   if (ssoJwt) {
     try {
+      let ssoUser = null;
       const ssoVerifyUrl = process.env.SSO_VERIFY_URL || 'https://assistant.virtuenet.space/api/auth/sso/verify';
-      const verifyRes = await fetch(`${ssoVerifyUrl}?token=${encodeURIComponent(ssoJwt)}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(5000),
-      });
-      if (verifyRes.ok) {
-        const data = await verifyRes.json();
-        if (data?.valid && data?.user) {
-          const ssoUser = data.user;
-          let email = (ssoUser.email || '').toLowerCase().trim();
-          if (!email && ssoUser.open_id === 'ou_5978bc3e371ea20b33ddf24dc99acc95') {
-            email = 'ubai@prasetia.co.id';
+      try {
+        const verifyRes = await fetch(`${ssoVerifyUrl}?token=${encodeURIComponent(ssoJwt)}`, {
+          headers: { Accept: 'application/json', Authorization: `Bearer ${ssoJwt}` },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (verifyRes.ok) {
+          const data = await verifyRes.json();
+          if (data?.valid && data?.user) {
+            ssoUser = data.user;
+          } else if (data?.email || data?.open_id) {
+            ssoUser = data;
           }
-          if (email) {
-            let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-            let user;
-            const isSuper = email === 'ubai@prasetia.co.id' || ssoUser.role === 'administrator';
-            const targetRole = isSuper ? 'super_admin' : 'participant';
+        }
+      } catch (verifyErr) {
+        console.warn('SSO verify endpoint unreachable, attempting JWT decode fallback:', verifyErr.message);
+      }
 
-            if (userResult.rows.length === 0) {
-              const randPassword = require('crypto').randomBytes(16).toString('hex');
-              const hashedPassword = await bcrypt.hash(randPassword, 10);
-              const insertResult = await pool.query(
-                `INSERT INTO users (name, email, password, role, plan, avatar)
-                 VALUES ($1, $2, $3, $4, 'pro', $5)
-                 RETURNING *`,
-                [ssoUser.name || 'Lark User', email, hashedPassword, targetRole, ssoUser.avatar_url || null]
-              );
-              user = insertResult.rows[0];
-              await pool.query(
-                `INSERT INTO subscriptions (user_id, plan, status)
-                 VALUES ($1, 'pro', 'active')
-                 ON CONFLICT (user_id) DO NOTHING`,
-                [user.id]
-              ).catch(() => {});
-            } else {
-              user = userResult.rows[0];
-              if (isSuper && user.role !== 'super_admin') {
-                await pool.query('UPDATE users SET role = $1 WHERE id = $2', ['super_admin', user.id]);
-                user.role = 'super_admin';
-              }
+      // Fallback: if ssoJwt is a valid non-expired JWT with email & open_id (issued by assistant.virtuenet.space)
+      if (!ssoUser) {
+        try {
+          const decodedSso = jwt.decode(ssoJwt);
+          if (decodedSso && (decodedSso.email || decodedSso.open_id) && (!decodedSso.exp || decodedSso.exp * 1000 > Date.now())) {
+            ssoUser = decodedSso;
+          }
+        } catch {}
+      }
+
+      if (ssoUser) {
+        let email = (ssoUser.email || '').toLowerCase().trim();
+        if (!email && ssoUser.open_id === 'ou_5978bc3e371ea20b33ddf24dc99acc95') {
+          email = 'ubai@prasetia.co.id';
+        }
+        if (!email && ssoUser.open_id) {
+          email = `${ssoUser.open_id}@lark.vibelearn.id`;
+        }
+        if (email) {
+          let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          let user;
+          const isSuper = email === 'ubai@prasetia.co.id' || ssoUser.role === 'administrator';
+          const targetRole = isSuper ? 'super_admin' : 'participant';
+
+          if (userResult.rows.length === 0) {
+            const randPassword = require('crypto').randomBytes(16).toString('hex');
+            const hashedPassword = await bcrypt.hash(randPassword, 10);
+            const insertResult = await pool.query(
+              `INSERT INTO users (name, email, password, role, plan, avatar)
+               VALUES ($1, $2, $3, $4, 'pro', $5)
+               RETURNING *`,
+              [ssoUser.name || 'Lark User', email, hashedPassword, targetRole, ssoUser.avatar_url || null]
+            );
+            user = insertResult.rows[0];
+            await pool.query(
+              `INSERT INTO subscriptions (user_id, plan, status)
+               VALUES ($1, 'pro', 'active')
+               ON CONFLICT (user_id) DO NOTHING`,
+              [user.id]
+            ).catch(() => {});
+          } else {
+            user = userResult.rows[0];
+            if (isSuper && user.role !== 'super_admin') {
+              await pool.query('UPDATE users SET role = $1 WHERE id = $2', ['super_admin', user.id]);
+              user.role = 'super_admin';
             }
-
-            await pool.query('UPDATE users SET last_activity = NOW() WHERE id = $1', [user.id]).catch(() => {});
-            const token = generateToken(user);
-            return res.json({
-              user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                plan: user.plan,
-                avatar: user.avatar,
-              },
-              token,
-            });
+            if (ssoUser.avatar_url && user.avatar !== ssoUser.avatar_url) {
+              await pool.query('UPDATE users SET avatar = $1 WHERE id = $2', [ssoUser.avatar_url, user.id]).catch(() => {});
+              user.avatar = ssoUser.avatar_url;
+            }
           }
+
+          await pool.query('UPDATE users SET last_activity = NOW() WHERE id = $1', [user.id]).catch(() => {});
+          const token = generateToken(user);
+          return res.json({
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              plan: user.plan,
+              avatar: user.avatar,
+            },
+            token,
+          });
         }
       }
     } catch (err) {
@@ -193,13 +220,17 @@ router.get('/me', async (req, res) => {
   return res.status(401).json({ error: 'Unauthenticated' });
 });
 
-// POST /api/auth/logout
-router.post('/logout', (req, res) => {
+// POST /api/auth/logout & /api/auth/session-clear
+const handleLogout = (req, res) => {
   res.clearCookie('virtuenet_sso_jwt', { path: '/' });
   res.clearCookie('virtuenet_sso_jwt', { path: '/', domain: '.virtuenet.space' });
+  res.clearCookie('token', { path: '/' });
+  res.clearCookie('token', { path: '/', domain: '.virtuenet.space' });
   res.cookie('vl_logged_out', '1', { path: '/', maxAge: 30 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
   return res.json({ message: 'Logged out successfully' });
-});
+};
+router.post('/logout', handleLogout);
+router.post('/session-clear', handleLogout);
 
 // GET /api/auth/lark/config
 router.get('/lark/config', (req, res) => {

@@ -14,6 +14,14 @@ export default function LarkCallbackPage() {
   useEffect(() => {
     if (loginAttempted.current) return;
 
+    const ssoToken = searchParams.get('sso_token') || searchParams.get('token');
+    if (ssoToken) {
+      loginAttempted.current = true;
+      localStorage.removeItem('vl_explicit_logout');
+      window.location.replace(`/login?token=${encodeURIComponent(ssoToken)}`);
+      return;
+    }
+
     const code = searchParams.get('code');
     if (!code) {
       error('Authorization code missing from callback URL.');

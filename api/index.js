@@ -28,10 +28,11 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
+      scriptSrcElem: ["'self'", "https://static.cloudflareinsights.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "https://*.virtuenet.space", "https://*.larksuite.com", "https://*.feishu.cn"],
+      connectSrc: ["'self'", "https://*.virtuenet.space", "https://*.larksuite.com", "https://*.feishu.cn", "https://cloudflareinsights.com", "https://*.cloudflareinsights.com"],
       workerSrc: ["'self'", "blob:"],
       manifestSrc: ["'self'"],
       frameAncestors: ["'self'", "https://*.larksuite.com", "https://*.feishu.cn"],

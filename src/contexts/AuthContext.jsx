@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
       sessionStorage.setItem('vl_logout_reason', 'idle');
     }
     clearSsoCookieClientSide();
-    fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    fetch(`${API}/auth/session-clear`, { method: 'POST', credentials: 'include' }).catch(() => {});
     setToken(null);
     setUser(null);
   }, []);
@@ -51,9 +51,9 @@ export function AuthProvider({ children }) {
       if (saved) { try { setUser(JSON.parse(saved)); } catch {} }
       setLoading(false);
     } else {
-      // Check Virtuenet SSO session ONLY if user did not explicitly log out (unless returning with ?sso_token=)
+      // Check Virtuenet SSO session ONLY if user did not explicitly log out (unless returning with ?sso_token= or ?token=)
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const ssoToken = params ? params.get('sso_token') : null;
+      const ssoToken = params ? (params.get('sso_token') || params.get('token')) : null;
       const explicitLogout = localStorage.getItem('vl_explicit_logout') === '1';
 
       if (explicitLogout && !ssoToken) {

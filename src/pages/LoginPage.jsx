@@ -102,15 +102,12 @@ export default function LoginPage() {
     }
   };
 
-  const handleLarkLogin = async () => {
+  const handleLarkLogin = () => {
     setLoading(true);
     try {
-      const redirectUri = `${window.location.origin}/lark-callback`;
-      const API_URL = import.meta.env.VITE_API_URL || '/api';
-      const res = await fetch(`${API_URL}/auth/lark/config?redirect_uri=${encodeURIComponent(redirectUri)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch Lark configuration.');
-      window.location.href = data.authUrl;
+      localStorage.removeItem('vl_explicit_logout');
+      const returnTo = `${window.location.origin}/login`;
+      window.location.href = `https://assistant.virtuenet.space/api/auth/lark/login?return_to=${encodeURIComponent(returnTo)}`;
     } catch (err) {
       showError(err.message);
       setLoading(false);
