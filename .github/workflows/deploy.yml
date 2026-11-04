@@ -184,15 +184,6 @@ jobs:
           set -euo pipefail
           echo "🔍 Current Ingresses matching vibe:"
           kubectl get ingress -A -o wide | grep -i vibe || true
-          for ns in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}'); do
-            for ing in $(kubectl -n "$ns" get ingress -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true); do
-              hosts=$(kubectl -n "$ns" get ingress "$ing" -o jsonpath='{.spec.rules[*].host}' 2>/dev/null || true)
-              if echo "$hosts" | grep -q "vibe.virtuenet.space"; then
-                echo "--- Ingress $ns/$ing ---"
-                kubectl -n "$ns" get ingress "$ing" -o yaml
-              fi
-            done
-          done
 
           echo "🔍 Ensuring vibelearn-prod pods are scaled up and ready:"
           kubectl -n vibelearn-prod scale deployment/vibelearn-db --replicas=1
@@ -237,7 +228,7 @@ jobs:
             await check('Courses', '/api/courses', { headers });
             await check('Labs', '/api/labs', { headers });
             await check('Users', '/api/users', { headers });
-            await check('Leaderboard', '/api/users/leaderboard/top', { headers });
+            await check('Leaderboard', '/api/users/leaderboard', { headers });
             await check('Progress', '/api/progress', { headers });
             await check('Analytics Overview', '/api/analytics/overview', { headers });
             await check('Subscription Plans', '/api/subscriptions/plans', { headers });
