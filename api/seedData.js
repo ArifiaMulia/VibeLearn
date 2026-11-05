@@ -345,7 +345,7 @@ sequenceDiagram
       title_id: 'Zero-Shot vs Few-Shot Prompting',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=dOxUW9p5i98',
+      video_url: 'https://www.youtube.com/watch?v=pVpr4GYLzAo',
       xp_reward: 50,
       order_index: 1,
       transcript: `Welcome to Prompt Engineering Mastery. In this lesson, we explore two of the most foundational techniques in prompting: zero-shot and few-shot prompting. Zero-shot prompting means asking the model to perform a task with no examples. Few-shot prompting changes everything. By providing one, two, or three examples of the exact input-output pairs you want, the model learns your pattern and replicates it with high accuracy.`,
@@ -414,7 +414,7 @@ Dengan menyediakan dua contoh pertama, LLM memahami dengan sempurna bahwa Anda m
       title_id: 'Lanjutan: Chain of Thought & ReAct',
       type: 'video',
       difficulty: 'beginner',
-      video_url: 'https://www.youtube.com/watch?v=kYJ12p-Z-Jc',
+      video_url: 'https://www.youtube.com/watch?v=WYpR4Tx5ilU',
       xp_reward: 100,
       order_index: 2,
       transcript: 'Welcome to Advanced Prompting. In this lesson, we explore Chain of Thought and the ReAct framework. Chain of Thought forces the model to think step-by-step before answering, reducing logical errors. ReAct is a cycle of Thought, Action, and Observation used by AI agents to search, read, and run commands.',
@@ -559,7 +559,7 @@ Sebelum meminta AI membangun UI, rancang struktur datanya terlebih dahulu.`
       title_id: 'Integrasi Fitur Iteratif',
       type: 'video',
       difficulty: 'intermediate',
-      video_url: 'https://www.youtube.com/watch?v=u1Qj2tJ6J74',
+      video_url: 'https://www.youtube.com/watch?v=uSMdnoTdG2E',
       xp_reward: 100,
       order_index: 2,
       transcript: "Welcome to Iterative Feature Integration. Once you have scaffolded your application, you must integrate features step-by-step. Don't ask the AI to build the whole app. Build component-by-component, take screenshots of broken UI to ask AI to fix layout issues, and make micro-commits frequently so you can easily rollback when things break.",
@@ -645,7 +645,7 @@ Bangun aplikasi Anda dalam bagian-bagian terisolasi.
       title_id: 'Mendeteksi Halusinasi AI',
       type: 'video',
       difficulty: 'intermediate',
-      video_url: 'https://www.youtube.com/watch?v=aW3634N9_Lw',
+      video_url: 'https://www.youtube.com/watch?v=cfqtFvWOfg0',
       xp_reward: 50,
       order_index: 1,
       transcript: `Welcome to AI Code Review and Debugging. In this lesson, we address one of the most critical skills for any vibe coder: the ability to spot AI hallucinations before they ship to production.`,
@@ -685,7 +685,7 @@ AI tidak "tahu" cara menulis kode; AI memprediksi token berikutnya berdasarkan d
       title_id: 'Pengujian Otomatis dengan AI',
       type: 'video',
       difficulty: 'intermediate',
-      video_url: 'https://www.youtube.com/watch?v=aG47-1l7vWk',
+      video_url: 'https://www.youtube.com/watch?v=lRf4dwKZrn8',
       xp_reward: 100,
       order_index: 2,
       transcript: "Welcome to Automated Testing. The best defense against AI code hallucinations is writing comprehensive unit tests. We call this Test-Driven Vibe. You generate the code, ask AI to write the tests, run them, and feed any failures back to the AI. Having solid TypeScript types and ESLint checks also stops AI bugs before they run.",
@@ -767,7 +767,7 @@ Sebagai ganti TDD, kami menggunakan Test-Driven Vibe:
       title_id: 'Prompt Injection & Kebocoran Data',
       type: 'video',
       difficulty: 'advanced',
-      video_url: 'https://www.youtube.com/watch?v=J7N8x36M0Vw',
+      video_url: 'https://www.youtube.com/watch?v=jrHRe9lSqqA',
       xp_reward: 50,
       order_index: 1,
       transcript: `Welcome to Security-Aware Vibe Coding. In this lesson, we cover one of the most dangerous and underappreciated risks in AI-powered applications: prompt injection attacks and accidental data leaks.`,
@@ -806,7 +806,7 @@ Jika aplikasi Anda menerima input pengguna lalu menggabungkannya ke dalam prompt
       title_id: 'Arsitektur Defensif',
       type: 'video',
       difficulty: 'advanced',
-      video_url: 'https://www.youtube.com/watch?v=R9K1dF5nZgA',
+      video_url: 'https://www.youtube.com/watch?v=U_tsCjOrcK4',
       xp_reward: 100,
       order_index: 2,
       transcript: "Welcome to Defensive Architecture. Securing AI applications requires a strict defensive design. Use the Principle of Least Privilege for DB keys. Build validation layers using Zod or Joi to validate AI outputs before queries run. And always sandbox generated code in secure, restricted Docker containers.",
@@ -888,6 +888,7 @@ Jangan pernah meneruskan output teks mentah dari LLM langsung ke sistem penulisa
   "Deploy Live Apps: Manual to Automated CI/CD": [
     {
       title: 'What is Deployment? The Big Picture',
+      video_url: 'https://www.youtube.com/watch?v=c1zEou9HCG0',
       title_id: 'Apa itu Deployment? Gambaran Besarnya',
       type: 'text',
       difficulty: 'beginner',
@@ -978,6 +979,7 @@ Coolify adalah open-source, bisa di-self-host, dan memiliki integrasi GitHub sat
 
     {
       title: 'Git Fundamentals: Track and Push Your Code',
+      video_url: 'https://www.youtube.com/watch?v=hwP7WQkmECE',
       title_id: 'Dasar Git: Lacak dan Push Kode Kamu',
       type: 'text',
       difficulty: 'beginner',
@@ -1135,7 +1137,7 @@ Jalankan perintah ini di terminal proyekmu:
       difficulty: 'beginner',
       xp_reward: 60,
       order_index: 3,
-      video_url: 'https://archive.org/embed/youtube-iv8rSLsi1xo',
+      video_url: 'https://www.youtube.com/watch?v=JB7YD7OKm5g',
       transcript: `In this lesson we push a real project built with Antigravity to GitHub step by step.
 
 First, open your project folder in the terminal. If you used Antigravity to build your app, it likely already created a git repo for you. Run "git status" to check.
@@ -1317,6 +1319,7 @@ Buka URL repo GitHub kamu. Kamu seharusnya melihat:
 
     {
       title: 'Manual Deployment: SSH Into a Server',
+      video_url: 'https://www.youtube.com/watch?v=P0Fk-K2eZF8',
       title_id: 'Deployment Manual: SSH ke Server',
       type: 'text',
       difficulty: 'intermediate',
@@ -1525,7 +1528,7 @@ Cara ini berhasil, tapi:
       difficulty: 'intermediate',
       xp_reward: 80,
       order_index: 5,
-      video_url: 'https://archive.org/embed/youtube-taJlPG82Ucw',
+      video_url: 'https://www.youtube.com/watch?v=ZZ1lnw8D3Qo',
       transcript: `Welcome to Setting Up Coolify for Automated Deployment.
 
 Coolify is a self-hosted Heroku alternative. You install it on a VPS and it gives you a beautiful dashboard to deploy apps from GitHub with zero manual steps after the initial setup.
@@ -1707,6 +1710,7 @@ Mulai sekarang: \`git push\` = deploy otomatis dalam ~2 menit.`
 
     {
       title: 'Writing Your Dockerfile',
+      video_url: 'https://www.youtube.com/watch?v=Gjnup-PuquQ',
       title_id: 'Menulis Dockerfile Kamu',
       type: 'text',
       difficulty: 'intermediate',
@@ -1876,6 +1880,7 @@ Jika berhasil secara lokal di Docker, akan berhasil di Coolify.`
 
     {
       title: 'Secrets, Rollback & Monitoring',
+      video_url: 'https://www.youtube.com/watch?v=55A6v0mu64g',
       title_id: 'Secrets, Rollback & Monitoring',
       type: 'text',
       difficulty: 'intermediate',

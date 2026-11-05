@@ -174,69 +174,623 @@ function SubtitleBar({ transcript, transcript_id, lang }) {
   );
 }
 
-// Resolves any video URL to an embeddable format, with external link fallback
-function VideoPlayer({ url, title, transcript, transcript_id, lang }) {
-  if (!url) return null;
+// Extracts structured scenes from lesson markdown + transcript for the native unblockable Studio Video Player
+function parseLessonScenes(title, content, transcript, lang) {
+  const rawMd = content || '';
+  const allImgs = [...rawMd.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)].map(m => ({ alt: m[1], src: m[2] }));
+  const sections = rawMd.split(/\n(?=##?\s+)/).map(s => s.trim()).filter(Boolean);
 
-  let embedUrl = url;
+  const scenes = [];
+  sections.forEach((sec, idx) => {
+    const lines = sec.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const headingMatch = lines[0].match(/^#{1,3}\s+(.*)/);
+    const sceneTitle = headingMatch ? headingMatch[1].replace(/[*_`]/g, '') : (idx === 0 ? title : `${lang === 'id' ? 'Bagian' : 'Section'} ${idx + 1}`);
+    const imgMatch = sec.match(/!\[([^\]]*)\]\(([^)]+)\)/);
+    const sceneImg = imgMatch ? imgMatch[2] : (allImgs[idx % Math.max(1, allImgs.length)]?.src || null);
+
+    const codeMatch = sec.match(/```(?:\w+)?\n([\s\S]*?)```/);
+    const codeSnippet = codeMatch && !sec.includes('```mermaid') ? codeMatch[1].trim().split('\n').slice(0, 6).join('\n') : null;
+
+    const bullets = lines
+      .slice(headingMatch ? 1 : 0)
+      .filter(l => !l.startsWith('![') && !l.startsWith('```') && !l.startsWith('|') && !l.startsWith('flowchart') && !l.startsWith('graph ') && !l.startsWith('style '))
+      .map(l => l.replace(/^[-*>\d.]+\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1').trim())
+      .filter(l => l.length > 12)
+      .slice(0, 4);
+
+    if (bullets.length > 0 || codeSnippet) {
+      scenes.push({
+        id: idx + 1,
+        title: sceneTitle,
+        bullets: bullets.length ? bullets : [title],
+        image: sceneImg,
+        code: codeSnippet,
+        narration: `${sceneTitle}. ${bullets.join(' ')}`.slice(0, 320),
+      });
+    }
+  });
+
+  if (scenes.length === 0) {
+    const fallbackText = transcript || title || 'Interactive Video Lesson';
+    const sentences = fallbackText.split(/(?<=[.!?])\s+/).filter(Boolean);
+    for (let i = 0; i < Math.max(1, sentences.length); i += 2) {
+      scenes.push({
+        id: Math.floor(i / 2) + 1,
+        title: `${title} — ${lang === 'id' ? 'Bagian' : 'Part'} ${Math.floor(i / 2) + 1}`,
+        bullets: sentences.slice(i, i + 2),
+        image: allImgs[0]?.src || null,
+        code: null,
+        narration: sentences.slice(i, i + 2).join(' '),
+      });
+    }
+  }
+
+  return scenes.slice(0, 10);
+}
+
+// Native HTML5 Interactive Video Presenter — 100% immune to external media/firewall/YouTube blocks
+function InteractiveStudioPlayer({ title, content, transcript, transcript_id, lang }) {
+  const activeTranscript = (lang === 'id' && transcript_id) ? transcript_id : (transcript || transcript_id || '');
+  const scenes = parseLessonScenes(title, content, activeTranscript, lang);
+  const SCENE_DURATION = 10; // seconds per scene
+  const totalSeconds = Math.max(10, scenes.length * SCENE_DURATION);
+
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [elapsed, setElapsed] = useState(0);
+  const [speed, setSpeed] = useState(1);
+  const [loop, setLoop] = useState(true);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const containerRef = useRef(null);
+  const lastSpokenSceneRef = useRef(-1);
+
+  const currentSceneIdx = Math.min(scenes.length - 1, Math.floor(elapsed / SCENE_DURATION));
+  const currentScene = scenes[currentSceneIdx] || scenes[0];
+  const sceneProgress = ((elapsed % SCENE_DURATION) / SCENE_DURATION) * 100;
+
+  // Reset when lesson title/lang changes
+  useEffect(() => {
+    setElapsed(0);
+    setIsPlaying(true);
+    lastSpokenSceneRef.current = -1;
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, [title, lang]);
+
+  // Continuous playback timer
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      setElapsed(prev => {
+        const next = prev + 0.25 * speed;
+        if (next >= totalSeconds) {
+          if (loop) {
+            lastSpokenSceneRef.current = -1;
+            return 0;
+          }
+          setIsPlaying(false);
+          return totalSeconds;
+        }
+        return next;
+      });
+    }, 250);
+    return () => clearInterval(interval);
+  }, [isPlaying, speed, totalSeconds, loop]);
+
+  // Optional Web Speech API voice narration
+  useEffect(() => {
+    if (!voiceOn || !isPlaying || typeof window === 'undefined' || !window.speechSynthesis) {
+      if (typeof window !== 'undefined' && window.speechSynthesis && (!voiceOn || !isPlaying)) {
+        window.speechSynthesis.cancel();
+      }
+      return;
+    }
+    if (lastSpokenSceneRef.current !== currentSceneIdx && currentScene?.narration) {
+      lastSpokenSceneRef.current = currentSceneIdx;
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(currentScene.narration);
+        utter.lang = lang === 'id' ? 'id-ID' : 'en-US';
+        utter.rate = Math.min(1.5, Math.max(0.9, speed));
+        window.speechSynthesis.speak(utter);
+      } catch {}
+    }
+  }, [currentSceneIdx, voiceOn, isPlaying, currentScene, lang, speed]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const formatTime = (sec) => {
+    const s = Math.floor(sec);
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+  };
+
+  const handleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      containerRef.current.requestFullscreen?.().catch(() => {});
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        background: 'radial-gradient(circle at 18% 20%, rgba(124,58,237,0.28) 0%, rgba(6,182,212,0.14) 42%, #070714 100%)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid rgba(124,58,237,0.35)',
+        overflow: 'hidden',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
+        display: 'flex',
+        flexDirection: 'column',
+        userSelect: 'none',
+      }}
+    >
+      {/* 16:9 Cinema Stage */}
+      <div
+        onClick={() => setIsPlaying(p => !p)}
+        style={{
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '16/9',
+          padding: 'clamp(1rem, 3vw, 2.25rem)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Top HUD Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              padding: '0.22rem 0.65rem', borderRadius: 20,
+              background: isPlaying ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)',
+              border: `1px solid ${isPlaying ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'}`,
+              color: isPlaying ? '#34d399' : '#fbbf24',
+              fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.06em',
+            }}>
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%',
+                background: isPlaying ? '#10b981' : '#f59e0b',
+                boxShadow: isPlaying ? '0 0 8px #10b981' : 'none',
+              }} />
+              {isPlaying ? (lang === 'id' ? 'LIVE STUDIO · BEBAS BLOKIR' : 'LIVE STUDIO · UNBLOCKED') : (lang === 'id' ? 'DIJEDA' : 'PAUSED')}
+            </span>
+            <span style={{
+              fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)',
+              background: 'rgba(255,255,255,0.08)', padding: '0.2rem 0.6rem', borderRadius: 12,
+            }}>
+              SCENE {String(currentSceneIdx + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}
+            </span>
+          </div>
+
+          {/* Animated Audio Equalizer Bars */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 18 }}>
+            {[0.45, 0.85, 0.6, 1, 0.5, 0.9, 0.7, 0.4].map((h, idx) => (
+              <span
+                key={idx}
+                style={{
+                  width: 3,
+                  height: isPlaying ? `${Math.max(20, Math.round(((Math.sin(elapsed * 4 + idx) + 1) / 2) * h * 100))}%` : '22%',
+                  background: 'linear-gradient(180deg, #06b6d4, #8b5cf6)',
+                  borderRadius: 2,
+                  transition: 'height 0.2s ease',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Main Scene Body */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: currentScene?.image ? 'minmax(0, 1.25fr) minmax(0, 0.95fr)' : '1fr',
+          gap: 'clamp(0.75rem, 2vw, 1.5rem)',
+          alignItems: 'center',
+          zIndex: 2,
+          my: 'auto',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <div style={{
+              fontSize: 'clamp(1.05rem, 2.2vw, 1.55rem)',
+              fontWeight: 900,
+              color: '#ffffff',
+              lineHeight: 1.25,
+              textShadow: '0 2px 16px rgba(0,0,0,0.6)',
+            }}>
+              {currentScene?.title}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              {(currentScene?.bullets || []).map((b, bIdx) => (
+                <div
+                  key={bIdx}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '0.55rem',
+                    background: 'rgba(15, 23, 42, 0.68)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderLeft: '3px solid #06b6d4',
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: 8,
+                    color: 'rgba(255,255,255,0.92)',
+                    fontSize: 'clamp(0.74rem, 1.35vw, 0.9rem)',
+                    lineHeight: 1.45,
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  <span style={{ color: '#06b6d4', fontWeight: 800 }}>▸</span>
+                  <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{b}</span>
+                </div>
+              ))}
+            </div>
+
+            {currentScene?.code && (
+              <pre style={{
+                margin: 0, padding: '0.6rem 0.8rem',
+                background: 'rgba(10, 14, 26, 0.88)',
+                border: '1px solid rgba(124,58,237,0.35)',
+                borderRadius: 8, color: '#a5b4fc',
+                fontFamily: 'monospace', fontSize: '0.74rem',
+                overflow: 'hidden', maxHeight: 96,
+              }}>
+                <code>{currentScene.code}</code>
+              </pre>
+            )}
+          </div>
+
+          {currentScene?.image && (
+            <div style={{
+              width: '100%',
+              height: '100%',
+              maxHeight: 220,
+              borderRadius: 12,
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.16)',
+              boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
+              background: 'rgba(0,0,0,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <img
+                src={currentScene.image}
+                alt={currentScene.title}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transform: `scale(${1 + (sceneProgress / 100) * 0.06})`,
+                  transition: 'transform 0.35s linear',
+                }}
+                onError={e => { e.currentTarget.style.display = 'none'; }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Caption Overlay */}
+        <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <div style={{
+            background: 'rgba(0,0,0,0.78)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 8,
+            padding: '0.4rem 0.85rem',
+            color: '#f8fafc',
+            fontSize: 'clamp(0.72rem, 1.25vw, 0.84rem)',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}>
+            💬 {currentScene?.bullets?.[Math.floor((sceneProgress / 100) * (currentScene?.bullets?.length || 1))] || currentScene?.title}
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Transport Controls Bar */}
+      <div style={{
+        background: '#090b16',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
+        padding: '0.65rem 1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.55rem',
+      }}>
+        {/* Seek Scrubber */}
+        <div
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            lastSpokenSceneRef.current = -1;
+            setElapsed(ratio * totalSeconds);
+          }}
+          style={{
+            width: '100%', height: 7, background: 'rgba(255,255,255,0.14)',
+            borderRadius: 999, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+          }}
+          title={lang === 'id' ? 'Klik untuk menggeser waktu video' : 'Click to seek video'}
+        >
+          <div style={{
+            width: `${Math.min(100, (elapsed / totalSeconds) * 100)}%`,
+            height: '100%',
+            background: 'linear-gradient(90deg, #7c3aed, #06b6d4)',
+            borderRadius: 999,
+            transition: 'width 0.2s linear',
+          }} />
+        </div>
+
+        {/* Transport Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setIsPlaying(p => !p)}
+              style={{
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                color: '#fff', border: 'none', borderRadius: 8,
+                padding: '0.35rem 0.85rem', fontSize: '0.78rem', fontWeight: 800,
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              }}
+            >
+              {isPlaying ? '⏸ Pause' : '▶ Play'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                lastSpokenSceneRef.current = -1;
+                setElapsed(Math.max(0, (currentSceneIdx - 1) * SCENE_DURATION));
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.07)', color: '#e2e8f0',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6,
+                padding: '0.3rem 0.55rem', fontSize: '0.74rem', cursor: 'pointer',
+              }}
+              title={lang === 'id' ? 'Scene Sebelumnya' : 'Previous Scene'}
+            >
+              ⏮
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                lastSpokenSceneRef.current = -1;
+                setElapsed(((currentSceneIdx + 1) % scenes.length) * SCENE_DURATION);
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.07)', color: '#e2e8f0',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6,
+                padding: '0.3rem 0.55rem', fontSize: '0.74rem', cursor: 'pointer',
+              }}
+              title={lang === 'id' ? 'Scene Berikutnya' : 'Next Scene'}
+            >
+              ⏭
+            </button>
+
+            <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', marginLeft: '0.25rem' }}>
+              {formatTime(elapsed)} / {formatTime(totalSeconds)}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setVoiceOn(v => !v)}
+              style={{
+                background: voiceOn ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.06)',
+                color: voiceOn ? '#22d3ee' : 'rgba(255,255,255,0.7)',
+                border: `1px solid ${voiceOn ? 'rgba(6,182,212,0.45)' : 'rgba(255,255,255,0.12)'}`,
+                borderRadius: 6, padding: '0.28rem 0.6rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              {voiceOn ? (lang === 'id' ? '🔊 Narator ON' : '🔊 Voice ON') : (lang === 'id' ? '🔇 Narator' : '🔇 Voice')}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLoop(l => !l)}
+              style={{
+                background: loop ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.06)',
+                color: loop ? '#34d399' : 'rgba(255,255,255,0.6)',
+                border: `1px solid ${loop ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.12)'}`,
+                borderRadius: 6, padding: '0.28rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+              }}
+              title={lang === 'id' ? 'Putar terus-menerus tanpa henti' : 'Continuous auto-loop'}
+            >
+              🔁 {loop ? 'Auto-Loop ON' : 'Loop OFF'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSpeed(s => (s === 1 ? 1.25 : s === 1.25 ? 1.5 : s === 1.5 ? 2 : 1))}
+              style={{
+                background: 'rgba(255,255,255,0.07)', color: '#e2e8f0',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6,
+                padding: '0.28rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              {speed}x
+            </button>
+
+            <button
+              type="button"
+              onClick={handleFullscreen}
+              style={{
+                background: 'rgba(255,255,255,0.07)', color: '#e2e8f0',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6,
+                padding: '0.28rem 0.55rem', fontSize: '0.72rem', cursor: 'pointer',
+              }}
+              title="Fullscreen"
+            >
+              ⛶
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Multi-Engine Video Player with Unblockable Studio Mode + Dual YouTube Servers
+function VideoPlayer({ url, title, content, transcript, transcript_id, lang }) {
+  const [playerMode, setPlayerMode] = useState('studio'); // 'studio' | 'youtube_primary' | 'youtube_nocookie'
+
+  if (!url && !content) return null;
+
+  let youtubeId = null;
+  let embedPrimaryUrl = url;
+  let embedNoCookieUrl = url;
   let externalUrl = url;
   let platform = 'Video';
 
-  if (url.includes('archive.org')) {
-    platform = 'Internet Archive';
-    if (!url.includes('/embed/')) {
-      const match = url.match(/archive\.org\/details\/([^/?]+)/);
-      if (match) embedUrl = `https://archive.org/embed/${match[1]}`;
+  if (url) {
+    if (url.includes('archive.org')) {
+      platform = 'Internet Archive';
+      if (!url.includes('/embed/')) {
+        const match = url.match(/archive\.org\/details\/([^/?]+)/);
+        if (match) embedPrimaryUrl = `https://archive.org/embed/${match[1]}`;
+      }
+      embedNoCookieUrl = embedPrimaryUrl;
+      externalUrl = embedPrimaryUrl.replace('/embed/', '/details/');
+    } else if (url.includes('vimeo.com')) {
+      platform = 'Vimeo';
+      if (!url.includes('player.vimeo.com')) {
+        const match = url.match(/vimeo\.com\/(\d+)/);
+        if (match) embedPrimaryUrl = `https://player.vimeo.com/video/${match[1]}`;
+      }
+      embedNoCookieUrl = embedPrimaryUrl;
+      const idMatch = embedPrimaryUrl.match(/\/video\/(\d+)/);
+      externalUrl = idMatch ? `https://vimeo.com/${idMatch[1]}` : url;
+    } else if (url.includes('youtube') || url.includes('youtu.be')) {
+      platform = 'YouTube';
+      const idMatch = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([^&?]+)/);
+      if (idMatch) {
+        youtubeId = idMatch[1];
+        embedPrimaryUrl = `https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`;
+        embedNoCookieUrl = `https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0`;
+        externalUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
+      }
     }
-    externalUrl = embedUrl.replace('/embed/', '/details/');
-  } else if (url.includes('vimeo.com')) {
-    platform = 'Vimeo';
-    if (!url.includes('player.vimeo.com')) {
-      const match = url.match(/vimeo\.com\/(\d+)/);
-      if (match) embedUrl = `https://player.vimeo.com/video/${match[1]}`;
-    }
-    const idMatch = embedUrl.match(/\/video\/(\d+)/);
-    externalUrl = idMatch ? `https://vimeo.com/${idMatch[1]}` : url;
-  } else if (url.includes('youtube') || url.includes('youtu.be')) {
-    platform = 'YouTube';
-    const idMatch = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([^&?]+)/);
-    if (idMatch) {
-      embedUrl = `https://www.youtube-nocookie.com/embed/${idMatch[1]}?rel=0`;
-      externalUrl = `https://www.youtube.com/watch?v=${idMatch[1]}`;
-    }
-  } else if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
-    return (
-      <video controls style={{ width: '100%', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-        <source src={url} />
-      </video>
-    );
   }
 
   return (
-    <div>
-      <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: (transcript || transcript_id) ? 'var(--radius-lg) var(--radius-lg) 0 0' : 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)', borderBottom: (transcript || transcript_id) ? 'none' : '1px solid var(--border-light)' }}>
-        <iframe
-          src={embedUrl}
-          width="100%"
-          height="100%"
-          style={{ border: 'none' }}
-          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-          allowFullScreen
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+      {/* Multi-Source Switcher Header */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        flexWrap: 'wrap', gap: '0.5rem',
+        background: 'var(--bg-surface)', padding: '0.55rem 0.85rem',
+        borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setPlayerMode('studio')}
+            style={{
+              padding: '0.32rem 0.75rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700,
+              cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+              background: playerMode === 'studio' ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'var(--bg-card)',
+              color: playerMode === 'studio' ? '#fff' : 'var(--text-muted)',
+            }}
+          >
+            🎬 {lang === 'id' ? 'Studio Player (Bebas Blokir)' : 'Studio Player (Unblocked)'}
+          </button>
+
+          {url && (
+            <button
+              type="button"
+              onClick={() => setPlayerMode('youtube_primary')}
+              style={{
+                padding: '0.32rem 0.75rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700,
+                cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+                background: playerMode === 'youtube_primary' ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'var(--bg-card)',
+                color: playerMode === 'youtube_primary' ? '#fff' : 'var(--text-muted)',
+              }}
+            >
+              ▶️ {platform} Server 1
+            </button>
+          )}
+
+          {youtubeId && (
+            <button
+              type="button"
+              onClick={() => setPlayerMode('youtube_nocookie')}
+              style={{
+                padding: '0.32rem 0.75rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700,
+                cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+                background: playerMode === 'youtube_nocookie' ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'var(--bg-card)',
+                color: playerMode === 'youtube_nocookie' ? '#fff' : 'var(--text-muted)',
+              }}
+            >
+              🛡️ {lang === 'id' ? 'Mirror Privasi (Server 2)' : 'Privacy Mirror (Server 2)'}
+            </button>
+          )}
+        </div>
+
+        {externalUrl && (
+          <a
+            href={externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: '0.74rem', color: 'var(--accent)', fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none',
+            }}
+          >
+            <ExternalLink size={12} /> {lang === 'id' ? `Buka di ${platform}` : `Watch on ${platform}`}
+          </a>
+        )}
+      </div>
+
+      {/* Active Video Viewport */}
+      {playerMode === 'studio' ? (
+        <InteractiveStudioPlayer
           title={title}
+          content={content}
+          transcript={transcript}
+          transcript_id={transcript_id}
+          lang={lang}
         />
-      </div>
-      {(transcript || transcript_id) && (
-        <SubtitleBar transcript={transcript} transcript_id={transcript_id} lang={lang} />
+      ) : (
+        <div>
+          <div style={{
+            width: '100%', aspectRatio: '16/9', background: '#000',
+            borderRadius: (transcript || transcript_id) ? 'var(--radius-lg) var(--radius-lg) 0 0' : 'var(--radius-lg)',
+            overflow: 'hidden', border: '1px solid var(--border-light)',
+            borderBottom: (transcript || transcript_id) ? 'none' : '1px solid var(--border-light)',
+          }}>
+            <iframe
+              key={playerMode === 'youtube_primary' ? embedPrimaryUrl : embedNoCookieUrl}
+              src={playerMode === 'youtube_primary' ? embedPrimaryUrl : embedNoCookieUrl}
+              width="100%"
+              height="100%"
+              style={{ border: 'none' }}
+              referrerPolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+              allowFullScreen
+              title={title}
+            />
+          </div>
+          {(transcript || transcript_id) && (
+            <SubtitleBar transcript={transcript} transcript_id={transcript_id} lang={lang} />
+          )}
+        </div>
       )}
-      <div style={{ textAlign: 'right', marginTop: '0.4rem' }}>
-        <a href={externalUrl} target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none' }}
-          onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
-          onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
-        >
-          <ExternalLink size={12} /> Watch on {platform}
-        </a>
-      </div>
     </div>
   );
 }
@@ -772,10 +1326,11 @@ export default function LessonPage() {
         </div>
       )}
 
-      {lesson.type === 'video' && lesson.video_url && (
+      {lesson.type !== 'quiz' && (lesson.video_url || lesson.content) && (
         <VideoPlayer
           url={lesson.video_url}
-          title={lesson.title}
+          title={lang === 'id' && lesson.title_id ? lesson.title_id : lesson.title}
+          content={lang === 'id' && lesson.content_id ? lesson.content_id : lesson.content}
           transcript={lesson.transcript}
           transcript_id={lesson.transcript_id}
           lang={lang}

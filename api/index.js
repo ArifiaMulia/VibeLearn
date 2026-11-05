@@ -32,6 +32,8 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
+      mediaSrc: ["'self'", "data:", "blob:", "https:"],
+      frameSrc: ["'self'", "https://www.youtube.com", "https://www.youtube-nocookie.com", "https://youtu.be", "https://player.vimeo.com", "https://vimeo.com", "https://archive.org", "https://*.archive.org"],
       connectSrc: ["'self'", "https://*.virtuenet.space", "https://*.larksuite.com", "https://*.feishu.cn", "https://cloudflareinsights.com", "https://*.cloudflareinsights.com"],
       workerSrc: ["'self'", "blob:", "https://cdnjs.cloudflare.com"],
       manifestSrc: ["'self'"],
@@ -607,9 +609,12 @@ const initDb = async (retries = 10, delay = 3000) => {
                 content_id  = CASE WHEN $3 THEN $4 ELSE content_id END,
                 title_id    = COALESCE($5, title_id),
                 order_index = $6,
-                type        = CASE WHEN $7 = 'quiz' THEN 'quiz' ELSE type END
+                type        = $7,
+                video_url   = COALESCE($9, video_url),
+                transcript  = COALESCE($10, transcript),
+                transcript_id = COALESCE($11, transcript_id)
                WHERE id = $8`,
-              [shouldUpdateEn, l.content, shouldUpdateId, l.content_id || null, l.title_id || null, l.order_index, l.type, lessonId]
+              [shouldUpdateEn, l.content, shouldUpdateId, l.content_id || null, l.title_id || null, l.order_index, l.type, lessonId, l.video_url || null, l.transcript || null, l.transcript_id || null]
             );
             if (shouldUpdateEn || shouldUpdateId) {
               console.log(`  🖼️ Synced lesson illustrations: "${l.title}"`);

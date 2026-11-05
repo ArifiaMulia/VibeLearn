@@ -1276,7 +1276,8 @@ Log remediasi menampilkan setiap tindakan otomatis yang diambil: timestamp, kebi
     {
       title: 'Workflow Management — Onboarding, Transfers & Offboarding',
       title_id: 'Manajemen Workflow — Onboarding, Transfer & Offboarding',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=vStmEniXgWY',
       difficulty: 'intermediate',
       xp_reward: 75,
       order_index: 9,
@@ -1733,6 +1734,7 @@ Portal Pengguna SealSuite memiliki empat bagian utama:
     // ── Lesson 3: Using SSO ─────────────────────────────────────────────────
     {
       title: 'Accessing Work Apps with Single Sign-On (SSO)',
+      video_url: 'https://www.youtube.com/watch?v=4WM_LjvVIbU',
       title_id: 'Mengakses Aplikasi Kerja dengan Single Sign-On (SSO)',
       type: 'text',
       difficulty: 'beginner',
@@ -1963,7 +1965,8 @@ Anda TIDAK memerlukan VPN saat: menggunakan aplikasi cloud (Microsoft 365, Googl
     {
       title: 'Device Security — Understanding What SealSuite Monitors',
       title_id: 'Keamanan Perangkat — Memahami Apa yang Dipantau SealSuite',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=QVa7rNFo_ec',
       difficulty: 'beginner',
       xp_reward: 50,
       order_index: 5,
@@ -2086,7 +2089,8 @@ Jika menggunakan perangkat pribadi:
     {
       title: 'Data Security — Your Responsibilities as an Employee',
       title_id: 'Keamanan Data — Tanggung Jawab Anda sebagai Karyawan',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=tU-msNVkB5k',
       difficulty: 'beginner',
       xp_reward: 50,
       order_index: 6,
@@ -2335,7 +2339,8 @@ Uji pemahaman Anda tentang SealSuite sebagai pengguna akhir.`,
     {
       title: 'Simplifying Cybersecurity: The Gatekeeper Concept',
       title_id: 'Menyederhanakan Keamanan Siber: Konsep Penjaga Pintu',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=yn6CPQ9RioA',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 1,
@@ -2437,7 +2442,8 @@ flowchart LR
     {
       title: 'The 3 Pillars of SealSuite Office Security',
       title_id: '3 Pilar Utama Keamanan Kantor SealSuite',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=jq_LZ1RFPfU',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 2,
@@ -2509,7 +2515,8 @@ Untuk melindungi data perusahaan Anda, SealSuite bertumpu pada tiga pilar utama 
     {
       title: 'Identity Check: Single Sign-On (SSO) & MFA',
       title_id: 'Pemeriksaan Identitas: Single Sign-On (SSO) & MFA',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=Bv6NZlqqn48',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 3,
@@ -2585,7 +2592,8 @@ flowchart LR
     {
       title: 'Secure Remote Work: Connecting to the Office VPN',
       title_id: 'Kerja Remote yang Aman: Terhubung ke VPN Kantor',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=zMahtD8TIwc',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 4,
@@ -2641,7 +2649,8 @@ Dengan SealSuite, akses VPN sudah terintegrasi langsung di aplikasi. Cukup denga
     {
       title: 'Device Compliance: The Digital Health Check',
       title_id: 'Kepatuhan Perangkat: Pemeriksaan Kesehatan Digital',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=sBazKeKV7Xc',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 5,
@@ -2693,7 +2702,8 @@ Sama seperti pintu detektor logam di bandara yang memeriksa benda berbahaya, Sea
     {
       title: 'Preventing Data Leaks: X-Ray Scanner & Watermarks',
       title_id: 'Mencegah Kebocoran Data: Pemindai Sinar-X & Watermark',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=tVVEoSEgeUQ',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 6,
@@ -2755,7 +2765,8 @@ Bagaimana jika seseorang mencoba mengelabui sistem dengan mengganti nama file ce
     {
       title: 'Activity History: Reading the Security Logbook',
       title_id: 'Riwayat Aktivitas: Membaca Buku Log Keamanan',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=9RfsRn7m7OE',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 7,
@@ -2817,7 +2828,8 @@ Jika ada sesuatu yang tidak beres — pelanggaran akun, kebocoran file — log a
     {
       title: 'Know Your Enemy: Types of Digital Viruses & Malware',
       title_id: 'Kenali Musuh Anda: Jenis-Jenis Virus Digital & Malware',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=_g7hmxrVyTg',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 8,
@@ -2895,7 +2907,8 @@ Banyak orang menyebut setiap ancaman digital sebagai "virus", namun dalam dunia 
     {
       title: 'Antivirus Protection: The Real-Time Threat Hunter',
       title_id: 'Perlindungan Antivirus: Pemburu Ancaman Real-Time',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=55GaIolVVqI',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 9,
@@ -2945,7 +2958,8 @@ SealSuite memastikan setiap perangkat yang terhubung memiliki **antivirus aktif*
     {
       title: 'Hacker Tricks & Tools: How Attackers Try to Break In',
       title_id: 'Trik & Alat Peretas: Cara Hacker Mencoba Menyusup',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=nSGQkE67jcg',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 10,
@@ -3025,7 +3039,8 @@ Peretas jarang membobol perusahaan seperti di film Hollywood dengan mengetik kod
     {
       title: 'Mobile Device Management (MDM): Remote Control Tower',
       title_id: 'Manajemen Perangkat Mobile (MDM): Menara Kendali Jarak Jauh',
-      type: 'text',
+      type: 'video',
+      video_url: 'https://www.youtube.com/watch?v=V0MSBPMBY3I',
       difficulty: 'beginner',
       xp_reward: 75,
       order_index: 11,
