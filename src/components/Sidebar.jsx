@@ -7,7 +7,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import {
   LayoutDashboard, BookOpen, FlaskConical, Users, BarChart3,
   CreditCard, Settings, LogOut, Shield, ChevronLeft, ChevronRight,
-  Award, X, Cpu,
+  Award, X, Cpu, Newspaper,
 } from 'lucide-react';
 import pkg from '../../package.json';
 
@@ -44,6 +44,7 @@ export default function Sidebar() {
       { icon: LayoutDashboard, key: 'nav_dashboard',           to: '/dashboard' },
       { icon: BookOpen,         key: 'nav_courses',            to: '/courses' },
       { icon: FlaskConical,     key: 'nav_labs',               to: '/labs' },
+      { icon: Newspaper,        key: 'nav_news',               to: '/news' },
       { icon: Users,            key: 'nav_users',              to: '/admin/users' },
       { icon: BarChart3,        key: 'nav_analytics',          to: '/admin/analytics' },
       { icon: CreditCard,       key: 'nav_subscriptions',      to: '/admin/subscriptions' },
@@ -55,6 +56,7 @@ export default function Sidebar() {
       { icon: LayoutDashboard, key: 'nav_dashboard',           to: '/dashboard' },
       { icon: BookOpen,         key: 'nav_courses',            to: '/courses' },
       { icon: FlaskConical,     key: 'nav_labs',               to: '/labs' },
+      { icon: Newspaper,        key: 'nav_news',               to: '/news' },
       { icon: Users,            key: 'nav_students',           to: '/admin/users' },
       { icon: BarChart3,        key: 'nav_analytics',          to: '/admin/analytics' },
       { icon: Settings,         key: 'nav_course_builder',     to: '/admin/courses' },
@@ -64,6 +66,7 @@ export default function Sidebar() {
       { icon: LayoutDashboard, key: 'nav_dashboard',   to: '/dashboard' },
       { icon: BookOpen,         key: 'nav_my_courses', to: '/courses' },
       { icon: FlaskConical,     key: 'nav_labs',       to: '/labs' },
+      { icon: Newspaper,        key: 'nav_news',       to: '/news' },
       { icon: BarChart3,        key: 'nav_leaderboard', to: '/leaderboard' },
       { icon: Settings,         key: 'nav_profile',    to: '/profile' },
     ],
@@ -77,6 +80,7 @@ export default function Sidebar() {
     nav_courses:             t('nav_courses_sub'),
     nav_my_courses:          t('nav_courses_sub'),
     nav_labs:                t('nav_labs_sub'),
+    nav_news:                t('nav_news_sub'),
     nav_leaderboard:         t('nav_leaderboard_sub'),
     nav_profile:             t('nav_profile_sub'),
     nav_users:               null,

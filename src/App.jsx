@@ -21,6 +21,7 @@ const LabsPage = lazy(() => import('./pages/labs/LabsPage'));
 const LabSession = lazy(() => import('./pages/labs/LabSession'));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'));
+const NewsUpdatesPage = lazy(() => import('./pages/NewsUpdatesPage'));
 
 // Admin pages (lazy-loaded)
 const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
@@ -66,6 +67,7 @@ export default function App() {
                       <Route path="/labs" element={<LabsPage />} />
                       <Route path="/labs/:id" element={<LabSession />} />
                       <Route path="/leaderboard" element={<LeaderboardPage />} />
+                      <Route path="/news" element={<NewsUpdatesPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
 
                       <Route element={<ProtectedRoute allowedRoles={['super_admin', 'master']} />}>

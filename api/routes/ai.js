@@ -635,6 +635,27 @@ function evaluateZeroTrustAccess(user, device, resource) {
 // Langkah 3: Jalankan verifikasi otomatis (npm run build / test)`,
     proTip_id: 'Saat AI menemui error yang berulang, jangan hanya mengatakan *"masih error"*. Lampirkan **pesan error lengkap (stack trace)**, baris kode terkait, dan hasil yang Anda harapkan agar AI dapat langsung menemukan akar masalahnya (*Root Cause*).',
     proTip_en: 'When debugging with AI, never just say *"it doesn\'t work"*. Always paste the exact **error stack trace**, expected behavior, and relevant file context.'
+  },
+  {
+    match: /\b(black october|php2shell|vulnpocalypse|slopsquatting|litellm|supply chain)\b/i,
+    title_id: 'Bedah Intelijen Siber: Fenomena "Black October" & Serangan Agen AI Otonom',
+    title_en: 'Cyber Intelligence Deep Dive: "Black October" & Autonomous AI Threat Actors',
+    analogy_id: 'Sebelum **Black October (Oktober 2026)**, peretas bekerja seperti **pencuri manual** yang mencoba membuka kunci pintu satu per satu. Pada peristiwa Black October, peretas mengerahkan **ribuan robot AI otonom yang tidak pernah tidur** untuk memindai jutaan server secara bersamaan begitu celah keamanan baru diumumkan.',
+    analogy_en: 'Before **Black October (October 2026)**, attackers operated like manual lockpickers. During Black October, threat actors deployed **autonomous AI agents with infinite patience** that reverse-engineered patches and exploited servers globally within minutes.',
+    core_id: [
+      '**3 Peristiwa Kunci Black October**:\n  1. **Tsunami PHP2Shell (CVE-2026-109618 / CVE-2026-109619)**: Celah *Remote Code Execution (RCE)* kritis pada PHP yang ditemukan menggunakan bantuan model AI frontier dan memicu jutaan serangan otomatis dalam hitungan jam.\n  2. **Serangan Supply Chain Pustaka AI (LiteLLM)**: Penyusupan *credential stealer* ke dalam paket open-source AI untuk mencuri API Key (`OPENAI_API_KEY`, `BYTEPLUS_API_KEY`, dan kredensial cloud).\n  3. **Kompromi Platform Cloud Developer (Railway & Zeabur)**: Serangan terarah untuk memanen variabel `.env` produksi sehingga memaksa rotasi kunci massal.',
+      '**Mitigasi Wajib**: Jangan pernah menyimpan API Key di kode sumber, verifikasi setiap paket yang diinstal AI (cegah *Slopsquatting*), dan aktifkan **SealSuite Zero Trust + DLP** di seluruh perangkat tim.'
+    ],
+    core_en: [
+      '**3 Defining Events of Black October**:\n  1. **PHP2Shell RCE Tsunami (CVE-2026-109618)**: Critical PHP vulnerabilities exploited at scale within hours.\n  2. **LiteLLM Supply Chain Attack**: Malicious package release harvesting AI and cloud API keys.\n  3. **Cloud PaaS Intrusions**: Targeted harvesting of developer environment variables.',
+      '**Mandatory Defense**: Isolate secrets in Kubernetes/Vault, audit AI-suggested packages against slopsquatting, and enforce **SealSuite Zero Trust & DLP**.'
+    ],
+    code: `# Langkah Audit Cepat Pasca "Black October" untuk Proyek Node.js / AI:
+npm audit --production               # 1. Cek kerentanan supply-chain pada dependency
+git log -S "API_KEY" -p              # 2. Pastikan tidak ada secret yang bocor di riwayat Git
+kubectl get secret -n vibelearn-prod # 3. Simpan seluruh API Key di Kubernetes Secret terisolasi`,
+    proTip_id: 'Anda dapat membaca laporan lengkap beserta tautan sumber resminya (CISA, Cloudflare Radar, Wiz Security) langsung pada menu **Berita & Pembaruan (News & Updates)** di sidebar!',
+    proTip_en: 'You can read the full executive summary and official source links (CISA, Cloudflare Radar, Wiz) in the **News & Updates** module in the sidebar!'
   }
 ];
 
