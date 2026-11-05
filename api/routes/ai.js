@@ -459,51 +459,257 @@ router.get('/models', (req, res) => {
   });
 });
 
-// Dynamic Model Orchestration Response Generator
-function generateModelSpecificResponse(question, lessonTitle, lessonContent, lang, modelId) {
-  const q = question.toLowerCase();
+// ═══════════════════════════════════════════════════════════════════════════════
+// SENIOR EXPERT AI INSTRUCTOR ENGINE
+// Analyzes the user's question + full lesson content + transcript + quizzes
+// to deliver authoritative, comprehensive, mentor-grade explanations with
+// real-world analogies, Good vs Bad comparisons, runnable code, and Pro Tips.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const EXPERT_KNOWLEDGE_BASE = [
+  {
+    match: /\b(prompt|prompting|instruksi|perintah|cot|chain of thought|zero-shot|few-shot|system prompt|user prompt)\b/i,
+    title_id: 'Bedah Konsep: Prompt & Prompt Engineering',
+    title_en: 'Deep Dive: Prompts & Prompt Engineering',
+    analogy_id: 'Bayangkan AI seperti **Executive Chef bintang Michelin** yang memiliki jutaan resep di kepalanya, namun tidak tahu selera Anda. **Prompt** adalah *Order Ticket* (tiket pesanan) sekaligus *Standard Operating Procedure (SOP)* yang Anda berikan ke dapur.',
+    analogy_en: 'Think of the AI as a **Michelin-star Executive Chef** who knows millions of recipes but doesn\'t know your taste. A **Prompt** is both the *Order Ticket* and the *Standard Operating Procedure (SOP)* you hand to the kitchen.',
+    core_id: [
+      '**Definisi Teknis**: *Prompt* adalah rangkaian token masukan (teks, kode, atau konteks) yang dikirim ke *Large Language Model (LLM)* untuk mengondisikan distribusi probabilitas token berikutnya agar menghasilkan respons sesuai target.',
+      '**4 Pilar Prompt yang Efektif (Framework R-C-T-F)**:\n  1. **Role (Peran)**: Tetapkan keahlian AI (misal: *"Bertindaklah sebagai Principal Backend Engineer..."*).\n  2. **Context (Konteks)**: Jelaskan latar belakang masalah, stack teknologi, dan batasan sistem.\n  3. **Task (Tugas Spesifik)**: Instruksikan langkah kerja secara eksplisit dan terukur.\n  4. **Format (Struktur Output)**: Tentukan bentuk keluaran (JSON, tabel Markdown, atau blok kode modular).'
+    ],
+    core_en: [
+      '**Technical Definition**: A *Prompt* is the input sequence of tokens (text, code, or context) fed into a *Large Language Model (LLM)* to condition its probability distribution and steer the generated output.',
+      '**The 4 Pillars of an Expert Prompt (R-C-T-F Framework)**:\n  1. **Role**: Assign a specific persona (e.g., *"Act as a Principal Backend Engineer..."*).\n  2. **Context**: Provide system architecture, tech stack, and constraints.\n  3. **Task**: State the exact deliverable step-by-step.\n  4. **Format**: Specify the output schema (JSON, Markdown table, modular code).'
+    ],
+    code: `// ❌ PROMPT AWAM (Ambigu & Rawan Halusinasi):
+"Buatkan kode login user"
+
+// ✅ PROMPT LEVEL ENGINEER / EXPERT (Presisi Tinggi):
+"""
+Role: Senior Node.js Security Engineer
+Context: Aplikasi Express.js + PostgreSQL dengan autentikasi JWT.
+Task: Buat endpoint POST /api/auth/login yang aman dari SQL Injection & Timing Attack.
+Requirements:
+1. Gunakan parameterized query ($1) untuk cek email.
+2. Verifikasi password dengan bcrypt.compare().
+3. Kembalikan HTTP 401 generik jika gagal, dan JWT (exp: 30m) jika berhasil.
+"""`,
+    proTip_id: 'Kombinasikan **RAG (Retrieval-Augmented Generation)** untuk menyuplai data internal yang akurat, lalu gunakan **Chain-of-Thought (CoT)** (*"Mari analisis langkah demi langkah"*) agar AI tidak melompat ke kesimpulan yang salah.',
+    proTip_en: 'Combine **RAG (Retrieval-Augmented Generation)** to ground the model in factual data, then apply **Chain-of-Thought (CoT)** (*"Let\'s reason step by step"*) to prevent logical leaps and hallucinations.'
+  },
+  {
+    match: /\b(mcp|model context protocol|konteks protokol|tool calling|function calling)\b/i,
+    title_id: 'Bedah Arsitektur: Model Context Protocol (MCP)',
+    title_en: 'Architecture Deep Dive: Model Context Protocol (MCP)',
+    analogy_id: 'Secara default, LLM terisolasi di dalam "ruang kedap suara"—ia hanya tahu data saat ia dilatih. **MCP (Model Context Protocol)** adalah **jalur kabel fiber-optik standar (seperti port USB-C untuk AI)** yang menghubungkan otak AI langsung ke database live, GitHub, terminal, atau API internal perusahaan Anda secara aman.',
+    analogy_en: 'By default, an LLM is trapped in a soundproof room—it only knows its static training data. **MCP (Model Context Protocol)** is a **universal USB-C port for AI** that securely connects the model to live databases, GitHub repositories, terminals, and internal APIs.',
+    core_id: [
+      '**Mengapa MCP Penting?**: Sebelum ada MCP, setiap developer harus membuat integrasi kustom (*glue code*) untuk menghubungkan AI ke Slack, Postgres, atau Google Drive. MCP menstandarkan komunikasi tersebut menjadi satu protokol terbuka.',
+      '**3 Komponen Utama MCP**:\n  1. **MCP Host**: Aplikasi tempat Anda berinteraksi (seperti Cursor, Claude Desktop, atau IDE).\n  2. **MCP Client**: Penghubung di dalam aplikasi yang mengatur sesi protokol.\n  3. **MCP Server**: Layanan ringan yang mengekspos *Resources* (data), *Prompts* (templat), dan *Tools* (fungsi eksekusi) ke model AI.'
+    ],
+    core_en: [
+      '**Why MCP Matters**: Before MCP, connecting an LLM to Postgres, GitHub, or Slack required custom glue code for every provider. MCP standardizes context exchange into a single open protocol.',
+      '**3 Core Components**:\n  1. **MCP Host**: The AI application (IDE, chat interface).\n  2. **MCP Client**: Protocol connector maintaining 1:1 sessions.\n  3. **MCP Server**: Lightweight service exposing *Resources*, *Prompts*, and *Tools*.'
+    ],
+    code: `// Contoh deklarasi Tool pada MCP Server (Node.js)
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name === "query_customer_orders") {
+    const { customerId } = request.params.arguments;
+    const rows = await db.query("SELECT id, status, total FROM orders WHERE user_id = $1", [customerId]);
+    return { content: [{ type: "text", text: JSON.stringify(rows) }] };
+  }
+});`,
+    proTip_id: 'Selalu terapkan prinsip **Least Privilege** pada MCP Server: berikan akses *read-only* untuk kueri data, dan wajibkan konfirmasi manusia (*Human-in-the-Loop*) untuk aksi destruktif seperti `DELETE` atau `DROP`.',
+    proTip_en: 'Always enforce **Least Privilege** on MCP Servers: use read-only database credentials for queries and require *Human-in-the-Loop* approval for destructive actions.'
+  },
+  {
+    match: /\b(rag|retrieval|embedding|vector|vikingdb|rerank|halusinasi|hallucination)\b/i,
+    title_id: 'Bedah Arsitektur: RAG (Retrieval-Augmented Generation) & Vector Search',
+    title_en: 'Architecture Deep Dive: RAG & Vector Search',
+    analogy_id: 'Tanpa RAG, AI menjawab seperti mahasiswa yang ujian **tutup buku** (hanya mengandalkan hafalan lama dan bisa mengarang/halusinasi). Dengan **RAG**, AI ujian **buka buku referensi resmi**: ia mencari halaman dokumen yang relevan terlebih dahulu, baru menyusun jawaban berdasarkan fakta tertulis.',
+    analogy_en: 'Without RAG, an LLM takes a **closed-book exam** (relying on memory and risking hallucination). With **RAG**, it takes an **open-book exam**: retrieving verified reference paragraphs before synthesizing the answer.',
+    core_id: [
+      '**Alur Kerja Pipeline RAG**:\n  1. **Ingestion & Chunking**: Dokumen dipecah menjadi potongan teks (*chunks*) berukuran 300–500 token.\n  2. **Embedding**: Setiap potongan diubah menjadi vektor angka berdimensi tinggi (misal 1024 dimensi) menggunakan model embedding.\n  3. **Vector Retrieval (VikingDB / pgvector)**: Saat user bertanya, pertanyaan diubah menjadi vektor lalu dicari kemiripan semantiknya (*Cosine Similarity*).\n  4. **Reranking & Generation**: Hasil teratas diurutkan ulang oleh *Cross-Encoder Reranker* lalu disuntikkan ke dalam System Prompt LLM.'
+    ],
+    core_en: [
+      '**RAG Pipeline Stages**:\n  1. **Ingestion & Chunking**: Split documents into 300–500 token semantic chunks.\n  2. **Embedding**: Convert text chunks into dense high-dimensional vectors.\n  3. **Vector Retrieval**: Compute cosine similarity against the user query.\n  4. **Reranking & Generation**: Re-score top chunks and inject them into the LLM prompt.'
+    ],
+    code: `// Alur RAG Grounding pada Backend AI
+const relevantChunks = await vectorDB.search({ queryVector, topK: 5 });
+const groundedPrompt = \`Jawab pertanyaan HANYA berdasarkan referensi berikut:
+<context>
+\${relevantChunks.map(c => c.text).join("\\n---\\n")}
+</context>
+Pertanyaan: \${userQuestion}\`;`,
+    proTip_id: 'Jangan hanya mengandalkan *Vector Search* murni. Gunakan **Hybrid Search (Dense Vector + BM25 Keyword)** ditambah **Reranker** untuk meningkatkan akurasi pencarian istilah teknis atau kode produk hingga 35%.',
+    proTip_en: 'Combine **Dense Vector Search + BM25 Keyword Search (Hybrid Search)** with a **Reranker** to boost retrieval accuracy on exact technical terms and IDs.'
+  },
+  {
+    match: /\b(rate limit|usage limit|batas|kuota|429|throttle|token limit)\b/i,
+    title_id: 'Bedah Infrastruktur: Rate Limit vs Usage Limit pada API AI',
+    title_en: 'Infrastructure Deep Dive: Rate Limits vs Usage Limits',
+    analogy_id: '**Rate Limit** adalah **lebar pintu tol** (berapa mobil/request yang boleh lewat per detik/menit agar jalan tidak macet total). Sedangkan **Usage Limit** adalah **saldo e-Toll bulanan Anda** (total pemakaian maksimum dalam satu periode tagihan).',
+    analogy_en: '**Rate Limit** is the **number of highway toll lanes** (how many requests can pass per minute without crashing the server). **Usage Limit** is your **monthly toll card balance** (total budget/quota for the billing cycle).',
+    core_id: [
+      '**RPM (Requests Per Minute) & TPM (Tokens Per Minute)**: Batas kecepatan trafik real-time. Jika terlampaui, server mengembalikan status **HTTP 429 Too Many Requests**.',
+      '**Usage Limit (Kuota Bulanan / Hard Cap)**: Batas total konsumsi token atau anggaran dolar pada akun Anda. Jika habis, API akan menolak panggilan hingga kuota di-reset atau di-top-up.'
+    ],
+    core_en: [
+      '**RPM & TPM (Rate Limits)**: Real-time traffic throughput caps. Exceeding them triggers **HTTP 429 Too Many Requests**.',
+      '**Usage Limits (Quota / Spend Cap)**: Total monthly token or budget allowance.'
+    ],
+    code: `// Pola Standar Industri: Exponential Backoff + Jitter saat menghadapi HTTP 429
+async function callWithRetry(fn, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try { return await fn(); }
+    catch (err) {
+      if (err.status !== 429 || i === retries - 1) throw err;
+      const delay = Math.pow(2, i) * 1000 + Math.random() * 300;
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}`,
+    proTip_id: 'Di lingkungan produksi, selalu pasang **Response Caching (Redis)** untuk pertanyaan berulang dan terapkan **Exponential Backoff** agar aplikasi Anda tidak langsung gagal saat terjadi lonjakan trafik.',
+    proTip_en: 'In production, implement **Semantic/Response Caching** and **Exponential Backoff with Jitter** to handle burst traffic gracefully.'
+  },
+  {
+    match: /\b(vps|paas|deploy|deployment|hosting|coolify|vercel|docker|kubernetes|k3s|ci\/cd|git|github)\b/i,
+    title_id: 'Bedah DevOps: VPS vs PaaS, Git Workflow & Arsitektur Deployment',
+    title_en: 'DevOps Deep Dive: VPS vs PaaS, Git & Deployment Architecture',
+    analogy_id: '**VPS (Virtual Private Server)** seperti menyewa **ruko kosong**: murah dan bebas dimodifikasi, tetapi Anda harus memasang listrik, pipa air, dan satpam sendiri (setup Linux, Nginx, SSL, Firewall). **PaaS (Coolify/Vercel)** seperti menyewa **gerai siap pakai di mal**: Anda cukup membawa resep (kode GitHub), dan sistem otomatis mengurus build, SSL, dan publikasi.',
+    analogy_en: '**VPS** is like renting an **empty building shell**: full control, but you manage Linux, Nginx, SSL, and firewalls yourself. **PaaS (Coolify/Vercel)** is a **turnkey mall kiosk**: push your code to GitHub and the platform handles build, SSL, and routing automatically.',
+    core_id: [
+      '**Git & GitHub (Single Source of Truth)**: Menyimpan setiap riwayat perubahan kode (*commit*). Jika rilisan terbaru menyebabkan bug, Anda bisa melakukan *rollback* dalam hitungan detik.',
+      '**Alur CI/CD Modern**: `Kode Lokal` → `git push origin main` → `Automated Build & Test (Docker)` → `Zero-Downtime Rolling Update` → `Live di Domain Produksi`.'
+    ],
+    core_en: [
+      '**Git & GitHub**: Version control system tracking every commit for instant rollback and team collaboration.',
+      '**Modern CI/CD Pipeline**: `Local IDE` → `git push` → `Docker Container Build` → `Zero-Downtime Rolling Update`.'
+    ],
+    code: `# Alur Standar Engineer untuk Rilis ke Produksi:
+git status                        # 1. Periksa file yang berubah
+git add .                         # 2. Masukkan ke staging area
+git commit -m "feat: add auth"    # 3. Simpan snapshot dengan pesan semantik
+git push origin main              # 4. Trigger CI/CD pipeline otomatis`,
+    proTip_id: 'Jangan pernah menyimpan kredensial seperti `DATABASE_URL` atau `API_KEY` di dalam kode Git! Selalu gunakan **Environment Variables (`.env` / Kubernetes Secrets)**.',
+    proTip_en: 'Never commit secrets (`DATABASE_URL`, `API_KEY`) to Git. Always inject them via **Environment Variables** or **Kubernetes Secrets**.'
+  },
+  {
+    match: /\b(sealsuite|dlp|zero trust|virus|malware|ransomware|trojan|worm|spyware|keylogger|phishing|hack|hacking|wireshark|nmap|metasploit|burp|byod|edr|mdm)\b/i,
+    title_id: 'Bedah Cyber Security: SealSuite Zero Trust, DLP & Mitigasi Ancaman Siber',
+    title_en: 'Cybersecurity Deep Dive: SealSuite Zero Trust, DLP & Threat Mitigation',
+    analogy_id: 'Keamanan jaringan tradisional seperti **kastil dengan parit**: begitu penyusup berhasil masuk ke dalam benteng, ia bebas mengambil apa saja. **Zero Trust (SealSuite)** bekerja seperti **bandara internasional**: setiap orang, perangkat, dan dokumen diperiksa identitas, kesehatan perangkat, serta izinnya secara terus-menerus (*"Never Trust, Always Verify"*).',
+    analogy_en: 'Traditional perimeter security is like a **castle moat**: once inside, an attacker moves freely. **Zero Trust (SealSuite)** operates like an **international airport**: continuously verifying identity, device posture, and data permissions (*"Never Trust, Always Verify"*).',
+    core_id: [
+      '**Klasifikasi Malware Utama**:\n  - **Ransomware**: Mengenkripsi file penting dan meminta tebusan.\n  - **Trojan & Spyware/Infostealer**: Menyamar sebagai aplikasi normal untuk mencuri *session cookie*, password, dan ketikan keyboard (*Keylogger*).\n  - **Worm**: Menyebar otomatis antar komputer melalui celah jaringan tanpa perlu klik user.',
+      '**Pertahanan Berlapis dengan SealSuite**:\n  1. **Zero Trust Network Access (ZTNA)**: Memvalidasi identitas (SSO + MFA) dan kesehatan perangkat sebelum mengizinkan akses ke aplikasi kerja.\n  2. **Data Loss Prevention (DLP)**: Mencegah kebocoran dokumen rahasia (memblokir upload ke web pribadi, menyematkan *Screen Watermark* anti-foto, dan mengenkripsi file kerja).\n  3. **Endpoint Detection (EDR) & BYOD Sandbox**: Memisahkan ruang kerja perusahaan dari aplikasi pribadi di laptop/HP karyawan.'
+    ],
+    core_en: [
+      '**Core Malware Categories**: Ransomware (encrypts data for ransom), Trojans/Infostealers (steals credentials/cookies), and Worms (self-propagating network malware).',
+      '**SealSuite Defense-in-Depth**: Combines **ZTNA** (identity + device posture verification), **DLP** (screen watermarks, upload blocking, file encryption), and **EDR/BYOD Containerization**.'
+    ],
+    code: `// Kebijakan Zero Trust Access Control (Konsep Evaluasi Konteks Real-Time)
+function evaluateZeroTrustAccess(user, device, resource) {
+  if (!user.mfaVerified) return { allow: false, reason: "MFA wajib aktif" };
+  if (!device.edrHealthy || device.osOutdated) return { allow: false, reason: "Perangkat tidak memenuhi standar keamanan" };
+  return { allow: true, watermark: true, dlpPolicy: "STRICT_NO_EXTERNAL_UPLOAD" };
+}`,
+    proTip_id: 'Lebih dari 80% insiden pembobolan berawal dari *Phishing* dan pencurian *Session Token*. Pastikan selalu menggunakan **MFA (Multi-Factor Authentication)**, jangan pernah menginstal software bajakan/crack, dan patuhi peringatan DLP pada perangkat kerja.',
+    proTip_en: 'Over 80% of breaches start with phishing or stolen session tokens. Always enforce MFA, avoid untrusted binaries, and respect DLP policies.'
+  },
+  {
+    match: /\b(vibe coding|cursor|windsurf|antigravity|copilot|agent|subagent|orchestrat|ide)\b/i,
+    title_id: 'Bedah Metodologi: Vibe Coding & AI Agent Orchestration',
+    title_en: 'Methodology Deep Dive: Vibe Coding & AI Agent Orchestration',
+    analogy_id: 'Dalam **Vibe Coding**, peran Anda naik kelas dari **tukang batu** (yang mengetik setiap titik-koma secara manual) menjadi **Arsitek & Konduktor Orkestra**. Anda menentukan spesifikasi desain, batasan keamanan, dan memvalidasi hasil kerja agen AI.',
+    analogy_en: 'In **Vibe Coding**, you graduate from a **bricklayer** (typing every semicolon manually) to a **Software Architect & Orchestra Conductor**, directing AI agents with clear specs and verifying their output.',
+    core_id: [
+      '**Prinsip Utama Vibe Coding Profesional**:\n  1. **Spec-Driven Development**: Tulis kebutuhan fitur, skema database, dan kriteria sukses sebelum meminta AI menulis kode.\n  2. **Iterative Small Steps**: Bangun fitur secara modular (buat API dulu → uji → buat UI → integrasikan), jangan meminta seluruh aplikasi dalam satu prompt raksasa.\n  3. **Verify & Audit**: Selalu baca *diff* perubahan kode, jalankan build/test, dan periksa celah keamanan sebelum melakukan deploy.'
+    ],
+    core_en: [
+      '**Core Principles of Professional Vibe Coding**:\n  1. **Spec-Driven Development**: Define data models and edge cases first.\n  2. **Incremental Iteration**: Build and test in small vertical slices.\n  3. **Human Verification**: Review diffs, run automated tests, and audit security.'
+    ],
+    code: `// Pola Alur Kerja Vibe Coding yang Disarankan:
+// Langkah 1: Minta AI membuat rencana (Plan) & kontrak data
+// Langkah 2: Eksekusi perubahan terfokus pada file terkait
+// Langkah 3: Jalankan verifikasi otomatis (npm run build / test)`,
+    proTip_id: 'Saat AI menemui error yang berulang, jangan hanya mengatakan *"masih error"*. Lampirkan **pesan error lengkap (stack trace)**, baris kode terkait, dan hasil yang Anda harapkan agar AI dapat langsung menemukan akar masalahnya (*Root Cause*).',
+    proTip_en: 'When debugging with AI, never just say *"it doesn\'t work"*. Always paste the exact **error stack trace**, expected behavior, and relevant file context.'
+  }
+];
+
+function extractLessonInsights(lessonContent, lessonTranscript) {
+  const combined = `${lessonContent || ''}\n${lessonTranscript || ''}`;
+  const cleanLines = combined
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .split('\n')
+    .map(l => l.replace(/^[#>*-\d.]+\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim())
+    .filter(l => l.length > 25 && !l.startsWith('http') && !l.startsWith('|'));
+  return cleanLines.slice(0, 6);
+}
+
+// Dynamic Expert Instructor Response Generator (Fallback / Hybrid Engine)
+function generateModelSpecificResponse(question, lessonTitle, lessonContent, lang, modelId, lessonTranscript = '', lessonQuizzes = []) {
+  const q = question.trim();
+  const qLower = q.toLowerCase();
   const isId = lang === 'id';
   const model = AVAILABLE_MODELS.find(m => m.id === modelId) || AVAILABLE_MODELS[0];
 
-  const isAboutCode     = /code|kode|function|fungsi|syntax|component|react|node|javascript|error|debug|refactor/.test(q);
-  const isAboutSecurity = /security|keamanan|hack|inject|xss|sql|auth|token|leak|protect|guard/.test(q);
-  const isAboutDeploy   = /deploy|coolify|github|docker|server|vps|ssh|ci\/cd|pipeline/.test(q);
-  const isAboutRAG      = /rag|vector|embedding|vikingdb|database|retrieval|search|rerank/.test(q);
+  // 1. Check if the question matches a specialized topic in our Expert Knowledge Base
+  const matchedTopic = EXPERT_KNOWLEDGE_BASE.find(topic => topic.match.test(qLower))
+    || EXPERT_KNOWLEDGE_BASE.find(topic => topic.match.test(`${lessonTitle} ${(lessonContent || '').slice(0, 400)}`));
 
-  let response = '';
+  // 2. Extract relevant points directly from the current lesson's markdown & transcript
+  const lessonPoints = extractLessonInsights(lessonContent, lessonTranscript);
+  const codeBlockMatch = (lessonContent || '').match(/```(?!mermaid)(\w+)?\n([\s\S]*?)```/);
+  const lessonCodeSnippet = codeBlockMatch ? codeBlockMatch[2].trim() : null;
 
-  if (model.vendor === 'DeepSeek') {
-    if (model.id === 'deepseek-coder' || isAboutCode) {
-      response = isId
-        ? `💻 **[${model.displayName} — ${model.vendor}]**\n\nAnalisis Kode Berpresisi Tinggi untuk **${lessonTitle}**:\n\n\`\`\`javascript\n// Pola teroptimasi untuk materi ini\nexport const executeTask = async (payload) => {\n  // 1. Validasi input konteks\n  if (!payload) throw new Error("Invalid payload");\n  \n  // 2. Eksekusi alur cerdas\n  return { success: true, timestamp: Date.now(), lesson: "${lessonTitle}" };\n};\n\`\`\`\n\n📌 **Catatan Teknis**: Pola ini meminimalkan overhead memori dan menjamin konsistensi tipe saat dijalankan di Node.js runtime.`
-        : `💻 **[${model.displayName} — ${model.vendor}]**\n\nHigh-Precision Code Synthesis for **${lessonTitle}**:\n\n\`\`\`javascript\n// Optimized pattern for this module\nexport const executeTask = async (payload) => {\n  // 1. Context input validation\n  if (!payload) throw new Error("Invalid payload");\n  \n  // 2. Intelligent flow execution\n  return { success: true, timestamp: Date.now(), lesson: "${lessonTitle}" };\n};\n\`\`\`\n\n📌 **Technical Note**: This pattern minimizes memory overhead and ensures strict execution stability across Node.js runtimes.`;
-    } else {
-      response = isId
-        ? `🔬 **[${model.displayName} — ${model.vendor}]**\n\nPenalaran Sintetis untuk **${lessonTitle}**:\n\n"${question}"\n\n• **Spesialisasi Model**: ${model.specialization}\n• **Kesimpulan**: Konsep ini memberikan fondasi arsitektural yang kuat untuk skalabilitas aplikasi AI.`
-        : `🔬 **[${model.displayName} — ${model.vendor}]**\n\nSynthetic Reasoning for **${lessonTitle}**:\n\n"${question}"\n\n• **Model Specialization**: ${model.specialization}\n• **Verdict**: Adhering to this principle establishes a resilient architectural foundation for production AI workloads.`;
-    }
-  } else if (model.vendor === 'Z.AI') {
-    response = isId
-      ? `⚡ **[${model.displayName} — Z.AI]**\n\nEksekusi Alur Kerja untuk **${lessonTitle}**:\n\n1. **Identifikasi Kebutuhan**: "${question}"\n2. **Rekomendasi Cepat**: Terapkan metode terstruktur dengan memanfaatkan tool calling dan format respons berbasis JSON.\n3. **Efisiensi**: Model ${model.displayName} mengoptimalkan latensi tanpa mengurangi akurasi semantik.`
-      : `⚡ **[${model.displayName} — Z.AI]**\n\nWorkflow Execution for **${lessonTitle}**:\n\n1. **Requirement Analysis**: "${question}"\n2. **Actionable Directive**: Apply structured prompts and enforce JSON schema responses for reliable tool integration.\n3. **Throughput**: ${model.displayName} delivers ultra-fast latency with high semantic precision.`;
-  } else {
-    // ByteDance Family (Seedance, Doubao, Oceanus, VikingDB, etc.)
-    if (isAboutRAG || model.id.includes('vikingdb')) {
-      response = isId
-        ? `🔍 **[${model.displayName} — BytePlus VikingDB]**\n\nAnalisis Retrieval & Vektor untuk **${lessonTitle}**:\n\n• **Vector Similarity**: Mengindeks dokumen modul ke dalam ruang berdimensi tinggi.\n• **Context Grounding**: Menemukan potongan teks yang paling relevan dengan akurasi semantik 99%.\n• **Hasil**: Menghilangkan halusinasi pada model LLM saat menjawab query seputar ${lessonTitle}.`
-        : `🔍 **[${model.displayName} — BytePlus VikingDB]**\n\nVector Retrieval & RAG Analysis for **${lessonTitle}**:\n\n• **Vector Similarity**: Indexes module documents into high-dimensional semantic space.\n• **Context Grounding**: Retrieves relevant knowledge chunks with 99% contextual precision.\n• **Result**: Eliminates LLM hallucinations when querying ${lessonTitle}.`;
-    } else if (isAboutDeploy) {
-      response = isId
-        ? `🚀 **[${model.displayName} — BytePlus ModelArk]**\n\nAlur Deployment Otomatis untuk **${lessonTitle}**:\n\n1. **Local Setup**: Kode ditulis di Antigravity IDE.\n2. **Version Control**: Push ke GitHub (\`git push origin main\`).\n3. **Coolify CI/CD**: Webhook memicu build Docker otomatis di region \`ap-southeast-1\`.\n4. **Live URL**: Aplikasi live di \`https://vibe.virtuenet.space\` tanpa downtime.`
-        : `🚀 **[${model.displayName} — BytePlus ModelArk]**\n\nAutomated Deployment Pipeline for **${lessonTitle}**:\n\n1. **Local Development**: Code authored inside Antigravity IDE.\n2. **Version Control**: Git push to GitHub repository (\`git push origin main\`).\n3. **Coolify CI/CD**: Webhook triggers automated Docker build in \`ap-southeast-1\` region.\n4. **Zero Downtime**: App deploys live to \`https://vibe.virtuenet.space\` seamlessly.`;
-    } else {
-      response = isId
-        ? `✨ **[${model.displayName} — ByteDance ModelArk]**\n\nPenjelasan Interaktif untuk **${lessonTitle}**:\n\n${question}\n\n• **Inti Pembelajaran**: Menguasai konsep ini adalah kunci dalam akselerasi Vibe Coding dan AI orchestration.\n• **Praktek Terbaik**: Gunakan Interactive Lab untuk menguji variasi prompt dan implementasi kode secara langsung.`
-        : `✨ **[${model.displayName} — ByteDance ModelArk]**\n\nInteractive Explanation for **${lessonTitle}**:\n\n${question}\n\n• **Core Learning**: Mastering this concept is critical for high-velocity Vibe Coding and AI orchestration.\n• **Best Practice**: Open the Interactive Lab to experiment with prompt variations and live code execution.`;
-    }
+  // 3. Check if user is asking for quiz help
+  const isAskingQuiz = /\b(quiz|kuis|jawaban|soal|pertanyaan|answer|test|ujian)\b/i.test(qLower);
+  if (isAskingQuiz && Array.isArray(lessonQuizzes) && lessonQuizzes.length > 0) {
+    const quizGuide = lessonQuizzes.slice(0, 4).map((qz, idx) => {
+      const correctOpt = Array.isArray(qz.options) ? qz.options[qz.correct_answer] : '';
+      return `${idx + 1}. **${qz.question}**\n   - ✅ **Konsep Kunci**: ${correctOpt || ''}\n   - 💡 *Penjelasan*: ${qz.explanation || 'Perhatikan prinsip utama pada materi di atas.'}`;
+    }).join('\n\n');
+
+    return isId
+      ? `🎓 **Panduan Instruktur Ahli — Pembahasan Materi & Kuis (${lessonTitle})**\n\nMari kita bedah poin-poin krusial pada modul ini agar Anda tidak sekadar menghafal jawaban, melainkan benar-benar memahami konsep di baliknya:\n\n${quizGuide}\n\n---\n💡 **Tips Instruktur**: Sebelum memilih jawaban, tanyakan pada diri Anda: *"Apa risiko atau dampak teknis jika prinsip ini dilanggar di sistem nyata?"* Jika ada nomor soal tertentu yang ingin kita diskusikan lebih dalam, sebutkan saja!`
+      : `🎓 **Expert Instructor Guide — Quiz & Concept Breakdown (${lessonTitle})**\n\nLet's break down the core concepts tested in this module so you master the underlying engineering principles:\n\n${quizGuide}\n\n---\n💡 **Instructor Tip**: Always ask yourself *"What breaks in production if this principle is violated?"* Let me know if you want to dive deeper into any specific question!`;
   }
 
-  return response;
+  // 4. Build an authoritative, structured, expert-level response
+  if (matchedTopic) {
+    const title = isId ? matchedTopic.title_id : matchedTopic.title_en;
+    const analogy = isId ? matchedTopic.analogy_id : matchedTopic.analogy_en;
+    const cores = isId ? matchedTopic.core_id : matchedTopic.core_en;
+    const proTip = isId ? matchedTopic.proTip_id : matchedTopic.proTip_en;
+
+    const lessonConnection = lessonPoints.length > 0
+      ? (isId
+          ? `\n### 🔗 Kaitan Langsung dengan Materi "${lessonTitle}"\nBerdasarkan modul yang sedang Anda pelajari:\n${lessonPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}\n`
+          : `\n### 🔗 Direct Connection to "${lessonTitle}"\nFrom your current lesson material:\n${lessonPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}\n`)
+      : '';
+
+    return isId
+      ? `🎓 **${title}**\n*(Dijawab oleh Instruktur Ahli AI • Model: \`${model.displayName}\`)*\n\nPertanyaan yang sangat bagus: **"${q}"** — Mari kita bedah secara tuntas dari konsep dasar, analogi dunia nyata, hingga praktik terbaik di industri.\n\n### 💡 1. Analogi Sederhana (Mental Model)\n${analogy}\n\n### 🧠 2. Penjelasan Teknis Mendalam\n${cores.map(c => `- ${c}`).join('\n')}\n${lessonConnection}\n### 💻 3. Contoh Implementasi & Praktik Nyata\n\`\`\`javascript\n${lessonCodeSnippet || matchedTopic.code}\n\`\`\`\n\n> 🚀 **Pro-Tip Instruktur**: ${proTip}\n\nApakah Anda ingin saya berikan contoh kasus tambahan atau ingin langsung mempraktikkannya pada skenario Anda sendiri?`
+      : `🎓 **${title}**\n*(Answered by Expert AI Instructor • Model: \`${model.displayName}\`)*\n\nGreat question: **"${q}"** — Let's break this down from mental models to production-grade engineering practices.\n\n### 💡 1. Mental Model & Real-World Analogy\n${analogy}\n\n### 🧠 2. Technical Deep Dive\n${cores.map(c => `- ${c}`).join('\n')}\n${lessonConnection}\n### 💻 3. Practical Implementation Example\n\`\`\`javascript\n${lessonCodeSnippet || matchedTopic.code}\n\`\`\`\n\n> 🚀 **Instructor Pro-Tip**: ${proTip}\n\nWould you like to explore a real-world edge case or test this concept on your own project scenario?`;
+  }
+
+  // 5. Fallback for any general question: synthesize directly from the lesson's actual content & transcript
+  const keyBullets = lessonPoints.length > 0
+    ? lessonPoints.map(p => `- ${p}`).join('\n')
+    : (isId
+        ? `- Memahami struktur masalah secara sistematis sebelum menulis kode atau instruksi.\n- Menerapkan standar keamanan, efisiensi, dan verifikasi berlapis.`
+        : `- Structuring the problem systematically before writing code or prompts.\n- Applying security, efficiency, and multi-layer verification.`);
+
+  const codeSection = lessonCodeSnippet
+    ? `\n### 💻 Contoh Teknis dari Modul Ini\n\`\`\`javascript\n${lessonCodeSnippet}\n\`\`\`\n`
+    : '';
+
+  return isId
+    ? `🎓 **Analisis Instruktur Ahli — ${lessonTitle}**\n*(Model Aktif: \`${model.displayName}\`)*\n\nMenjawab pertanyaan Anda: **"${q}"**\n\nDalam konteks **${lessonTitle}**, konsep ini merupakan fondasi yang membedakan pengguna awam dengan seorang praktisi profesional. Berikut adalah bedah mendalamnya:\n\n### 🧠 Poin Inti yang Wajib Anda Kuasai\n${keyBullets}\n${codeSection}\n### 🛠️ Cara Menerapkannya di Dunia Nyata\n1. **Pahami Konteks & Tujuan**: Jangan langsung mengeksekusi tanpa mendefinisikan input, batasan keamanan, dan output yang diharapkan.\n2. **Iterasi & Validasi**: Uji pemahaman Anda menggunakan contoh skala kecil terlebih dahulu, lalu evaluasi hasilnya secara kritis.\n3. **Standar Produksi**: Pastikan setiap solusi yang Anda bangun terdokumentasi dan mudah dipelihara oleh tim.\n\n> 💡 **Saran Instruktur**: Coba tanyakan *"Bagaimana contoh kasus nyata jika konsep di ${lessonTitle} ini diterapkan di perusahaan?"* atau sebutkan bagian spesifik yang masih terasa membingungkan agar saya bisa menjelaskannya dengan analogi yang lebih dekat dengan pekerjaan Anda!`
+    : `🎓 **Expert Instructor Analysis — ${lessonTitle}**\n*(Active Model: \`${model.displayName}\`)*\n\nAddressing your question: **"${q}"**\n\nIn the context of **${lessonTitle}**, mastering this concept separates beginners from production-ready practitioners. Here is the structured breakdown:\n\n### 🧠 Core Engineering Takeaways\n${keyBullets}\n${codeSection}\n### 🛠️ How to Apply This in Practice\n1. **Define Context & Constraints**: Always clarify inputs, security boundaries, and expected outputs first.\n2. **Iterate & Validate**: Test in small increments and verify results critically.\n3. **Production Readiness**: Ensure your implementation is maintainable and observable.\n\n> 💡 **Instructor Tip**: Feel free to ask *"Can you give me a real-world company scenario for ${lessonTitle}?"* or point out any specific section you'd like me to unpack further!`;
 }
 
 // Helper: load AI settings from system_settings table
@@ -610,16 +816,25 @@ router.post('/ask', auth, async (req, res) => {
 
     const selectedModel = AVAILABLE_MODELS.find(m => m.id === model) || AVAILABLE_MODELS[0];
 
-    // Get lesson context
+    // Get lesson context (content, transcript, and quizzes for deep contextual mentoring)
     let lessonTitle = 'this lesson';
     let lessonContent = '';
+    let lessonTranscript = '';
+    let lessonQuizzes = [];
     if (lesson_id) {
       try {
-        const result = await pool.query('SELECT title, content, content_id FROM lessons WHERE id = $1', [lesson_id]);
+        const result = await pool.query(
+          'SELECT title, title_id, content, content_id, transcript, transcript_id FROM lessons WHERE id = $1',
+          [lesson_id]
+        );
         if (result.rows.length) {
-          lessonTitle = result.rows[0].title;
-          lessonContent = (lang === 'id' && result.rows[0].content_id) ? result.rows[0].content_id : result.rows[0].content;
+          const row = result.rows[0];
+          lessonTitle = (lang === 'id' && row.title_id) ? row.title_id : row.title;
+          lessonContent = (lang === 'id' && row.content_id) ? row.content_id : row.content;
+          lessonTranscript = (lang === 'id' && row.transcript_id) ? row.transcript_id : (row.transcript || '');
         }
+        const qzRes = await pool.query('SELECT question, options, correct_answer, explanation FROM quizzes WHERE lesson_id = $1 ORDER BY id', [lesson_id]);
+        lessonQuizzes = qzRes.rows || [];
       } catch {}
     }
 
@@ -633,18 +848,37 @@ router.post('/ask', auth, async (req, res) => {
     const endpoint = aiSettings.ai_byteplus_endpoint || process.env.BYTEPLUS_ARK_ENDPOINT || `${gatewayBase}/chat/completions`;
 
     if (aiEnabled && apiKey && apiKey.length > 10) {
-      const systemPrompt = `You are Promptara's AI Instructor running model ${selectedModel.displayName} (${selectedModel.vendor}).
-You are tutoring a student on the lesson: "${lessonTitle}".
-Reply in ${lang === 'id' ? 'Bahasa Indonesia' : 'English'}. Be educational, concise, and provide actionable coding guidance.
-Always format code examples with markdown code blocks.`;
+      const contextExcerpt = `${(lessonContent || '').slice(0, 1500)}\n${(lessonTranscript || '').slice(0, 1000)}`.trim();
+      const systemPrompt = `You are a Principal AI & Cybersecurity Instructor on Promptara (powered by ${selectedModel.displayName} - ${selectedModel.vendor}).
+You are mentoring a student on the lesson: "${lessonTitle}".
+Lesson Material Reference:
+"""
+${contextExcerpt}
+"""
+Instructions:
+1. Reply in ${lang === 'id' ? 'Bahasa Indonesia' : 'English'} with the authority, clarity, and warmth of a world-class Principal Engineer and Senior Mentor.
+2. Structure your answer with:
+   - 💡 A vivid real-world analogy (Mental Model)
+   - 🧠 Deep technical explanation grounded in the lesson material
+   - 💻 Concrete, practical examples or code snippets (Good vs Bad practice)
+   - 🚀 An actionable Pro-Tip.
+3. Never give generic filler or repeat the user's question without answering it.`;
       const targetModelId = selectedModel.id === 'dreamina-seedance-2-5' ? (process.env.OPENAI_MODEL || 'dola-seed-2-1-turbo-260628') : selectedModel.id;
       answer = await callExternalLLM(apiKey, endpoint, targetModelId, systemPrompt, question.trim());
     }
 
-    // ─── Fallback to built-in contextual engine ───
+    // ─── Fallback to Senior Expert Instructor Engine ───
     if (!answer && fallbackEnabled) {
-      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 400));
-      answer = generateModelSpecificResponse(question.trim(), lessonTitle, lessonContent, lang, selectedModel.id);
+      await new Promise(resolve => setTimeout(resolve, 350));
+      answer = generateModelSpecificResponse(
+        question.trim(),
+        lessonTitle,
+        lessonContent,
+        lang,
+        selectedModel.id,
+        lessonTranscript,
+        lessonQuizzes
+      );
     }
 
     if (!answer) {

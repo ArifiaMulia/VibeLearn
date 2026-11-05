@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sparkles, Send, X, ChevronDown, ChevronUp, Loader2, Bot, User, Check, RefreshCw, Search, Shield, Cpu } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -454,7 +456,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {/* Messages Container */}
           <div style={{
-            maxHeight: 340,
+            maxHeight: 480,
             overflowY: 'auto',
             padding: '0.85rem',
             display: 'flex',
@@ -469,7 +471,7 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                     padding: '0.25rem 0.6rem', background: 'rgba(255,255,255,0.03)',
                     borderRadius: 12, margin: '0.2rem auto', maxWidth: '85%'
                   }}>
-                    {msg.text}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                   </div>
                 );
               }
@@ -494,26 +496,71 @@ export default function AskInstructor({ lessonId, lessonTitle, lessonType }) {
                     {isUser ? <User size={14} color="white" /> : <Bot size={14} color="white" />}
                   </div>
                   <div style={{
-                    maxWidth: '82%',
-                    padding: '0.75rem 0.95rem',
+                    maxWidth: isUser ? '80%' : '90%',
+                    padding: '0.85rem 1.05rem',
                     background: isUser ? 'rgba(124,58,237,0.15)' : 'var(--bg-surface)',
                     border: `1px solid ${isUser ? 'rgba(124,58,237,0.3)' : 'var(--border-light)'}`,
                     borderRadius: isUser ? '14px 4px 14px 14px' : '4px 14px 14px 14px',
-                    fontSize: '0.84rem', lineHeight: 1.6, color: 'var(--text-secondary)',
-                    whiteSpace: 'pre-wrap'
+                    fontSize: '0.85rem', lineHeight: 1.65, color: 'var(--text-secondary)',
+                    overflowX: 'auto'
                   }}>
                     {!isUser && (
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: '0.4rem',
                         fontSize: '0.68rem', color: '#f97316', fontWeight: 800,
-                        marginBottom: '0.35rem', fontFamily: 'monospace'
+                        marginBottom: '0.45rem', fontFamily: 'monospace',
+                        paddingBottom: '0.35rem', borderBottom: '1px solid var(--border-light)'
                       }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
                         {msg.model || activeModelObj.name}
                         {msg.vendor && <span style={{ color: '#71717a', fontWeight: 500 }}>({msg.vendor})</span>}
+                        <span style={{ marginLeft: 'auto', fontSize: '0.62rem', background: 'rgba(16,185,129,0.12)', color: '#10b981', padding: '0.1rem 0.4rem', borderRadius: 4 }}>
+                          EXPERT MENTOR
+                        </span>
                       </div>
                     )}
-                    {msg.text}
+                    {isUser ? (
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                    ) : (
+                      <div className="ai-instructor-markdown">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h3: ({node, ...props}) => <h4 style={{ margin: '0.85rem 0 0.4rem', fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }} {...props} />,
+                            p: ({node, ...props}) => <p style={{ margin: '0 0 0.65rem' }} {...props} />,
+                            ul: ({node, ...props}) => <ul style={{ margin: '0 0 0.65rem 1.15rem', padding: 0 }} {...props} />,
+                            ol: ({node, ...props}) => <ol style={{ margin: '0 0 0.65rem 1.15rem', padding: 0 }} {...props} />,
+                            li: ({node, ...props}) => <li style={{ marginBottom: '0.3rem' }} {...props} />,
+                            strong: ({node, ...props}) => <strong style={{ color: 'var(--text-primary)', fontWeight: 700 }} {...props} />,
+                            blockquote: ({node, ...props}) => (
+                              <blockquote style={{
+                                margin: '0.65rem 0', padding: '0.6rem 0.85rem',
+                                borderLeft: '3px solid #f97316', background: 'rgba(249,115,22,0.08)',
+                                borderRadius: '0 8px 8px 0', color: 'var(--text-primary)', fontSize: '0.82rem'
+                              }} {...props} />
+                            ),
+                            code: ({node, inline, className, children, ...props}) => {
+                              return !inline ? (
+                                <pre style={{
+                                  background: '#11111b', padding: '0.75rem 0.9rem', borderRadius: 8,
+                                  overflowX: 'auto', margin: '0.5rem 0 0.75rem', border: '1px solid #27272a',
+                                  fontSize: '0.78rem', lineHeight: 1.5
+                                }}>
+                                  <code style={{ color: '#cdd6f4', fontFamily: 'monospace' }} {...props}>{children}</code>
+                                </pre>
+                              ) : (
+                                <code style={{
+                                  background: 'rgba(124,58,237,0.15)', padding: '0.12rem 0.38rem',
+                                  borderRadius: 4, color: 'var(--primary)', fontFamily: 'monospace', fontSize: '0.82em'
+                                }} {...props}>{children}</code>
+                              );
+                            }
+                          }}
+                        >
+                          {msg.text}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                     <div style={{
                       fontSize: '0.65rem', color: 'var(--text-muted)',
                       marginTop: '0.35rem', textAlign: isUser ? 'right' : 'left'
