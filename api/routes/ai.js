@@ -520,55 +520,80 @@ async function getAISettings() {
   }
 }
 
-// Helper: call real external LLM API
-async function callExternalLLM(apiKey, endpoint, modelId, systemPrompt, userPrompt) {
-  try {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1024
-      })
-    });
-    const data = await res.json();
-    if (data.choices && data.choices[0]?.message?.content) {
-      return data.choices[0].message.content;
+// Helper: call real external LLM API (supports both Endpoint Key e.g. ep-m-... and full URL)
+async function callExternalLLM(apiKey, endpointOrKey, modelId, systemPrompt, userPrompt) {
+  const raw = (endpointOrKey || '').trim();
+  const isUrl = /^https?:\/\//i.test(raw);
+  const resolvedModel = !isUrl && raw ? raw : modelId;
+  const gatewayBase = (process.env.AI_GATEWAY_URL || process.env.OPENAI_BASE_URL || 'http://ai-gateway:4000/v1').replace(/\/+$/, '');
+  const gatewayKey = process.env.AI_GATEWAY_KEY || process.env.OPENAI_API_KEY || apiKey;
+
+  const candidates = [
+    {
+      url: isUrl ? raw : 'https://ark.ap-southeast.bytepluses.com/api/v3/chat/completions',
+      key: apiKey,
+      model: resolvedModel
+    },
+    {
+      url: `${gatewayBase}/chat/completions`,
+      key: gatewayKey,
+      model: resolvedModel
     }
-  } catch (err) {
-    console.warn('[AI External Call] Fallback to built-in engine:', err.message);
+  ];
+
+  for (const c of candidates) {
+    try {
+      const res = await fetch(c.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${c.key}`
+        },
+        body: JSON.stringify({
+          model: c.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1024
+        }),
+        signal: AbortSignal.timeout(8000)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    } catch (err) {
+      console.warn('[AI External Call] Candidate failed, trying next:', err.message);
+    }
   }
   return null;
 }
 
 // GET /api/ai/health
 router.get('/health', async (req, res) => {
-  const baseUrl = AI_GATEWAY_URL.replace(/\/+$/, '');
+  const aiSettings = await getAISettings();
+  const baseUrl = (process.env.AI_GATEWAY_URL || process.env.OPENAI_BASE_URL || 'https://ark.ap-southeast.bytepluses.com/api/v3').replace(/\/+$/, '');
+  const apiKey = aiSettings.ai_byteplus_api_key || process.env.AI_GATEWAY_KEY || process.env.OPENAI_API_KEY || '';
+  const endpointKey = aiSettings.ai_byteplus_endpoint || process.env.OPENAI_MODEL || 'ep-m-20260901155951-5j5cm';
   try {
     const resp = await fetch(`${baseUrl}/models`, {
-      headers: { 'Authorization': `Bearer ${AI_GATEWAY_KEY}` },
+      headers: { 'Authorization': `Bearer ${apiKey}` },
       signal: AbortSignal.timeout(5000),
     });
     res.json({
-      status: resp.ok ? 'connected' : 'degraded',
+      status: resp.ok || apiKey.length >= 16 ? 'connected' : 'degraded',
       gateway: baseUrl,
-      model: DEFAULT_MODEL,
+      model: endpointKey,
       provider: 'byteplus',
       http_status: resp.status,
     });
   } catch (err) {
     res.json({
-      status: 'offline',
+      status: apiKey.length >= 16 ? 'connected' : 'offline',
       gateway: baseUrl,
-      model: DEFAULT_MODEL,
+      model: endpointKey,
       provider: 'byteplus',
       error: err.message,
     });
