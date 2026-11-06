@@ -11,31 +11,31 @@
   "categories": ["education", "security", "productivity"],
   "icons": [
     {
-      "src": "/app-icon-192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/app-icon-512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/app-icon-192-maskable.png",
+      "src": "/icons/icon-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/app-icon-512-maskable.png",
+      "src": "/icons/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon.svg",
+      "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -47,21 +47,21 @@
       "short_name": "Berita",
       "description": "Baca rangkuman berita Vibe Coding & Cybersecurity terkini",
       "url": "/news",
-      "icons": [{ "src": "/app-icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Kursus Saya",
       "short_name": "Kursus",
       "description": "Lanjutkan belajar materi Vibe Coding & AI",
       "url": "/courses",
-      "icons": [{ "src": "/app-icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Laboratorium Interaktif",
       "short_name": "Labs",
       "description": "Latihan praktik prompt engineering & keamanan siber",
       "url": "/labs",
-      "icons": [{ "src": "/app-icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

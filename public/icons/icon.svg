@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.28"/>
+      <stop offset="60%" stop-color="#0f172a" stop-opacity="0.88"/>
+      <stop offset="100%" stop-color="#0b0f19" stop-opacity="1"/>
+    </radialGradient>
+  </defs>
+  <!-- Dark Rounded App Tile Background -->
+  <rect width="512" height="512" rx="96" fill="#0b0f19"/>
+  <circle cx="256" cy="256" r="230" fill="url(#bgGlow)"/>
+  <!-- Isometric 3D Blue Blocks Logo -->
+  <g transform="translate(24, 18) scale(0.9)">
+    <!-- Top & Left Body Extrusion (#5eb5f7) -->
+    <path d="M236 42 L488 168 L488 308 L142 480 L16 416 L16 290 L134 232 L134 94 Z" fill="#5eb5f7" stroke="#5eb5f7" stroke-width="6" stroke-linejoin="round"/>
+    <!-- Top Upper Right Face (#3078b4) -->
+    <polygon points="262,162 372,106 372,222 262,278" fill="#3078b4"/>
+    <!-- Bottom Left Front Face (#8ccbf9) -->
+    <polygon points="142,354 252,298 252,414 142,470" fill="#8ccbf9"/>
+    <!-- Bottom Middle Front Face (#74bff8) -->
+    <polygon points="262,294 372,238 372,354 262,410" fill="#74bff8"/>
+    <!-- Bottom Right Front Face (#468cc8) -->
+    <polygon points="382,234 482,184 482,300 382,350" fill="#468cc8"/>
+  </g>
+</svg>

@@ -1,9 +1,9 @@
 /**
  * Promptara Enterprise Service Worker (PWA & TWA — modeled after SecureScope)
- * Precaches app shell & opaque icons gracefully so Chrome WebAPK & iOS standalone install never fail.
+ * Precaches app shell & opaque /icons/* gracefully so Chrome WebAPK & iOS standalone install never fail.
  */
 
-const CACHE_NAME = 'promptara-shell-v3.6.0-r3';
+const CACHE_NAME = 'promptara-shell-v3.6.0-r4';
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [
@@ -11,15 +11,11 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/offline.html',
-  '/icon.svg',
-  '/app-icon-192.png',
-  '/app-icon-512.png',
-  '/app-icon-192-maskable.png',
-  '/app-icon-512-maskable.png',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/icon-192-maskable.png',
-  '/icon-512-maskable.png'
+  '/icons/icon.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-192-maskable.png',
+  '/icons/icon-512-maskable.png'
 ];
 
 self.addEventListener('install', (event) => {
