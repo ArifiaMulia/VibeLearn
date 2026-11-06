@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Code2, Rocket, Play, Shield, CheckCircle, X, Building2, Users, Star, ArrowRight, Globe, Lock, Cpu } from 'lucide-react';
+import { Zap, Code2, Rocket, Play, Shield, CheckCircle, X, Building2, Users, Star, ArrowRight, Globe, Lock, Cpu, Smartphone, Download, Newspaper } from 'lucide-react';
 import UpgradeModal from '../components/UpgradeModal';
+import MobileInstallModal from '../components/MobileInstallModal';
 import { useBranding } from '../contexts/BrandingContext';
 
 // ── Main Landing Page ──────────────────────────────────────────────────────
@@ -9,6 +10,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const branding = useBranding();
   const [modal, setModal] = useState(null); // null | 'pro' | 'enterprise'
+  const [mobileModalPlatform, setMobileModalPlatform] = useState(null); // null | 'android' | 'ios'
   const [apiPlans, setApiPlans] = useState([]);
   const [currency, setCurrency] = useState('IDR');
 
@@ -61,16 +63,29 @@ export default function LandingPage() {
   return (
     <div style={{ background:'var(--bg-base)', minHeight:'100vh', color:'var(--text-primary)', fontFamily:'var(--font-sans, system-ui)' }}>
       {modal && <UpgradeModal planId={modal} plansData={plans} onClose={() => setModal(null)} />}
+      <MobileInstallModal
+        open={Boolean(mobileModalPlatform)}
+        initialPlatform={mobileModalPlatform === 'ios' ? 'ios' : 'android'}
+        onClose={() => setMobileModalPlatform(null)}
+      />
 
       {/* Nav */}
-      <nav style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1.25rem 5%', borderBottom:'1px solid var(--border-light)', background:'rgba(7,7,26,0.85)', backdropFilter:'blur(20px)', position:'sticky', top:0, zIndex:100 }}>
+      <nav style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1.1rem 5%', borderBottom:'1px solid var(--border-light)', background:'rgba(7,7,26,0.88)', backdropFilter:'blur(20px)', position:'sticky', top:0, zIndex:100, flexWrap:'wrap', gap:'0.75rem' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'0.75rem' }}>
           <img src={(branding.app_logo_url || "/logo.png").startsWith('http') || (branding.app_logo_url || "/logo.png").startsWith('data:') ? (branding.app_logo_url || "/logo.png") : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || "/logo.png").startsWith('/') ? '' : '/'}${branding.app_logo_url || "/logo.png"}`} alt={branding.app_name || "Promptara"} onError={e => { if (!e.target.src.endsWith('/logo.png')) e.target.src = '/logo.png'; }} style={{ width:36, height:36, borderRadius:10, objectFit:'cover', boxShadow:'0 0 16px var(--primary-glow)' }} />
           <span style={{ fontWeight:800, fontSize:'1.2rem' }}>{branding.app_name || "Promptara"}</span>
           <span style={{ fontSize:'0.7rem', color:'var(--accent)', fontWeight:600 }}>{branding.app_tagline || "AI Coding Academy"}</span>
         </div>
-        <div style={{ display:'flex', gap:'0.75rem', alignItems:'center' }}>
-          <a href="#pricing" style={{ fontSize:'0.85rem', color:'var(--text-muted)', textDecoration:'none', padding:'0.4rem 0.75rem' }}
+        <div style={{ display:'flex', gap:'0.65rem', alignItems:'center', flexWrap:'wrap' }}>
+          <a href="#download-app" style={{
+            fontSize:'0.82rem', color:'#10b981', fontWeight:700, textDecoration:'none',
+            padding:'0.4rem 0.8rem', borderRadius:20,
+            background:'rgba(16,185,129,0.12)', border:'1px solid rgba(16,185,129,0.35)',
+            display:'inline-flex', alignItems:'center', gap:'0.35rem'
+          }}>
+            <Download size={14} /> Download App (Android / iOS)
+          </a>
+          <a href="#pricing" style={{ fontSize:'0.85rem', color:'var(--text-muted)', textDecoration:'none', padding:'0.4rem 0.65rem' }}
             onMouseOver={e => e.currentTarget.style.color='var(--text-primary)'} onMouseOut={e => e.currentTarget.style.color='var(--text-muted)'}>
             Pricing
           </a>
@@ -80,24 +95,189 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section style={{ padding:'7rem 5% 5rem', textAlign:'center', position:'relative', overflow:'hidden' }}>
+      <section style={{ padding:'6rem 5% 4.5rem', textAlign:'center', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'80vw', height:'80vw', background:'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 60%)', zIndex:0, pointerEvents:'none' }}/>
         <div style={{ position:'relative', zIndex:1, maxWidth:820, margin:'0 auto' }}>
           <div className="badge badge-accent" style={{ marginBottom:'1.5rem', display:'inline-flex', gap:'0.4rem' }}>
             <Star size={13}/> The #1 Platform for Vibe Coding in Indonesia
           </div>
-          <h1 style={{ fontSize:'3.5rem', fontWeight:900, lineHeight:1.1, marginBottom:'1.5rem' }}>
+          <h1 style={{ fontSize:'clamp(2.2rem, 5vw, 3.5rem)', fontWeight:900, lineHeight:1.1, marginBottom:'1.5rem' }}>
             Learn to Build Software<br/>
             <span style={{ background:'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
               At The Speed of Thought.
             </span>
           </h1>
-          <p style={{ fontSize:'1.15rem', color:'var(--text-muted)', lineHeight:1.7, marginBottom:'2.5rem', maxWidth:600, margin:'0 auto 2.5rem' }}>
-            Master AI-assisted coding through interactive labs, real-world simulations, and a gamified bilingual curriculum for modern developers.
+          <p style={{ fontSize:'1.1rem', color:'var(--text-muted)', lineHeight:1.7, marginBottom:'2.25rem', maxWidth:620, margin:'0 auto 2.25rem' }}>
+            Master AI-assisted coding through interactive labs, real-world simulations, and breaking cybersecurity news — now available on Web, Android, and iOS.
           </p>
-          <div style={{ display:'flex', gap:'1rem', justifyContent:'center', flexWrap:'wrap' }}>
+          <div style={{ display:'flex', gap:'0.85rem', justifyContent:'center', flexWrap:'wrap' }}>
             <button className="btn btn-primary btn-lg" onClick={() => navigate('/login')}><Play size={18}/> Start Learning Free</button>
+            <button
+              className="btn btn-lg"
+              onClick={() => setMobileModalPlatform('android')}
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2))',
+                border: '1.5px solid rgba(16, 185, 129, 0.55)',
+                color: '#10b981',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <Download size={18}/> Download App (Android & iOS)
+            </button>
             <button className="btn btn-ghost btn-lg" onClick={() => setModal('pro')}><Zap size={18}/> Upgrade to Pro</button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── DOWNLOAD MOBILE APP SECTION (Android & iOS Installer Hub) ── */}
+      <section id="download-app" style={{
+        padding: '3.5rem 5%',
+        background: 'radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.16), rgba(6, 182, 212, 0.06) 60%, var(--bg-base) 100%)',
+        borderTop: '1px solid var(--border-light)',
+      }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.25rem' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.28rem 0.85rem', borderRadius: 20,
+              background: 'rgba(16, 185, 129, 0.14)', border: '1px solid rgba(16, 185, 129, 0.4)',
+              color: '#10b981', fontSize: '0.75rem', fontWeight: 800, marginBottom: '0.75rem'
+            }}>
+              <Smartphone size={14} /> TERSEDIA UNTUK ANDROID & iOS (PWABUILDER CERTIFIED)
+            </span>
+            <h2 style={{ fontSize: '2.1rem', fontWeight: 900, margin: '0 0 0.5rem' }}>
+              Download Aplikasi Mobile {branding.app_name || 'Promptara'}
+            </h2>
+            <p style={{ color: 'var(--text-muted)', maxWidth: 660, margin: '0 auto', fontSize: '0.95rem', lineHeight: 1.6 }}>
+              Pilih installer sesuai perangkat Anda di bawah ini untuk belajar di mana saja dan membaca rangkuman berita keamanan siber terkini (termasuk laporan khusus <strong>"Black October"</strong>) langsung dari HP Anda.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+            gap: '1.5rem',
+          }}>
+            {/* Android Installer Card */}
+            <div className="card" style={{
+              padding: '1.85rem',
+              border: '1.5px solid rgba(16, 185, 129, 0.4)',
+              background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.1), var(--bg-card))',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '1.25rem',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 14,
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '1.5rem', boxShadow: '0 6px 20px rgba(16,185,129,0.3)'
+                    }}>
+                      🤖
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Installer Android</h3>
+                      <div style={{ fontSize: '0.76rem', color: '#10b981', fontWeight: 700 }}>
+                        WebAPK & PWABuilder • Android 8.0+
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', borderRadius: 12, background: 'rgba(16,185,129,0.18)', color: '#10b981', fontWeight: 800 }}>
+                    RESMI
+                  </span>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 1rem' }}>
+                  Instal langsung ke App Drawer & layar utama HP Android Anda dengan 1-Klik. Mendukung layar penuh (standalone), Audio Briefing berita, dan mode baca offline.
+                </p>
+              </div>
+              <button
+                onClick={() => setMobileModalPlatform('android')}
+                style={{
+                  width: '100%',
+                  padding: '0.85rem 1.2rem',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                  color: '#fff',
+                  fontWeight: 800,
+                  fontSize: '0.92rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 6px 20px rgba(16, 185, 129, 0.3)',
+                }}
+              >
+                <Download size={18} /> Pilih & Instal untuk Android
+              </button>
+            </div>
+
+            {/* iOS Installer Card */}
+            <div className="card" style={{
+              padding: '1.85rem',
+              border: '1.5px solid rgba(124, 58, 237, 0.45)',
+              background: 'linear-gradient(145deg, rgba(124, 58, 237, 0.12), var(--bg-card))',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '1.25rem',
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 14,
+                      background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '1.5rem', boxShadow: '0 6px 20px rgba(124,58,237,0.35)'
+                    }}>
+                      🍎
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Installer iOS (iPhone & iPad)</h3>
+                      <div style={{ fontSize: '0.76rem', color: '#a78bfa', fontWeight: 700 }}>
+                        Apple WebApp & Profil Installer • iOS 14+
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', borderRadius: 12, background: 'rgba(124,58,237,0.2)', color: '#a78bfa', fontWeight: 800 }}>
+                    RESMI
+                  </span>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6, margin: '0 0 1rem' }}>
+                  Pasang ke layar utama iPhone atau iPad melalui Safari Add to Home Screen atau unduh file profil installer `.mobileconfig` resmi.
+                </p>
+              </div>
+              <button
+                onClick={() => setMobileModalPlatform('ios')}
+                style={{
+                  width: '100%',
+                  padding: '0.85rem 1.2rem',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
+                  color: '#fff',
+                  fontWeight: 800,
+                  fontSize: '0.92rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 6px 20px rgba(124, 58, 237, 0.35)',
+                }}
+              >
+                <Download size={18} /> Pilih & Instal untuk iOS (iPhone/iPad)
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -121,7 +301,7 @@ export default function LandingPage() {
             <h2 style={{ fontSize:'2.5rem', marginBottom:'0.75rem' }}>Why Promptara?</h2>
             <p style={{ color:'var(--text-muted)', fontSize:'1.05rem' }}>Everything you need to master AI coding tools and ship real products.</p>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1.5rem' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:'1.5rem' }}>
             {features.map((f, i) => (
               <div key={i} className="card" style={{ padding:'2rem', transition:'transform 0.2s, box-shadow 0.2s' }}
                 onMouseOver={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 16px 40px rgba(124,58,237,0.15)'; }}
@@ -159,13 +339,12 @@ export default function LandingPage() {
               </button>
             </div>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1.5rem', alignItems:'center' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:'1.5rem', alignItems:'center' }}>
             {plans.map(p => (
               <div key={p.id} className="card" style={{
                 padding: p.highlight ? '3rem 2rem' : '2.5rem 2rem',
                 border: `2px solid ${p.highlight ? p.color : 'var(--border-light)'}`,
                 background: p.highlight ? 'linear-gradient(180deg, rgba(124,58,237,0.07), transparent)' : undefined,
-                transform: p.highlight ? 'scale(1.04)' : undefined,
                 position:'relative', overflow:'hidden',
                 transition:'transform 0.2s, box-shadow 0.2s',
               }}

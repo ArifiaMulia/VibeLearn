@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
-import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy, Bird } from 'lucide-react';
-
+import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy, Bird, Smartphone, Download } from 'lucide-react';
+import MobileInstallModal from '../components/MobileInstallModal';
 import { useBranding } from '../contexts/BrandingContext';
 
 export default function LoginPage() {
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetToken, setResetToken] = useState(null);
   const [newPassword, setNewPassword] = useState('');
+  const [mobileModalPlatform, setMobileModalPlatform] = useState(null);
 
   useEffect(() => { if (user) navigate('/dashboard'); }, [user]);
 
@@ -79,7 +80,6 @@ export default function LoginPage() {
     }
   };
 
-
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async (e) => {
@@ -115,17 +115,23 @@ export default function LoginPage() {
   };
 
   const features = [
-    { icon: BookOpen, text: '5 Interactive Courses', color: 'var(--primary)' },
+    { icon: BookOpen, text: '5 Interactive Courses & Cyber News', color: 'var(--primary)' },
     { icon: FlaskConical, text: 'Hands-on AI Labs', color: 'var(--accent)' },
     { icon: Trophy, text: 'XP & Leaderboard', color: 'var(--warning)' },
   ];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg-base)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexWrap: 'wrap', background: 'var(--bg-base)' }}>
+      <MobileInstallModal
+        open={Boolean(mobileModalPlatform)}
+        initialPlatform={mobileModalPlatform === 'ios' ? 'ios' : 'android'}
+        onClose={() => setMobileModalPlatform(null)}
+      />
+
       {/* Left Panel */}
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        padding: '3rem', background: 'var(--bg-surface)',
+        flex: '1 1 380px', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        padding: '2.5rem', background: 'var(--bg-surface)',
         borderRight: '1px solid var(--border-light)', position: 'relative', overflow: 'hidden',
       }}>
         {/* Glow */}
@@ -134,7 +140,7 @@ export default function LoginPage() {
 
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 440 }}>
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
             <img src={(branding.app_logo_url || '/logo.png').startsWith('http') || (branding.app_logo_url || '/logo.png').startsWith('data:') ? (branding.app_logo_url || '/logo.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/logo.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/logo.png'}`} alt={branding.app_name || 'Promptara'} onError={e => { if (!e.target.src.endsWith('/logo.png')) e.target.src = '/logo.png'; }} style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover', boxShadow: '0 0 30px var(--primary-glow)' }} />
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>{branding.app_name || 'Promptara'}</div>
@@ -142,16 +148,16 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 900, lineHeight: 1.15, marginBottom: '1rem' }}>
+          <h1 style={{ fontSize: '2.1rem', fontWeight: 900, lineHeight: 1.15, marginBottom: '1rem' }}>
             Master Vibe Coding.<br />
             <span style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Ship Anything.</span>
           </h1>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '2rem' }}>
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '1.75rem' }}>
             The interactive LMS that teaches you to build real apps with AI — fast, fun, and effective.
           </p>
 
           {/* Features */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
             {features.map(({ icon: Icon, text, color }) => (
               <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{ width: 34, height: 34, borderRadius: 8, background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -162,20 +168,67 @@ export default function LoginPage() {
             ))}
           </div>
 
+          {/* Mobile App Installer Box on Login Left Panel */}
+          <div style={{
+            padding: '1rem 1.15rem',
+            borderRadius: 12,
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(124, 58, 237, 0.12))',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+          }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Smartphone size={15} color="#10b981" /> Download Aplikasi Mobile (Android & iOS)
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setMobileModalPlatform('android')}
+                style={{
+                  flex: 1,
+                  padding: '0.48rem 0.75rem',
+                  borderRadius: 8,
+                  border: '1px solid rgba(16,185,129,0.45)',
+                  background: 'rgba(16,185,129,0.16)',
+                  color: '#10b981',
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                🤖 Installer Android
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileModalPlatform('ios')}
+                style={{
+                  flex: 1,
+                  padding: '0.48rem 0.75rem',
+                  borderRadius: 8,
+                  border: '1px solid rgba(124,58,237,0.45)',
+                  background: 'rgba(124,58,237,0.18)',
+                  color: '#a78bfa',
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                🍎 Installer iOS
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Right Panel — Form */}
-      <div style={{ width: 480, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div style={{ flex: '1 1 380px', maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
           {/* Toggle */}
-          <div className="tab-bar" style={{ marginBottom: '2rem' }}>
+          <div className="tab-bar" style={{ marginBottom: '1.75rem' }}>
             <button className={`tab-btn ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Sign In</button>
             <button className={`tab-btn ${mode === 'register' ? 'active' : ''}`} onClick={() => setMode('register')}>Sign Up</button>
           </div>
 
           <h2 style={{ marginBottom: '0.5rem' }}>{mode === 'login' ? 'Welcome back' : 'Create account'}</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', fontSize: '0.9rem' }}>
             {mode === 'login' ? 'Sign in to continue your learning journey' : 'Join Promptara and start building with AI'}
           </p>
 
@@ -213,7 +266,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-
             <button type="submit" className="btn btn-primary btn-lg w-full" disabled={loading} style={{ marginTop: '0.5rem' }}>
               {loading ? <span className="animate-spin" style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block' }} />
                 : <>{mode === 'login' ? 'Sign In' : 'Get Started'} <ArrowRight size={18} /></>}
@@ -221,7 +273,7 @@ export default function LoginPage() {
 
             {mode === 'login' && (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.75rem 0' }}>
                   <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>or continue with</span>
                   <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
@@ -241,12 +293,6 @@ export default function LoginPage() {
                     color: '#3b82f6',
                     transition: 'all 0.2s',
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(59,130,246,0.2)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(59,130,246,0.1)';
-                  }}
                 >
                   <Bird size={18} />
                   Sign In with Lark
@@ -257,13 +303,13 @@ export default function LoginPage() {
 
           {mode === 'register' && (
             <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Free plan includes 1 course and 2 labs. <Link to="/landing" style={{ color: 'var(--accent)' }}>See all plans →</Link>
+              Free plan includes 1 course and 2 labs. <Link to="/" style={{ color: 'var(--accent)' }}>See all plans →</Link>
             </p>
           )}
 
           {/* Powered-by footer */}
           <div style={{
-            marginTop: '2.5rem', paddingTop: '1.25rem',
+            marginTop: '2rem', paddingTop: '1.25rem',
             borderTop: '1px solid var(--border-light)',
             textAlign: 'center',
           }}>
@@ -274,10 +320,7 @@ export default function LoginPage() {
               style={{
                 fontSize: '0.73rem', color: 'var(--text-muted)',
                 textDecoration: 'none', lineHeight: 1.6,
-                transition: 'color 0.2s',
               }}
-              onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
-              onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
             >
               <span style={{ display: 'block', fontWeight: 600 }}>
                 🌐 Virtuenet.id
@@ -312,7 +355,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* Reset Token Modal (Self-service link clicked from email) */}
+      {/* Reset Token Modal */}
       {resetToken && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
           <div className="card" style={{ width: '100%', maxWidth: 400, padding: '2rem' }}>
@@ -338,4 +381,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

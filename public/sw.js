@@ -1,10 +1,10 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Promptara Service Worker (iOS & Android Mobile Offline Support)
+   Promptara Service Worker (PWABuilder & WebAPK Compliant — iOS & Android)
    - Network-First with Offline Cache Fallback for /api/news & /api/courses
-   - Cache-First for static assets & lesson illustrations
+   - Cache-First for static assets, icons & lesson illustrations
    ───────────────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'promptara-v6';
+const CACHE_NAME = 'promptara-v7';
 
 // App shell assets to cache on install
 const SHELL_ASSETS = [
@@ -12,6 +12,10 @@ const SHELL_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/logo.png',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/apple-touch-icon.png',
+  '/favicon-192x192.png',
 ];
 
 // Helper to safely cache put without throwing errors for unsupported schemes
@@ -19,7 +23,6 @@ function safeCachePut(request, response) {
   if (!request) return;
   const reqUrl = typeof request === 'string' ? request : request.url;
   if (!reqUrl) return;
-  // Strictly allow only http: and https: schemes (reject chrome-extension:, data:, moz-extension:, etc.)
   if (!reqUrl.startsWith('http://') && !reqUrl.startsWith('https://')) return;
   if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
     try {
@@ -34,7 +37,7 @@ function safeCachePut(request, response) {
 // ── Install: pre-cache shell ──────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)).catch(() => {})
   );
   self.skipWaiting();
 });
@@ -53,12 +56,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // Skip unsupported schemes (chrome-extension, moz-extension, etc.) and non-http(s)
   if (!request.url || (!request.url.startsWith('http://') && !request.url.startsWith('https://'))) return;
 
   const url = new URL(request.url);
 
-  // Skip non-GET requests
   if (request.method !== 'GET') return;
 
   // For mobile offline reading: Network-First with Cache Fallback for News & Courses GET APIs
@@ -78,10 +79,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Always network for all other /api endpoints (auth, progress mutations, etc.)
+  // Always network for all other /api endpoints
   if (url.pathname.startsWith('/api')) return;
 
-  // For navigation requests (HTML pages) — Network first, fallback to cache
+  // For navigation requests (HTML pages) — Network first, fallback to cached index.html
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -94,8 +95,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For images from /images/ — Cache first (lesson illustrations)
-  if (url.pathname.startsWith('/images/')) {
+  // For images and icons — Cache first
+  if (
+    url.pathname.startsWith('/images/') ||
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.ico')
+  ) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
