@@ -203,8 +203,9 @@ jobs:
           curl -fsS --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/api/health" | head -c 300 && echo ""
           curl -fsS --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/api/config" | head -c 300 && echo ""
           curl -fsS --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/manifest.json" | head -c 300 && echo ""
-          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/icon-512.png" | head -n 5
-          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/icon-512-maskable.png" | head -n 5
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/app-icon-512.png" | head -n 5
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/app-icon-512-maskable.png" | head -n 5
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/pwa-sw.js" | head -n 5
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/uploads/images/1793776302191-658592852.png" | head -n 5
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/uploads/images/1793776549788-625074971.png" | head -n 5
 

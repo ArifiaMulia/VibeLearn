@@ -8,7 +8,7 @@ export function BrandingProvider({ children }) {
   const [branding, setBranding] = useState({
     app_name: 'Promptara',
     app_tagline: 'AI Coding Academy',
-    app_logo_url: '/icon-512.png',
+    app_logo_url: '/app-icon-512.png',
   });
   const [loading, setLoading] = useState(true);
 

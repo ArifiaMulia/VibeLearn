@@ -135,7 +135,7 @@ export default function Sidebar() {
               }} onError={e => {
                 if (!e.target.dataset.fallback) {
                   e.target.dataset.fallback = '1';
-                  e.target.src = '/icon-512.png';
+                  e.target.src = '/app-icon-512.png';
                 } else {
                   e.target.style.display = 'none';
                 }
@@ -259,7 +259,7 @@ export default function Sidebar() {
             onError={e => {
               if (!e.target.dataset.fallback) {
                 e.target.dataset.fallback = '1';
-                e.target.src = '/icon-512.png';
+                e.target.src = '/app-icon-512.png';
               } else {
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'flex';

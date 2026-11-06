@@ -184,10 +184,10 @@ app.get('/api/config', async (req, res) => {
     const config = {
       app_name: 'Promptara',
       app_tagline: 'AI Coding Academy',
-      app_logo_url: '/icon-512.png'
+      app_logo_url: '/app-icon-512.png'
     };
     result.rows.forEach(row => {
-      config[row.key] = (row.key === 'app_logo_url' && (row.value === '/logo.png' || (row.value && row.value.startsWith('/uploads/images/')))) ? '/icon-512.png' : row.value;
+      config[row.key] = (row.key === 'app_logo_url' && (row.value === '/logo.png' || row.value === '/icon-512.png' || (row.value && row.value.startsWith('/uploads/images/')))) ? '/app-icon-512.png' : row.value;
     });
     res.json(config);
   } catch (err) {

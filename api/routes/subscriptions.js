@@ -164,7 +164,7 @@ router.get('/settings', async (req, res) => {
     manual_bank_recipient: 'PT Vibe Learn / Arifia Mulia',
     app_name: 'Promptara',
     app_tagline: 'AI Coding Academy',
-    app_logo_url: '/icon-512.png'
+    app_logo_url: '/app-icon-512.png'
   };
   try {
     // Ensure table exists first
@@ -179,7 +179,7 @@ router.get('/settings', async (req, res) => {
        WHERE key IN ('manual_bank_name', 'manual_bank_account', 'manual_bank_recipient', 'app_name', 'app_tagline', 'app_logo_url')`
     );
     result.rows.forEach(row => {
-      defaults[row.key] = (row.key === 'app_logo_url' && (row.value === '/logo.png' || (row.value && row.value.startsWith('/uploads/images/')))) ? '/icon-512.png' : row.value;
+      defaults[row.key] = (row.key === 'app_logo_url' && (row.value === '/logo.png' || row.value === '/icon-512.png' || (row.value && row.value.startsWith('/uploads/images/')))) ? '/app-icon-512.png' : row.value;
     });
   } catch (err) {
     // Log but always return defaults — never fail with 500

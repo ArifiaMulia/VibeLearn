@@ -141,7 +141,7 @@ export default function LoginPage() {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 440 }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-            <img src={(branding.app_logo_url || '/icon-512.png').startsWith('http') || (branding.app_logo_url || '/icon-512.png').startsWith('data:') ? (branding.app_logo_url || '/icon-512.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/icon-512.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/icon-512.png'}`} alt={branding.app_name || 'Promptara'} onError={e => { if (!e.target.src.endsWith('/icon-512.png')) e.target.src = '/icon-512.png'; }} style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'contain', boxShadow: '0 0 30px var(--primary-glow)' }} />
+            <img src={(branding.app_logo_url || '/app-icon-512.png').startsWith('http') || (branding.app_logo_url || '/app-icon-512.png').startsWith('data:') ? (branding.app_logo_url || '/app-icon-512.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/app-icon-512.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/app-icon-512.png'}`} alt={branding.app_name || 'Promptara'} onError={e => { if (!e.target.src.endsWith('/app-icon-512.png')) e.target.src = '/app-icon-512.png'; }} style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'contain', boxShadow: '0 0 30px var(--primary-glow)' }} />
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>{branding.app_name || 'Promptara'}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{branding.app_tagline || 'AI Coding Academy'}</div>
