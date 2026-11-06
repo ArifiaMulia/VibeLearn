@@ -1,62 +1,44 @@
 {
-  "id": "/",
   "name": "Promptara — VibeLearn AI & Cyber Academy",
   "short_name": "Promptara",
   "description": "Belajar Vibe Coding, AI Orchestration & Berita Cybersecurity Terkini (Black October) di iOS & Android.",
-  "start_url": "/?source=pwa",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "portrait-primary",
-  "theme_color": "#07071a",
-  "background_color": "#07071a",
-  "dir": "ltr",
-  "lang": "id",
-  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
-  "categories": ["education", "productivity", "security", "news"],
-  "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
-  },
+  "theme_color": "#0f172a",
+  "background_color": "#0b0f19",
+  "categories": ["education", "security", "productivity"],
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-192x192.png",
+      "src": "/icon-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/og/vibelearn-og-image.png",
-      "sizes": "1200x630",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Promptara Interactive Vibe Coding & Cybersecurity LMS"
     },
     {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Promptara Mobile App for iOS & Android"
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -65,23 +47,21 @@
       "short_name": "Berita",
       "description": "Baca rangkuman berita Vibe Coding & Cybersecurity terkini",
       "url": "/news",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Kursus Saya",
       "short_name": "Kursus",
       "description": "Lanjutkan belajar materi Vibe Coding & AI",
       "url": "/courses",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Laboratorium Interaktif",
       "short_name": "Labs",
       "description": "Latihan praktik prompt engineering & keamanan siber",
       "url": "/labs",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
-  ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  ]
 }

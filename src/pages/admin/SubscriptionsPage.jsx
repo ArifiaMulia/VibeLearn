@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 const DEFAULT_INVOICE_ELEMENTS = [
-  { id: 'logo', type: 'image', label: 'Company Logo', src: '/logo.png', top: 7, left: 10, width: 45, height: 45, visible: true },
+  { id: 'logo', type: 'image', label: 'Company Logo', src: '/icon-512.png', top: 7, left: 10, width: 45, height: 45, visible: true },
   { id: 'company_name', type: 'text', label: 'Company Name', text: 'PROMPTARA ACADEMY', top: 6, left: 17, fontSize: 13, fontFamily: 'sans-serif', color: '#1a1a1a', fontWeight: 'bold', align: 'left', visible: true },
   { id: 'company_addr', type: 'text', label: 'Company Address', text: 'virtuenet.id · Jakarta, Indonesia', top: 9, left: 17, fontSize: 7, fontFamily: 'sans-serif', color: '#718096', fontWeight: 'normal', align: 'left', visible: true },
   

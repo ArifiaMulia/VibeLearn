@@ -211,12 +211,12 @@ export default function MobileInstallModal({ open, onClose, initialPlatform }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <img
-              src="/icon-192x192.png"
+              src="/icon-192.png"
               alt="Promptara"
               style={{
                 width: 48, height: 48, borderRadius: 12,
-                objectFit: 'cover', flexShrink: 0,
-                boxShadow: '0 4px 16px rgba(124, 58, 237, 0.4)'
+                objectFit: 'contain', flexShrink: 0,
+                boxShadow: '0 4px 16px rgba(59, 130, 246, 0.35)'
               }}
             />
             <div>

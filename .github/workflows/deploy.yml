@@ -5,6 +5,10 @@ on:
     branches: [main, virtuenet]
   workflow_dispatch:
 
+concurrency:
+  group: k3s-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -176,6 +180,7 @@ jobs:
 
   ensure-ingress-routing:
     name: Ensure Production Ingress Routing
+    if: github.ref == 'refs/heads/main'
     needs: deploy-frontend
     runs-on: [self-hosted, in-cluster, k3s]
     steps:
@@ -191,13 +196,17 @@ jobs:
           kubectl -n vibelearn-prod scale deployment/vibelearn --replicas=1
           kubectl -n vibelearn-prod rollout status deployment/vibelearn-api --timeout=60s
           kubectl -n vibelearn-prod rollout status deployment/vibelearn --timeout=60s
+          sleep 3
 
           echo "🧪 Running In-Cluster E2E Module & Upload Verification..."
           API_URL="http://vibelearn.vibelearn-prod.svc.cluster.local"
-          curl -fsS "${API_URL}/api/health" | head -c 300 && echo ""
-          curl -fsS "${API_URL}/api/config" | head -c 300 && echo ""
-          curl -fsS -I "${API_URL}/uploads/images/1793776302191-658592852.png" | head -n 5
-          curl -fsS -I "${API_URL}/uploads/images/1793776549788-625074971.png" | head -n 5
+          curl -fsS --retry 5 --retry-delay 2 --retry-all-errors "${API_URL}/api/health" | head -c 300 && echo ""
+          curl -fsS --retry 5 --retry-delay 2 --retry-all-errors "${API_URL}/api/config" | head -c 300 && echo ""
+          curl -fsS --retry 5 --retry-delay 2 --retry-all-errors "${API_URL}/manifest.json" | head -c 300 && echo ""
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-all-errors "${API_URL}/icon-512.png" | head -n 5
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-all-errors "${API_URL}/icon-512-maskable.png" | head -n 5
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-all-errors "${API_URL}/uploads/images/1793776302191-658592852.png" | head -n 5
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-all-errors "${API_URL}/uploads/images/1793776549788-625074971.png" | head -n 5
 
           echo "🧪 Testing Full API & Upload Persistence via vibelearn-api..."
           kubectl -n vibelearn-prod exec deployment/vibelearn-api -- node -e "

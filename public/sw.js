@@ -1,133 +1,141 @@
-/* ─────────────────────────────────────────────────────────────────────────
-   Promptara Service Worker (PWABuilder & WebAPK Compliant — iOS & Android)
-   - Network-First with Offline Cache Fallback for /api/news & /api/courses
-   - Cache-First for static assets, icons & lesson illustrations
-   ───────────────────────────────────────────────────────────────────────── */
+/**
+ * Promptara Enterprise Service Worker (PWA & TWA — modeled after SecureScope)
+ * Precaches app shell & icons gracefully so Chrome WebAPK & iOS standalone install never fail.
+ */
 
-const CACHE_NAME = 'promptara-v7';
+const CACHE_NAME = 'promptara-shell-v3.6.0-r1';
+const OFFLINE_URL = '/offline.html';
 
-// App shell assets to cache on install
-const SHELL_ASSETS = [
+const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.png',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
+  '/offline.html',
+  '/icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-192-maskable.png',
+  '/icon-512-maskable.png',
   '/apple-touch-icon.png',
-  '/favicon-192x192.png',
+  '/logo.png'
 ];
 
-// Helper to safely cache put without throwing errors for unsupported schemes
-function safeCachePut(request, response) {
-  if (!request) return;
-  const reqUrl = typeof request === 'string' ? request : request.url;
-  if (!reqUrl) return;
-  if (!reqUrl.startsWith('http://') && !reqUrl.startsWith('https://')) return;
-  if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
-    try {
-      const clone = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
-    } catch (e) {
-      // Ignore cache put errors
-    }
-  }
-}
-
-// ── Install: pre-cache shell ──────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)).catch(() => {})
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const asset of STATIC_ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn(`[SW] Precache skipped for asset: ${asset}`, err.message);
+        }
+      }
+    })
   );
   self.skipWaiting();
 });
 
-// ── Activate: clean old caches ────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// ── Fetch strategy ────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-
-  if (!request.url || (!request.url.startsWith('http://') && !request.url.startsWith('https://'))) return;
+  const request = event.request;
+  if (!request.url || (!request.url.startsWith('http://') && !request.url.startsWith('https://'))) {
+    return;
+  }
 
   const url = new URL(request.url);
 
-  if (request.method !== 'GET') return;
+  if (request.method !== 'GET') {
+    return;
+  }
 
-  // For mobile offline reading: Network-First with Cache Fallback for News & Courses GET APIs
-  if (
-    url.pathname === '/api/news' ||
-    url.pathname === '/api/courses' ||
-    url.pathname === '/api/settings/branding'
-  ) {
+  // Offline reading support for public/news & courses GET endpoints
+  if (url.pathname === '/api/news' || url.pathname === '/api/courses') {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          safeCachePut(request, response);
-          return response;
+        .then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, clone)).catch(() => {});
+          }
+          return res;
         })
         .catch(() => caches.match(request))
     );
     return;
   }
 
-  // Always network for all other /api endpoints
-  if (url.pathname.startsWith('/api')) return;
+  // Never cache auth or other API calls
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/.well-known/') ||
+    url.searchParams.has('token') ||
+    url.searchParams.has('session_token') ||
+    url.searchParams.has('code')
+  ) {
+    return;
+  }
 
-  // For navigation requests (HTML pages) — Network first, fallback to cached index.html
+  // Navigation requests (HTML documents)
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          safeCachePut(request, response);
-          return response;
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((c) => c.put('/index.html', clone)).catch(() => {});
+          }
+          return networkResponse;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(async () => {
+          const cache = await caches.open(CACHE_NAME);
+          const cachedIndex = await cache.match('/index.html');
+          if (cachedIndex) return cachedIndex;
+          const cachedOffline = await cache.match(OFFLINE_URL);
+          return cachedOffline || new Response('Aplikasi sedang offline.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+        })
     );
     return;
   }
 
-  // For images and icons — Cache first
+  // Static Assets: Stale-While-Revalidate strategy
   if (
-    url.pathname.startsWith('/images/') ||
-    url.pathname.endsWith('.png') ||
-    url.pathname.endsWith('.ico')
+    url.origin === self.location.origin &&
+    (url.pathname.endsWith('.js') ||
+     url.pathname.endsWith('.css') ||
+     url.pathname.endsWith('.png') ||
+     url.pathname.endsWith('.svg') ||
+     url.pathname.endsWith('.woff2') ||
+     url.pathname === '/manifest.json')
   ) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
-          safeCachePut(request, response);
-          return response;
-        });
-      })
-    );
-    return;
-  }
+      caches.match(request).then((cachedResponse) => {
+        const fetchPromise = fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            }).catch(() => {});
+          }
+          return networkResponse;
+        }).catch(() => null);
 
-  // For JS/CSS/fonts — Cache first, then network
-  if (
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.css') ||
-    url.pathname.includes('/assets/') ||
-    url.hostname === 'fonts.googleapis.com' ||
-    url.hostname === 'fonts.gstatic.com'
-  ) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
-          safeCachePut(request, response);
-          return response;
-        });
+        return cachedResponse || fetchPromise;
       })
     );
     return;

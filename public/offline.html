@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Promptara — Mode Offline</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0b0f19;
+      color: #f0f0ff;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .card {
+      max-width: 420px;
+      background: #13182b;
+      border: 1px solid rgba(94, 181, 247, 0.3);
+      border-radius: 20px;
+      padding: 2rem 1.5rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    img { width: 72px; height: 72px; border-radius: 16px; margin-bottom: 1rem; }
+    h1 { font-size: 1.35rem; margin: 0 0 0.5rem; }
+    p { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; margin: 0 0 1.5rem; }
+    button {
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.5rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="/icon-192.png" alt="Promptara" />
+    <h1>Anda Sedang Offline</h1>
+    <p>Koneksi internet terputus. Periksa jaringan Anda lalu ketuk tombol di bawah untuk memuat ulang aplikasi Promptara.</p>
+    <button onclick="window.location.reload()">Coba Muat Ulang</button>
+  </div>
+</body>
+</html>
