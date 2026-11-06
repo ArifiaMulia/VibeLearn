@@ -1,8 +1,10 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Promptara Service Worker  — Cache-First for assets, Network-First for API
+   Promptara Service Worker (iOS & Android Mobile Offline Support)
+   - Network-First with Offline Cache Fallback for /api/news & /api/courses
+   - Cache-First for static assets & lesson illustrations
    ───────────────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'promptara-v5';
+const CACHE_NAME = 'promptara-v6';
 
 // App shell assets to cache on install
 const SHELL_ASSETS = [
@@ -50,15 +52,34 @@ self.addEventListener('activate', (event) => {
 // ── Fetch strategy ────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  
+
   // Skip unsupported schemes (chrome-extension, moz-extension, etc.) and non-http(s)
   if (!request.url || (!request.url.startsWith('http://') && !request.url.startsWith('https://'))) return;
 
   const url = new URL(request.url);
 
-  // Skip non-GET and cross-origin API/external requests
+  // Skip non-GET requests
   if (request.method !== 'GET') return;
-  if (url.pathname.startsWith('/api')) return;  // Always network for API
+
+  // For mobile offline reading: Network-First with Cache Fallback for News & Courses GET APIs
+  if (
+    url.pathname === '/api/news' ||
+    url.pathname === '/api/courses' ||
+    url.pathname === '/api/settings/branding'
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          safeCachePut(request, response);
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Always network for all other /api endpoints (auth, progress mutations, etc.)
+  if (url.pathname.startsWith('/api')) return;
 
   // For navigation requests (HTML pages) — Network first, fallback to cache
   if (request.mode === 'navigate') {

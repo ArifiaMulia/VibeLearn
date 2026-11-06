@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { BookOpen, FlaskConical, Trophy, Zap, TrendingUp, Clock, Star, ArrowRight, Users, BarChart3, Flame, CheckCircle2, Sparkles, Lock } from 'lucide-react';
+import { BookOpen, FlaskConical, Trophy, Zap, TrendingUp, Clock, Star, ArrowRight, Users, BarChart3, Flame, CheckCircle2, Sparkles, Lock, Newspaper, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CourseCard from '../components/CourseCard';
 import { XPLevel } from '../components/XPBadge';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import MobileInstallModal from '../components/MobileInstallModal';
 
 export default function Dashboard() {
   const { user, authFetch, isRole } = useAuth();
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [adminStats, setAdminStats] = useState(null);
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showMobileModal, setShowMobileModal] = useState(false);
   const [weeklyChallenge, setWeeklyChallenge] = useState({ target: 3, current: 0, deadline: '', completed: false });
 
   useEffect(() => {
@@ -122,6 +124,41 @@ export default function Dashboard() {
              </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Breaking News & Mobile App Card for Admin */}
+        <div className="card" style={{
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.14), rgba(124, 58, 237, 0.12))',
+          border: '1.5px solid rgba(239, 68, 68, 0.4)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'
+        }}>
+          <div style={{ flex: '1 1 260px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+              <span style={{ background: '#ef4444', color: '#fff', fontSize: '0.68rem', fontWeight: 800, padding: '0.18rem 0.55rem', borderRadius: 20 }}>
+                🔥 BLACK OCTOBER REPORT
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 700 }}>
+                📱 iOS & Android Ready
+              </span>
+            </div>
+            <h4 style={{ margin: '0 0 0.25rem', fontSize: '1.02rem' }}>
+              {lang === 'id' ? 'Berita & Update Keamanan Siber + Aplikasi Mobile' : 'Cybersecurity News & Mobile App Hub'}
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              {lang === 'id'
+                ? 'Baca rangkuman eksekutif "Black October", tren Vibe Coding, atau instal aplikasi mobile iOS & Android.'
+                : 'Read the "Black October" executive briefing, Vibe Coding updates, or install the iOS & Android mobile app.'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary btn-sm" onClick={() => navigate('/news')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Newspaper size={15} /> {lang === 'id' ? 'Buka Berita & Update' : 'Open News & Updates'}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowMobileModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid var(--border-light)' }}>
+              <Smartphone size={15} color="var(--accent)" /> {lang === 'id' ? 'Instal iOS / Android' : 'Install iOS / Android'}
+            </button>
+          </div>
+        </div>
+        <MobileInstallModal open={showMobileModal} onClose={() => setShowMobileModal(false)} />
       </div>
     );
   }
@@ -194,9 +231,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Hero & Daily Goal */}
-      <div style={{ display: 'flex', gap: '1.5rem' }}>
-        <div style={{ flex: 1, padding: '2rem', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.1))', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+      {/* Hero & Daily Goal (Responsive Wrap for Mobile iOS/Android) */}
+      <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 280px', padding: '1.75rem', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.1))', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
           <h2 style={{ marginBottom: '0.3rem' }}>Hey {user.name.split(' ')[0]}! {progress?.streak > 0 ? '🔥' : '👋'}</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
             {progress?.streak > 0
@@ -206,7 +243,7 @@ export default function Dashboard() {
           {progress && <XPLevel xp={progress.total_xp} />}
         </div>
         
-        <div className="card" style={{ width: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div className="card" style={{ flex: '1 1 240px', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
           <div className={`goal-circle ${dailyGoalReached ? 'active' : ''}`}>
             {dailyGoalReached ? <CheckCircle2 size={40} color="var(--success)" /> : <Flame size={40} color="var(--text-muted)" />}
           </div>
@@ -217,6 +254,42 @@ export default function Dashboard() {
               {lang === 'id' ? '🌟 Selesaikan 1 pelajaran hari ini!' : '🌟 Finish 1 lesson today!'}
             </p>
           )}
+        </div>
+      </div>
+
+      {/* ── BREAKING NEWS ("BLACK OCTOBER") & MOBILE APP BANNER ── */}
+      <div className="card" style={{
+        background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.14), rgba(124, 58, 237, 0.12))',
+        border: '1.5px solid rgba(239, 68, 68, 0.4)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'
+      }}>
+        <div style={{ flex: '1 1 260px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+            <span style={{ background: '#ef4444', color: '#fff', fontSize: '0.68rem', fontWeight: 800, padding: '0.18rem 0.55rem', borderRadius: 20 }}>
+              🔥 {lang === 'id' ? 'BERITA TERKINI · BLACK OCTOBER' : 'BREAKING · BLACK OCTOBER'}
+            </span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 700 }}>
+              📱 iOS & Android Ready
+            </span>
+          </div>
+          <h4 style={{ margin: '0 0 0.25rem', fontSize: '1rem' }}>
+            {lang === 'id'
+              ? 'Baca Rangkuman "Black October" & Tren Vibe Coding di Mana Saja'
+              : 'Read "Black October" Cyber Briefings & Vibe Coding News Anywhere'}
+          </h4>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            {lang === 'id'
+              ? 'Dilengkapi fitur Audio Briefing (dengarkan berita saat di perjalanan) dan aplikasi mobile iOS & Android dengan dukungan baca offline.'
+              : 'Includes hands-free Audio Briefing and installable iOS & Android mobile app with offline reading support.'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/news')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Newspaper size={15} /> {lang === 'id' ? 'Baca Berita Terkini' : 'Read Latest News'}
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowMobileModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid var(--border-light)' }}>
+            <Smartphone size={15} color="var(--accent)" /> {lang === 'id' ? 'Instal App (iOS/Android)' : 'Install App (iOS/Android)'}
+          </button>
         </div>
       </div>
 
@@ -461,6 +534,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <MobileInstallModal open={showMobileModal} onClose={() => setShowMobileModal(false)} />
     </div>
   );
 }

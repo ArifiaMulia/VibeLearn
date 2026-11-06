@@ -1,7 +1,7 @@
 {
-  "name": "VibeLearn — Interactive Vibe Coding LMS",
-  "short_name": "VibeLearn",
-  "description": "Belajar Vibe Coding & Cybersecurity dengan AI — interaktif, gamifikasi, dan menyenangkan.",
+  "name": "Promptara — VibeLearn AI & Cyber Academy",
+  "short_name": "Promptara",
+  "description": "Belajar Vibe Coding, AI Orchestration & Berita Cybersecurity Terkini (Black October) di iOS & Android.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "theme_color": "#07071a",
   "background_color": "#07071a",
   "lang": "id",
-  "categories": ["education", "productivity", "security"],
+  "categories": ["education", "productivity", "security", "news"],
   "icons": [
     {
       "src": "/favicon-192x192.png",
@@ -34,6 +34,29 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Berita & Update (Black October)",
+      "short_name": "Berita",
+      "description": "Baca rangkuman berita Vibe Coding & Cybersecurity terkini",
+      "url": "/news",
+      "icons": [{ "src": "/favicon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Kursus Saya",
+      "short_name": "Kursus",
+      "description": "Lanjutkan belajar materi Vibe Coding & AI",
+      "url": "/courses",
+      "icons": [{ "src": "/favicon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Laboratorium Interaktif",
+      "short_name": "Labs",
+      "description": "Latihan praktik prompt engineering & keamanan siber",
+      "url": "/labs",
+      "icons": [{ "src": "/favicon-192x192.png", "sizes": "192x192" }]
     }
   ],
   "screenshots": [],

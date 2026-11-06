@@ -3,50 +3,44 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
   LayoutDashboard, BookOpen, FlaskConical, Users, BarChart3,
-  CreditCard, Settings, Award,
+  CreditCard, Settings, Award, Newspaper,
 } from 'lucide-react';
 
 /**
- * BottomNav — Fixed bottom navigation bar for mobile screens.
+ * BottomNav — Fixed bottom navigation bar for mobile screens (iOS & Android).
  * Shown only on screens < 768px (controlled by parent via CSS or JS).
- * Role-aware: renders nav items matching the current user's role.
+ * Role-aware: includes direct 1-tap access to News & Updates (/news) for all roles.
  */
 export default function BottomNav() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isId = lang === 'id';
 
   const NAV_ITEMS = {
     super_admin: [
       { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/dashboard' },
       { icon: BookOpen,        key: 'nav_courses',        to: '/courses' },
+      { icon: Newspaper,       key: 'nav_news',           to: '/news', badge: 'HOT' },
       { icon: FlaskConical,    key: 'nav_labs',           to: '/labs' },
       { icon: Users,           key: 'nav_users',          to: '/admin/users' },
-      { icon: BarChart3,       key: 'nav_analytics',      to: '/admin/analytics' },
-      { icon: CreditCard,      key: 'nav_subscriptions',  to: '/admin/subscriptions' },
-      { icon: Settings,        key: 'nav_course_builder', to: '/admin/courses' },
-      { icon: Award,           key: 'nav_certificate_builder', to: '/admin/certificates' },
     ],
     master: [
       { icon: LayoutDashboard, key: 'nav_dashboard',     to: '/dashboard' },
       { icon: BookOpen,        key: 'nav_courses',        to: '/courses' },
+      { icon: Newspaper,       key: 'nav_news',           to: '/news', badge: 'HOT' },
       { icon: FlaskConical,    key: 'nav_labs',           to: '/labs' },
       { icon: Users,           key: 'nav_students',       to: '/admin/users' },
-      { icon: BarChart3,       key: 'nav_analytics',      to: '/admin/analytics' },
-      { icon: Settings,        key: 'nav_course_builder', to: '/admin/courses' },
-      { icon: Award,           key: 'nav_certificate_builder', to: '/admin/certificates' },
     ],
     participant: [
       { icon: LayoutDashboard, key: 'nav_dashboard',   to: '/dashboard' },
       { icon: BookOpen,        key: 'nav_my_courses',  to: '/courses' },
+      { icon: Newspaper,       key: 'nav_news',        to: '/news', badge: 'HOT' },
       { icon: FlaskConical,    key: 'nav_labs',        to: '/labs' },
-      { icon: BarChart3,       key: 'nav_leaderboard', to: '/leaderboard' },
       { icon: Settings,        key: 'nav_profile',     to: '/profile' },
     ],
   };
 
   const navItems = NAV_ITEMS[user?.role] || NAV_ITEMS.participant;
-
-  // For admin roles with many items, show only the first 5 to fit mobile screen
   const visibleItems = navItems.slice(0, 5);
 
   return (
@@ -65,10 +59,10 @@ export default function BottomNav() {
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.3)',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.35)',
       }}
     >
-      {visibleItems.map(({ icon: Icon, key, to }) => (
+      {visibleItems.map(({ icon: Icon, key, to, badge }) => (
         <NavLink
           key={to}
           to={to}
@@ -80,26 +74,49 @@ export default function BottomNav() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.2rem',
-            padding: '0.6rem 0.25rem',
+            padding: '0.55rem 0.2rem',
             textDecoration: 'none',
             color: isActive ? 'var(--primary-light)' : 'var(--text-muted)',
             background: isActive
-              ? 'linear-gradient(180deg, rgba(124,58,237,0.12) 0%, transparent 100%)'
+              ? 'linear-gradient(180deg, rgba(124,58,237,0.14) 0%, transparent 100%)'
               : 'transparent',
             borderTop: isActive ? '2px solid var(--primary)' : '2px solid transparent',
             transition: 'all 0.18s ease',
             minWidth: 0,
+            position: 'relative',
           })}
         >
           {({ isActive }) => (
             <>
-              <Icon
-                size={20}
-                style={{
-                  filter: isActive ? 'drop-shadow(0 0 6px var(--primary-glow))' : 'none',
-                  transition: 'filter 0.18s ease',
-                }}
-              />
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <Icon
+                  size={20}
+                  style={{
+                    filter: isActive ? 'drop-shadow(0 0 6px var(--primary-glow))' : 'none',
+                    transition: 'filter 0.18s ease',
+                  }}
+                />
+                {badge && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -5,
+                      right: -12,
+                      background: '#ef4444',
+                      color: '#fff',
+                      fontSize: '0.45rem',
+                      fontWeight: 900,
+                      padding: '1px 3.5px',
+                      borderRadius: 6,
+                      letterSpacing: '0.02em',
+                      lineHeight: 1.1,
+                      boxShadow: '0 0 6px rgba(239,68,68,0.6)',
+                    }}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </div>
               <span
                 style={{
                   fontSize: '0.6rem',
@@ -112,7 +129,7 @@ export default function BottomNav() {
                   letterSpacing: '-0.01em',
                 }}
               >
-                {t(key)}
+                {key === 'nav_news' ? (isId ? 'Berita' : 'News') : t(key)}
               </span>
             </>
           )}

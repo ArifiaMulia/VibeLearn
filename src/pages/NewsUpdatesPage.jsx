@@ -3,10 +3,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
   Newspaper, ShieldAlert, Cpu, Sparkles, ExternalLink, Clock, Search,
-  ChevronDown, ChevronUp, Plus, Trash2, Flame, Shield, BookOpen, X, CheckCircle, AlertTriangle
+  ChevronDown, ChevronUp, Plus, Trash2, Flame, Shield, BookOpen, X, CheckCircle, AlertTriangle,
+  Volume2, VolumeX, Share2, Smartphone, Check
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import MobileInstallModal from '../components/MobileInstallModal';
 
 const CATEGORY_META = {
   all: {
@@ -72,6 +74,9 @@ export default function NewsUpdatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSlug, setExpandedSlug] = useState('black-october-2026-ai-vulnpocalypse-cybersecurity');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [speakingSlug, setSpeakingSlug] = useState(null);
+  const [copiedSlug, setCopiedSlug] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [newPost, setNewPost] = useState({
     category: 'cybersecurity',
@@ -108,7 +113,56 @@ export default function NewsUpdatesPage() {
 
   useEffect(() => {
     loadNews();
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
+
+  const handleToggleAudioBriefing = (item) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (speakingSlug === item.slug) {
+      window.speechSynthesis.cancel();
+      setSpeakingSlug(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const title = (isId ? item.title_id : item.title_en) || '';
+    const summary = (isId ? item.summary_id : item.summary_en) || '';
+    const rawContent = ((isId ? item.content_id : item.content_en) || '')
+      .replace(/[#*`_~>|]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const utterance = new SpeechSynthesisUtterance(`${title}. ${summary}. ${rawContent}`);
+    utterance.lang = isId ? 'id-ID' : 'en-US';
+    utterance.rate = 1.02;
+    utterance.onend = () => setSpeakingSlug(null);
+    utterance.onerror = () => setSpeakingSlug(null);
+    setSpeakingSlug(item.slug);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleShareArticle = async (item) => {
+    const title = (isId ? item.title_id : item.title_en) || 'Promptara News';
+    const summary = (isId ? item.summary_id : item.summary_en) || '';
+    const shareUrl = `${window.location.origin}/news#${item.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title,
+          text: `${title} — ${summary}`,
+          url: shareUrl,
+        });
+        return;
+      } catch {}
+    }
+    try {
+      await navigator.clipboard?.writeText(`${title}\n\n${summary}\n\n🔗 ${shareUrl}`);
+      setCopiedSlug(item.slug);
+      setTimeout(() => setCopiedSlug(null), 2500);
+    } catch {}
+  };
 
   const handleCreatePost = async (e) => {
     e.preventDefault();
@@ -223,20 +277,36 @@ export default function NewsUpdatesPage() {
           </div>
         </div>
 
-        {isAdmin && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
           <button
-            onClick={() => setShowAddModal(true)}
-            className="btn btn-primary btn-sm"
+            onClick={() => setShowMobileModal(true)}
+            className="btn btn-ghost btn-sm"
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.45rem',
-              background: 'linear-gradient(135deg, #f97316, #7c3aed)',
-              border: 'none', padding: '0.6rem 1.1rem', fontWeight: 700
+              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              border: '1px solid rgba(6, 182, 212, 0.45)',
+              background: 'rgba(6, 182, 212, 0.1)',
+              color: 'var(--accent)', fontWeight: 700, padding: '0.55rem 0.95rem'
             }}
           >
-            <Plus size={16} />
-            {isId ? 'Tambah Berita / Update' : 'Publish Update'}
+            <Smartphone size={16} />
+            {isId ? '📱 Baca di iOS & Android' : '📱 Read on iOS & Android'}
           </button>
-        )}
+
+          {isAdmin && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="btn btn-primary btn-sm"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.45rem',
+                background: 'linear-gradient(135deg, #f97316, #7c3aed)',
+                border: 'none', padding: '0.6rem 1.1rem', fontWeight: 700
+              }}
+            >
+              <Plus size={16} />
+              {isId ? 'Tambah Berita / Update' : 'Publish Update'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Spotlight Banner: "Black October" Executive Alert ── */}
@@ -322,14 +392,17 @@ export default function NewsUpdatesPage() {
         </div>
       )}
 
-      {/* ── Filter Tabs & Search Bar ── */}
+      {/* ── Filter Tabs & Search Bar (Touch-Scrollable on Mobile) ── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         flexWrap: 'wrap', gap: '0.75rem',
         background: 'var(--bg-card)', padding: '0.85rem 1rem',
         borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)'
       }}>
-        <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'flex', gap: '0.45rem', overflowX: 'auto', maxWidth: '100%',
+          paddingBottom: '0.15rem', WebkitOverflowScrolling: 'touch'
+        }}>
           {Object.entries(CATEGORY_META).map(([catKey, meta]) => {
             const active = activeCategory === catKey;
             return (
@@ -342,6 +415,8 @@ export default function NewsUpdatesPage() {
                   fontSize: '0.78rem',
                   fontWeight: 700,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                   border: active ? `1.5px solid ${meta.color}` : '1px solid var(--border-light)',
                   background: active ? `${meta.color}22` : 'var(--bg-surface)',
                   color: active ? meta.color : 'var(--text-muted)',
@@ -354,7 +429,7 @@ export default function NewsUpdatesPage() {
           })}
         </div>
 
-        <div style={{ position: 'relative', minWidth: 240, flex: '0 1 280px' }}>
+        <div style={{ position: 'relative', minWidth: 220, flex: '1 1 240px' }}>
           <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
@@ -484,23 +559,61 @@ export default function NewsUpdatesPage() {
                       ))}
                     </div>
 
-                    <button
-                      onClick={() => setExpandedSlug(isExpanded ? null : item.slug)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                        padding: '0.42rem 0.9rem', borderRadius: 8,
-                        background: isExpanded ? 'rgba(124, 58, 237, 0.15)' : 'var(--bg-surface)',
-                        border: `1px solid ${isExpanded ? 'var(--primary)' : 'var(--border-light)'}`,
-                        color: isExpanded ? 'var(--primary)' : 'var(--text-primary)',
-                        fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer'
-                      }}
-                    >
-                      <BookOpen size={14} />
-                      {isExpanded
-                        ? (isId ? 'Tutup Rangkuman' : 'Collapse Briefing')
-                        : (isId ? 'Baca Bedah Lengkap & Sumber' : 'Read Executive Breakdown & Sources')}
-                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                      {/* Audio Briefing Button (Hands-free mobile listening) */}
+                      <button
+                        onClick={() => handleToggleAudioBriefing(item)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                          padding: '0.4rem 0.75rem', borderRadius: 8,
+                          background: speakingSlug === item.slug ? 'rgba(16, 185, 129, 0.16)' : 'var(--bg-surface)',
+                          border: `1px solid ${speakingSlug === item.slug ? '#10b981' : 'var(--border-light)'}`,
+                          color: speakingSlug === item.slug ? '#10b981' : 'var(--text-secondary)',
+                          fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+                        }}
+                      >
+                        {speakingSlug === item.slug ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                        {speakingSlug === item.slug
+                          ? (isId ? 'Hentikan Audio' : 'Stop Audio')
+                          : (isId ? 'Dengarkan' : 'Listen')}
+                      </button>
+
+                      {/* Mobile Native Share Button */}
+                      <button
+                        onClick={() => handleShareArticle(item)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                          padding: '0.4rem 0.75rem', borderRadius: 8,
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--border-light)',
+                          color: copiedSlug === item.slug ? '#10b981' : 'var(--text-secondary)',
+                          fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+                        }}
+                      >
+                        {copiedSlug === item.slug ? <Check size={14} /> : <Share2 size={14} />}
+                        {copiedSlug === item.slug
+                          ? (isId ? 'Tersalin!' : 'Copied!')
+                          : (isId ? 'Bagikan' : 'Share')}
+                      </button>
+
+                      <button
+                        onClick={() => setExpandedSlug(isExpanded ? null : item.slug)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                          padding: '0.42rem 0.9rem', borderRadius: 8,
+                          background: isExpanded ? 'rgba(124, 58, 237, 0.15)' : 'var(--bg-surface)',
+                          border: `1px solid ${isExpanded ? 'var(--primary)' : 'var(--border-light)'}`,
+                          color: isExpanded ? 'var(--primary)' : 'var(--text-primary)',
+                          fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer'
+                        }}
+                      >
+                        <BookOpen size={14} />
+                        {isExpanded
+                          ? (isId ? 'Tutup Rangkuman' : 'Collapse Briefing')
+                          : (isId ? 'Baca Bedah Lengkap & Sumber' : 'Read Executive Breakdown & Sources')}
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -737,6 +850,8 @@ export default function NewsUpdatesPage() {
           </div>
         </div>
       )}
+
+      <MobileInstallModal open={showMobileModal} onClose={() => setShowMobileModal(false)} />
     </div>
   );
 }

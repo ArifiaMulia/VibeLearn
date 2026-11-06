@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Search, Zap, Sun, Moon, X, Menu } from 'lucide-react';
+import { Bell, Search, Zap, Sun, Moon, X, Menu, Smartphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useIsMobile } from '../hooks/useIsMobile';
+import MobileInstallModal from './MobileInstallModal';
 
 function NotificationPanel({ onClose, t }) {
   const { authFetch } = useAuth();
@@ -82,6 +83,7 @@ export default function TopBar({ title, subtitle }) {
   const [search, setSearch] = useState('');
   const [theme, setTheme] = useState(localStorage.getItem('vl_theme') || 'dark');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileModal, setShowMobileModal] = useState(false);
 
   const sidebarWidth = isMobile ? 0 : (collapsed ? 72 : 260);
 
@@ -152,7 +154,7 @@ export default function TopBar({ title, subtitle }) {
       )}
 
       {/* XP (participants only) */}
-      {user?.role === 'participant' && (
+      {user?.role === 'participant' && !isMobile && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '0.75rem',
           background: 'var(--bg-card)', border: '1px solid var(--border-light)',
@@ -174,8 +176,8 @@ export default function TopBar({ title, subtitle }) {
         </div>
       )}
 
-      {/* Super Admin Preview */}
-      {realUser?.role === 'super_admin' && (
+      {/* Super Admin Preview (hidden on small mobile screens to avoid overflow) */}
+      {realUser?.role === 'super_admin' && !isMobile && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
           {previewRole && (
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--warning)', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 6, padding: '0.25rem 0.6rem' }}>
@@ -208,7 +210,31 @@ export default function TopBar({ title, subtitle }) {
       )}
 
       {/* Right Controls */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto', flexShrink: 0, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '0.45rem', marginLeft: 'auto', flexShrink: 0, alignItems: 'center' }}>
+        {/* iOS & Android Mobile App Installer Button */}
+        <button
+          onClick={() => setShowMobileModal(true)}
+          title={lang === 'id' ? 'Instal Aplikasi Mobile (iOS & Android)' : 'Install Mobile App (iOS & Android)'}
+          style={{
+            height: 38,
+            borderRadius: 'var(--radius-sm)',
+            padding: isMobile ? '0 0.6rem' : '0 0.75rem',
+            background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.16), rgba(6, 182, 212, 0.16))',
+            border: '1px solid rgba(124, 58, 237, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            cursor: 'pointer',
+            fontSize: '0.76rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            transition: 'all 0.2s',
+          }}
+        >
+          <Smartphone size={15} color="var(--accent)" />
+          <span>{isMobile ? 'App' : (lang === 'id' ? 'iOS / Android' : 'Mobile App')}</span>
+        </button>
+
         {/* Language Toggle */}
         <button
           onClick={toggleLang}
@@ -250,6 +276,7 @@ export default function TopBar({ title, subtitle }) {
           {showNotifications && <NotificationPanel t={t} onClose={() => setShowNotifications(false)} />}
         </div>
       </div>
+      <MobileInstallModal open={showMobileModal} onClose={() => setShowMobileModal(false)} />
     </header>
   );
 }

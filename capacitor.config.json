@@ -1,0 +1,19 @@
+{
+  "appId": "space.virtuenet.promptara",
+  "appName": "Promptara",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://vibe.virtuenet.space",
+    "cleartext": false
+  },
+  "ios": {
+    "contentInset": "always",
+    "allowsLinkPreview": true,
+    "backgroundColor": "#07071a"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#07071a"
+  }
+}
