@@ -3,7 +3,7 @@
  * Precaches app shell & icons gracefully so Chrome WebAPK & iOS standalone install never fail.
  */
 
-const CACHE_NAME = 'promptara-shell-v3.6.0-r1';
+const CACHE_NAME = 'promptara-shell-v3.6.0-r2';
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [
@@ -15,9 +15,7 @@ const STATIC_ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
   '/icon-192-maskable.png',
-  '/icon-512-maskable.png',
-  '/apple-touch-icon.png',
-  '/logo.png'
+  '/icon-512-maskable.png'
 ];
 
 self.addEventListener('install', (event) => {
