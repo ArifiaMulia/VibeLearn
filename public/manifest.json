@@ -1,7 +1,8 @@
 {
-  "name": "Promptara — VibeLearn AI & Cyber Academy",
+  "name": "Promptara - VibeLearn AI & Cyber Academy",
   "short_name": "Promptara",
   "description": "Belajar Vibe Coding, AI Orchestration & Berita Cybersecurity Terkini (Black October) di iOS & Android.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

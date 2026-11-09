@@ -197,26 +197,37 @@ export default function LandingPage() {
                   Instal langsung ke App Drawer & layar utama HP Android Anda dengan 1-Klik. Mendukung layar penuh (standalone), Audio Briefing berita, dan mode baca offline.
                 </p>
               </div>
+              <a
+                href="/assets/promptara.apk"
+                download="Promptara.apk"
+                style={{
+                  width: '100%', padding: '0.85rem 1.2rem', borderRadius: 10, textDecoration: 'none',
+                  background: 'linear-gradient(135deg, #10b981, #06b6d4)', color: '#fff',
+                  fontWeight: 800, fontSize: '0.92rem', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', gap: '0.5rem', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.3)',
+                }}
+              >
+                <Download size={18} /> Unduh APK Android (Langsung)
+              </a>
               <button
                 onClick={() => setMobileModalPlatform('android')}
                 style={{
                   width: '100%',
-                  padding: '0.85rem 1.2rem',
+                  padding: '0.7rem 1.2rem',
                   borderRadius: 10,
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-                  color: '#fff',
-                  fontWeight: 800,
-                  fontSize: '0.92rem',
+                  border: '1px solid rgba(16, 185, 129, 0.45)',
+                  background: 'transparent',
+                  color: '#10b981',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  boxShadow: '0 6px 20px rgba(16, 185, 129, 0.3)',
                 }}
               >
-                <Download size={18} /> Pilih & Instal untuk Android
+                <Smartphone size={16} /> Panduan &amp; opsi instal via Chrome
               </button>
             </div>
 

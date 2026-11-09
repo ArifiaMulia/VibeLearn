@@ -351,25 +351,44 @@ export default function MobileInstallModal({ open, onClose, initialPlatform }) {
               </span>
             </div>
 
-            {/* Primary 1-Click Install Button */}
+            {/* Direct APK download — works even when Chrome's "Install app" hangs */}
+            <a
+              href="/assets/promptara.apk"
+              download="Promptara.apk"
+              style={{
+                width: '100%', padding: '0.95rem 1rem', borderRadius: 10, textDecoration: 'none',
+                background: 'linear-gradient(135deg, #10b981, #06b6d4)', color: '#fff',
+                fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: '0.55rem', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
+              }}
+            >
+              <Download size={18} />
+              {isId ? 'Unduh Aplikasi Android (APK)' : 'Download Android App (APK)'}
+            </a>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+              {isId
+                ? <>Buka file <strong>Promptara.apk</strong> setelah terunduh. Jika diminta, izinkan <strong>"Instal dari sumber ini"</strong> untuk Chrome, lalu ketuk <strong>Instal</strong>. Ikon Promptara langsung muncul di layar utama.</>
+                : <>Open <strong>Promptara.apk</strong> once downloaded. If asked, allow <strong>"Install from this source"</strong> for Chrome, then tap <strong>Install</strong>.</>}
+            </div>
+
+            {/* Alternative: Chrome WebAPK install */}
             <button
               onClick={handleAndroidInstall}
               disabled={installingState}
               style={{
                 width: '100%',
-                padding: '0.85rem 1rem',
+                padding: '0.7rem 1rem',
                 borderRadius: 10,
-                border: 'none',
-                background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: '0.92rem',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                fontWeight: 700,
+                fontSize: '0.84rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.55rem',
-                boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
               }}
             >
               <Download size={18} />
