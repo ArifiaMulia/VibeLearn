@@ -448,7 +448,7 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
   .grid-3 { grid-template-columns: repeat(2,1fr); }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
   /* ── Core layout ── */
   .main-content { margin-left: 0 !important; }
   .page-container { padding: 1rem; max-width: 100%; }
@@ -520,7 +520,7 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
 }
 
 /* ── Extra small screens (< 480px) ── */
-@media (max-width: 480px) {
+@media (max-width: 480px), (max-device-width: 480px) and (pointer: coarse) {
   .page-container { padding: 0.75rem; }
   h1 { font-size: 1.4rem; }
   .card { padding: 0.85rem; }
@@ -943,7 +943,7 @@ pre { max-width: 100%; overflow-x: auto; }
 .markdown-content, .markdown-content p, .markdown-content li, .markdown-content td { overflow-wrap: anywhere; }
 .markdown-content pre { overflow-x: auto; }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
   html, body, #root { max-width: 100vw; overflow-x: hidden; }
   body { font-size: 16px; }
   .app-layout { display: block; width: 100%; overflow-x: hidden; }
@@ -986,11 +986,11 @@ pre { max-width: 100%; overflow-x: auto; }
 }
 
 /* Floating helpers must clear the bottom navigation bar */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
   .float-above-nav { bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important; right: 0.85rem !important; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
   /* Data tables scroll inside their own box (never widen the page) */
   table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
   table td, table th { padding: 0.65rem 0.75rem !important; }
@@ -1001,7 +1001,7 @@ pre { max-width: 100%; overflow-x: auto; }
   h2[style*="display: flex"] { flex-wrap: wrap; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
   .page-container div, .page-container section, .page-container form, .page-container article { min-width: 0; }
   input, select, textarea { max-width: 100%; }
 }
