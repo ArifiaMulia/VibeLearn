@@ -129,7 +129,7 @@ export default function LoginPage() {
       />
 
       {/* Left Panel */}
-      <div style={{
+      <div className="login-left" style={{
         flex: '1 1 380px', display: 'flex', flexDirection: 'column', justifyContent: 'center',
         padding: '2.5rem', background: 'var(--bg-surface)',
         borderRight: '1px solid var(--border-light)', position: 'relative', overflow: 'hidden',
@@ -219,7 +219,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel — Form */}
-      <div style={{ flex: '1 1 380px', maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div className="login-right" style={{ flex: '1 1 380px', maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
           {/* Toggle */}
           <div className="tab-bar" style={{ marginBottom: '1.75rem' }}>

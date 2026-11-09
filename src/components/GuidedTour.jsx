@@ -99,14 +99,15 @@ export default function GuidedTour() {
   };
 
   return (
-    <div style={{
+    <div className="float-above-nav" style={{
       position: 'fixed', bottom: '1.5rem', right: '1.5rem',
       zIndex: 500, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem',
+      maxWidth: 'calc(100vw - 1.5rem)',
     }}>
       {/* Expanded Panel */}
       {expanded && (
         <div style={{
-          width: 300, background: 'var(--bg-surface)',
+          width: 'min(300px, calc(100vw - 1.7rem))', background: 'var(--bg-surface)',
           border: '1px solid var(--primary)', borderRadius: 'var(--radius-lg)',
           boxShadow: '0 8px 40px rgba(124,58,237,0.25)',
           animation: 'fadeInUp 0.25s ease',

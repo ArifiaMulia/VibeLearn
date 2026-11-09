@@ -76,8 +76,8 @@ export default function LandingPage() {
           <span style={{ fontWeight:800, fontSize:'1.2rem' }}>{branding.app_name || "Promptara"}</span>
           <span style={{ fontSize:'0.7rem', color:'var(--accent)', fontWeight:600 }}>{branding.app_tagline || "AI Coding Academy"}</span>
         </div>
-        <div style={{ display:'flex', gap:'0.65rem', alignItems:'center', flexWrap:'wrap' }}>
-          <a href="#download-app" style={{
+        <div className="landing-nav-actions" style={{ display:'flex', gap:'0.65rem', alignItems:'center', flexWrap:'wrap' }}>
+          <a href="#download-app" className="landing-nav-extra" style={{
             fontSize:'0.82rem', color:'#10b981', fontWeight:700, textDecoration:'none',
             padding:'0.4rem 0.8rem', borderRadius:20,
             background:'rgba(16,185,129,0.12)', border:'1px solid rgba(16,185,129,0.35)',
@@ -85,7 +85,7 @@ export default function LandingPage() {
           }}>
             <Download size={14} /> Download App (Android / iOS)
           </a>
-          <a href="#pricing" style={{ fontSize:'0.85rem', color:'var(--text-muted)', textDecoration:'none', padding:'0.4rem 0.65rem' }}
+          <a href="#pricing" className="landing-nav-extra" style={{ fontSize:'0.85rem', color:'var(--text-muted)', textDecoration:'none', padding:'0.4rem 0.65rem' }}
             onMouseOver={e => e.currentTarget.style.color='var(--text-primary)'} onMouseOut={e => e.currentTarget.style.color='var(--text-muted)'}>
             Pricing
           </a>
@@ -284,7 +284,7 @@ export default function LandingPage() {
 
       {/* Stats */}
       <section style={{ padding:'2rem 5%', background:'var(--bg-surface)', borderTop:'1px solid var(--border-light)', borderBottom:'1px solid var(--border-light)' }}>
-        <div style={{ maxWidth:900, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1rem', textAlign:'center' }}>
+        <div className="landing-stats" style={{ maxWidth:900, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1rem', textAlign:'center' }}>
           {stats.map(s => (
             <div key={s.label}>
               <div style={{ fontSize:'2.2rem', fontWeight:900, background:'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>{s.value}</div>

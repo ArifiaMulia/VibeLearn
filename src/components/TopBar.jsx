@@ -29,7 +29,12 @@ function NotificationPanel({ onClose, t }) {
   };
 
   return (
-    <div ref={ref} style={{
+    <div ref={ref} style={window.innerWidth < 768 ? {
+      position: 'fixed', top: 'calc(var(--topbar-height) + 6px)', left: '0.75rem', right: '0.75rem', width: 'auto',
+      background: 'var(--bg-surface)', border: '1px solid var(--border-light)',
+      borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', zIndex: 300,
+      overflow: 'hidden', animation: 'fadeInUp 0.2s ease',
+    } : {
       position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 340,
       background: 'var(--bg-surface)', border: '1px solid var(--border-light)',
       borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', zIndex: 200,
@@ -232,7 +237,7 @@ export default function TopBar({ title, subtitle }) {
           }}
         >
           <Smartphone size={15} color="var(--accent)" />
-          <span>{isMobile ? 'App' : (lang === 'id' ? 'iOS / Android' : 'Mobile App')}</span>
+          <span>{isMobile ? '' : (lang === 'id' ? 'iOS / Android' : 'Mobile App')}</span>
         </button>
 
         {/* Language Toggle */}
@@ -250,7 +255,7 @@ export default function TopBar({ title, subtitle }) {
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
         >
           <span style={{ fontSize: '1rem' }}>{lang === 'en' ? '🇬🇧' : '🇮🇩'}</span>
-          <span>{lang === 'en' ? 'EN' : 'ID'}</span>
+          {!isMobile && <span>{lang === 'en' ? 'EN' : 'ID'}</span>}
         </button>
 
         {/* Theme toggle */}
