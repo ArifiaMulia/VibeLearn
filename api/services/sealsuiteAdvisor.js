@@ -11,7 +11,7 @@ const SEALSUITE_DOCS_URL = 'https://docs.byteplus.com/en/docs/sealsuite/docs-wha
 const PROFILES = [
   {
     id: 'interception_wiretapping_insider_lims',
-    match: /penyadapan|sadap|wiretap|interception|lawful interception|\blims\b|spyware|pegasus|espionage|spionase|insider threat|telecom|telekomunikasi|presiden|kepala negara|vip|signal|ss7|imsi/i,
+    match: /penyadapan|sadap|wiretap|interception|lawful interception|\blims\b|spyware|pegasus|espionage|spionase|insider threat|ss7|imsi/i,
     modules: [
       'Zero Trust Encrypted Tunnel (SealSuite VPN / ZTNA)',
       'Privileged Insider & Admin Audit Log (Immutable Telemetry)',
@@ -62,7 +62,7 @@ const PROFILES = [
   },
   {
     id: 'session_identity_phishing',
-    match: /infostealer|session|cookie|phishing|credential|password|oauth|sso|token|hijack|brute[- ]?force|mfa|2fa|identity/i,
+    match: /infostealer|session hijacking|pass-the-cookie|cookie theft|phishing|credential theft|password leak|oauth|sso|token theft|account takeover|brute[- ]?force|mfa|2fa|zero[- ]?trust|unauthorized access|peretasan akun/i,
     modules: ['IAM (OneId SSO & Multi-Factor Authentication)', 'Device-Bound ZTNA & Application Gateway', 'Dynamic Control Risk Engine'],
     headline_id: 'Pengikatan Sesi ke Perangkat Terdaftar (Device-Bound Zero Trust) & Verifikasi MFA Kontekstual',
     headline_en: 'Device-Bound Zero Trust Session Enforcement & Adaptive Multi-Factor Authentication (IAM)',
@@ -83,7 +83,7 @@ const PROFILES = [
   },
   {
     id: 'zeroday_cve_vuln_patch',
-    match: /cve-\d{4}|zero[- ]?day|rce|remote code execution|php2shell|vulnerability|exploit|patch|unpatched|privilege escalation|buffer overflow|sql injection/i,
+    match: /cve-\d{4}|zero[- ]?day|\brce\b|remote code execution|php2shell|vulnerabilit|exploit|unpatched|privilege escalation|buffer overflow|sql injection|kerentanan siber|celah keamanan/i,
     modules: ['Endpoint Vulnerability & Patch Management', 'Application Gateway (Layer-7 Reverse Proxy)', 'Device Baseline Compliance'],
     headline_id: 'Mitigasi Celah Zero-Day/CVE dengan Isolasi Application Gateway & Distribusi Patch Terpusat',
     headline_en: 'Zero-Day / CVE Containment via Layer-7 Application Gateway & Centralized Patch Rollout',
@@ -104,7 +104,7 @@ const PROFILES = [
   },
   {
     id: 'supply_chain_ai_dlp_secrets',
-    match: /supply[- ]?chain|slopsquatting|vibe coding|api key|secret|leak|exfiltrat|dlp|source code|git|npm|pypi|litellm|mcp|prompt injection|shadow ai|llm/i,
+    match: /supply[- ]?chain|slopsquatting|api[- ]?key|secret leak|data leak|kebocoran data|data breach|exfiltrat|\bdlp\b|data loss prevention|litellm|prompt injection|shadow ai/i,
     modules: ['Data Loss Prevention (DLP v3.3.2+)', 'Endpoint Software Blacklist & Baseline', 'BYOD Secure Workspace & Watermarking'],
     headline_id: 'Pencegahan Kebocoran Source Code / API Key (Endpoint DLP) & Kontrol Paket/Aplikasi Terlarang',
     headline_en: 'Source Code & API Key Data Loss Prevention (Endpoint DLP) & Unauthorized Software Blocking',
@@ -125,31 +125,17 @@ const PROFILES = [
   },
 ];
 
-const DEFAULT_PROFILE = {
-  id: 'zero_trust_holistic',
-  modules: ['Zero Trust Network Access (ZTNA)', 'Endpoint Security & Device Baseline', 'Data Loss Prevention (DLP) & IAM'],
-  headline_id: 'Pertahanan Berlapis Arsitektur Zero Trust Terpadu (Identitas, Endpoint, Jaringan & DLP)',
-  headline_en: 'Unified Zero Trust Defense-in-Depth (Identity, Endpoint Posture, Network & DLP)',
-  summary_id:
-    'BytePlus SealSuite menyatukan 5 pilar keamanan inti (IAM, ZTNA/VPN, Endpoint Security, DLP, dan Dynamic Control) dalam satu konsol untuk memverifikasi setiap pengguna, kesehatan perangkat, dan keamanan data secara berkelanjutan.',
-  summary_en:
-    'BytePlus SealSuite unifies 5 core security pillars (IAM, ZTNA/VPN, Endpoint Security, DLP, and Dynamic Control) in a single console to continuously verify user identity, device posture, and data protection.',
-  actions_id: [
-    '**Verifikasi Identitas & Perangkat Berkelanjutan (Zero Trust)**: Pastikan hanya pengguna terautentikasi MFA dengan perangkat yang lulus pemeriksaan *Device Baseline* (OS ter-patch, antivirus aktif, enkripsi disk menyala) yang dapat mengakses sistem internal.',
-    '**Perlindungan Kebocoran Data (Endpoint DLP & Watermark)**: Terapkan kontrol transfer file, pembatasan peripheral/USB, serta watermark layar untuk mencegah eksfiltrasi data sensitif perusahaan.',
-    '**Manajemen Versi & Kepatuhan Terpusat**: Pantau seluruh event keamanan secara real-time dan kelola pembaruan agen keamanan melalui `Enterprise Settings > Versions` sesuai panduan resmi Release Notes SealSuite.',
-  ],
-  actions_en: [
-    '**Continuous Identity & Device Posture Verification**: Grant resource access only to MFA-authenticated users on endpoints that pass *Device Baseline* checks (active antivirus, disk encryption, and up-to-date OS patches).',
-    '**Endpoint Data Loss Prevention (DLP & Watermarking)**: Enforce file-transfer policies, USB peripheral controls, and screen watermarking to prevent sensitive corporate data leakage.',
-    '**Centralized Version & Compliance Governance**: Monitor security telemetry in real time and manage rolling client updates or hotfixes via `Enterprise Settings > Versions` per the SealSuite Release Notes.',
-  ],
-};
+// Exclude pure AI model benchmarks, general developer tutorials, or non-security news unless they explicitly address a security/privacy/threat topic
+const SECURITY_RELEVANCE_CHECK = /penyadapan|sadap|wiretap|interception|\blims\b|spyware|pegasus|ransomware|malware|trojan|backdoor|wiper|botnet|infostealer|phishing|credential|hijack|brute[- ]?force|cve-\d{4}|zero[- ]?day|\brce\b|php2shell|vulnerabilit|exploit|sql injection|supply[- ]?chain|slopsquatting|secret leak|data leak|kebocoran data|data breach|exfiltrat|\bdlp\b|data loss|prompt injection|sealsuite|zero[- ]?trust|keamanan siber|cybersecurity|serangan siber|peretasan|hacker|peretas|bssn|cisa|owasp/i;
 
 function buildSealSuiteResolution(article = {}) {
+  // Never force SealSuite onto pure AI model benchmark or general AI agent workflow articles unless they have concrete security/threat content
+  if (article.category === 'ai-models') {
+    return null;
+  }
+
   const haystack = [
     article.slug || '',
-    article.category || '',
     article.title_en || '',
     article.title_id || '',
     article.summary_en || '',
@@ -159,8 +145,15 @@ function buildSealSuiteResolution(article = {}) {
     Array.isArray(article.tags) ? article.tags.join(' ') : String(article.tags || ''),
   ].join(' ');
 
+  if (!SECURITY_RELEVANCE_CHECK.test(haystack)) {
+    return null;
+  }
+
   const matched = PROFILES.filter((p) => p.match.test(haystack));
-  const primary = matched[0] || DEFAULT_PROFILE;
+  if (matched.length === 0) {
+    return null;
+  }
+  const primary = matched[0];
 
   // Combine modules and actions if multiple threat vectors match (e.g., Black October has CVE + Supply Chain + Session theft)
   const modulesSet = new Set(primary.modules);

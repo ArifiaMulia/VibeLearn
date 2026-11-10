@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { ArrowLeft, ArrowRight, CheckCircle, Zap, Play, Trophy, ExternalLink, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { XPPopup } from '../../components/XPBadge';
 import ResourcesPanel from '../../components/ResourcesPanel';
@@ -231,6 +232,7 @@ function parseLessonScenes(title, content, transcript, lang) {
 
 // Native HTML5 Interactive Video Presenter — 100% immune to external media/firewall/YouTube blocks
 function InteractiveStudioPlayer({ title, content, transcript, transcript_id, lang }) {
+  const isMobile = useIsMobile(768);
   const activeTranscript = (lang === 'id' && transcript_id) ? transcript_id : (transcript || transcript_id || '');
   const scenes = parseLessonScenes(title, content, activeTranscript, lang);
   const SCENE_DURATION = 10; // seconds per scene
@@ -337,43 +339,45 @@ function InteractiveStudioPlayer({ title, content, transcript, transcript_id, la
         userSelect: 'none',
       }}
     >
-      {/* 16:9 Cinema Stage */}
+      {/* 16:9 Cinema Stage (auto-height on mobile so bullets & images never clip) */}
       <div
         onClick={() => setIsPlaying(p => !p)}
         style={{
           position: 'relative',
           width: '100%',
-          aspectRatio: '16/9',
-          padding: 'clamp(1rem, 3vw, 2.25rem)',
+          aspectRatio: isMobile ? 'auto' : '16/9',
+          minHeight: isMobile ? 280 : undefined,
+          padding: isMobile ? '0.9rem' : 'clamp(1rem, 3vw, 2.25rem)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
+          gap: isMobile ? '0.75rem' : 0,
           cursor: 'pointer',
           overflow: 'hidden',
           boxSizing: 'border-box',
         }}
       >
         {/* Top HUD Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', zIndex: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-              padding: '0.22rem 0.65rem', borderRadius: 20,
+              padding: '0.2rem 0.55rem', borderRadius: 20,
               background: isPlaying ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)',
               border: `1px solid ${isPlaying ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'}`,
               color: isPlaying ? '#34d399' : '#fbbf24',
-              fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.06em',
+              fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em',
             }}>
               <span style={{
                 width: 7, height: 7, borderRadius: '50%',
                 background: isPlaying ? '#10b981' : '#f59e0b',
                 boxShadow: isPlaying ? '0 0 8px #10b981' : 'none',
               }} />
-              {isPlaying ? (lang === 'id' ? 'LIVE STUDIO · BEBAS BLOKIR' : 'LIVE STUDIO · UNBLOCKED') : (lang === 'id' ? 'DIJEDA' : 'PAUSED')}
+              {isPlaying ? (lang === 'id' ? 'LIVE STUDIO' : 'LIVE STUDIO') : (lang === 'id' ? 'DIJEDA' : 'PAUSED')}
             </span>
             <span style={{
-              fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)',
-              background: 'rgba(255,255,255,0.08)', padding: '0.2rem 0.6rem', borderRadius: 12,
+              fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)',
+              background: 'rgba(255,255,255,0.08)', padding: '0.18rem 0.55rem', borderRadius: 12,
             }}>
               SCENE {String(currentSceneIdx + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}
             </span>
@@ -399,54 +403,54 @@ function InteractiveStudioPlayer({ title, content, transcript, transcript_id, la
         {/* Main Scene Body */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: currentScene?.image ? 'minmax(0, 1.25fr) minmax(0, 0.95fr)' : '1fr',
-          gap: 'clamp(0.75rem, 2vw, 1.5rem)',
+          gridTemplateColumns: (!isMobile && currentScene?.image) ? 'minmax(0, 1.25fr) minmax(0, 0.95fr)' : '1fr',
+          gap: isMobile ? '0.65rem' : 'clamp(0.75rem, 2vw, 1.5rem)',
           alignItems: 'center',
           zIndex: 2,
           my: 'auto',
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
             <div style={{
-              fontSize: 'clamp(1.05rem, 2.2vw, 1.55rem)',
-              fontWeight: 900,
+              fontSize: isMobile ? '0.98rem' : 'clamp(1.05rem, 2.2vw, 1.55rem)',
+              fontWeight: 800,
               color: '#ffffff',
-              lineHeight: 1.25,
+              lineHeight: 1.3,
               textShadow: '0 2px 16px rgba(0,0,0,0.6)',
             }}>
               {currentScene?.title}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-              {(currentScene?.bullets || []).map((b, bIdx) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {(currentScene?.bullets || []).slice(0, isMobile ? 3 : 4).map((b, bIdx) => (
                 <div
                   key={bIdx}
                   style={{
-                    display: 'flex', alignItems: 'flex-start', gap: '0.55rem',
+                    display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
                     background: 'rgba(15, 23, 42, 0.68)',
                     border: '1px solid rgba(255,255,255,0.1)',
                     borderLeft: '3px solid #06b6d4',
-                    padding: '0.45rem 0.75rem',
+                    padding: isMobile ? '0.4rem 0.65rem' : '0.45rem 0.75rem',
                     borderRadius: 8,
                     color: 'rgba(255,255,255,0.92)',
-                    fontSize: 'clamp(0.74rem, 1.35vw, 0.9rem)',
+                    fontSize: isMobile ? '0.78rem' : 'clamp(0.74rem, 1.35vw, 0.9rem)',
                     lineHeight: 1.45,
                     backdropFilter: 'blur(8px)',
                   }}
                 >
                   <span style={{ color: '#06b6d4', fontWeight: 800 }}>▸</span>
-                  <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{b}</span>
+                  <span style={{ display: '-webkit-box', WebkitLineClamp: isMobile ? 3 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{b}</span>
                 </div>
               ))}
             </div>
 
             {currentScene?.code && (
               <pre style={{
-                margin: 0, padding: '0.6rem 0.8rem',
+                margin: 0, padding: '0.55rem 0.75rem',
                 background: 'rgba(10, 14, 26, 0.88)',
                 border: '1px solid rgba(124,58,237,0.35)',
                 borderRadius: 8, color: '#a5b4fc',
-                fontFamily: 'monospace', fontSize: '0.74rem',
-                overflow: 'hidden', maxHeight: 96,
+                fontFamily: 'monospace', fontSize: '0.72rem',
+                overflowX: 'auto', maxHeight: 96,
               }}>
                 <code>{currentScene.code}</code>
               </pre>
@@ -456,9 +460,9 @@ function InteractiveStudioPlayer({ title, content, transcript, transcript_id, la
           {currentScene?.image && (
             <div style={{
               width: '100%',
-              height: '100%',
-              maxHeight: 220,
-              borderRadius: 12,
+              height: isMobile ? 150 : '100%',
+              maxHeight: isMobile ? 150 : 220,
+              borderRadius: 10,
               overflow: 'hidden',
               border: '1px solid rgba(255,255,255,0.16)',
               boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
@@ -489,13 +493,14 @@ function InteractiveStudioPlayer({ title, content, transcript, transcript_id, la
             background: 'rgba(0,0,0,0.78)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 8,
-            padding: '0.4rem 0.85rem',
+            padding: '0.38rem 0.75rem',
             color: '#f8fafc',
-            fontSize: 'clamp(0.72rem, 1.25vw, 0.84rem)',
+            fontSize: isMobile ? '0.74rem' : 'clamp(0.72rem, 1.25vw, 0.84rem)',
             textAlign: 'center',
-            whiteSpace: 'nowrap',
+            whiteSpace: isMobile ? 'normal' : 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
+            lineHeight: 1.4,
           }}>
             💬 {currentScene?.bullets?.[Math.floor((sceneProgress / 100) * (currentScene?.bullets?.length || 1))] || currentScene?.title}
           </div>

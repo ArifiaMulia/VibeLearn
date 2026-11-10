@@ -84,20 +84,20 @@ export default function ProfilePage() {
       <h1 style={{ fontSize: '1.8rem' }}>{t('nav_profile')}</h1>
 
       {/* Main Info */}
-      <div className="card" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+      <div className="card" style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <div style={{ 
-          width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 800,
-          boxShadow: '0 0 30px var(--primary-glow)', flexShrink: 0
+          width: 76, height: 76, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 800,
+          boxShadow: '0 0 24px var(--primary-glow)', flexShrink: 0
         }}>
           {user.name.charAt(0).toUpperCase()}
         </div>
-        <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{user.name}</h2>
-          <p style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <Mail size={14} /> {user.email}
+        <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+          <h2 style={{ fontSize: '1.35rem', marginBottom: '0.25rem' }}>{user.name}</h2>
+          <p style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', fontSize: '0.88rem', wordBreak: 'break-all' }}>
+            <Mail size={14} style={{ flexShrink: 0 }} /> {user.email}
           </p>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
             <span className="badge badge-primary"><Shield size={12} style={{ marginRight: 4 }}/> {user.role.replace('_', ' ')}</span>
             <span className="badge badge-accent"><CreditCard size={12} style={{ marginRight: 4 }}/> {user.plan.toUpperCase()} PLAN</span>
             {user.plan === 'free' && (
@@ -108,7 +108,7 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        <button className="btn btn-ghost" onClick={logout}>{t('nav_sign_out')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={logout} style={{ alignSelf: 'flex-start' }}>{t('nav_sign_out')}</button>
 
         {upgradeOpen && (
           <UpgradeModal 

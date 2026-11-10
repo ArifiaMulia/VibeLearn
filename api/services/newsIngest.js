@@ -15,11 +15,8 @@ const FEEDS = [
   { url: 'https://www.cisa.gov/cybersecurity-advisories/all.xml', name: 'CISA Advisories', category: 'cybersecurity', severity: 'high' },
   { url: 'https://simonwillison.net/atom/everything/', name: 'Simon Willison', category: 'vibe-coding' },
   { url: 'https://github.blog/ai-and-ml/feed/', name: 'GitHub Blog (AI & ML)', category: 'ai-agents' },
-  // 10 Media Berita Kepercayaan Publik RI (GoodStats / Reuters Institute Digital News Report)
+  // 10 Media Berita Kepercayaan Publik RI (GoodStats / Reuters Institute Digital News Report) — kanal Teknologi
   { url: 'https://www.cnnindonesia.com/teknologi/rss', name: 'CNN Indonesia', category: 'cybersecurity' },
-  { url: 'https://www.cnnindonesia.com/nasional/rss', name: 'CNN Indonesia Nasional', category: 'cybersecurity' },
-  { url: 'https://rss.tempo.co/nasional', name: 'Tempo.co', category: 'cybersecurity' },
-  { url: 'https://www.tribunnews.com/rss', name: 'Tribunnews', category: 'cybersecurity' },
 ];
 
 // 10 Media Berita Kepercayaan Publik RI (GoodStats Data: https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS)
@@ -364,8 +361,14 @@ async function searchTrustedIndonesianMedia(query, mediaId = 'all') {
         ...tagsOf({ title: cleanTitle, text: rawSummary, categories: it.categories || [] }, { name: publisherName, category: 'cybersecurity' }),
       ].slice(0, 8);
 
-      const contentId = `### Rangkuman Pemberitaan (${publisherName})\n${summaryId}\n\n### Konteks Keamanan Siber & Kedaulatan Data\nBerita terkait **"${cleanQuery}"** ini dihimpun dari daftar **10 Media Berita Kepercayaan Publik Tertinggi di Indonesia** ([GoodStats / Reuters Institute Digital News Report](${GOODSTATS_REFERENCE_URL})). Di bawah artikel ini, sistem secara otomatis memetakan **Resolusi & Mitigasi BytePlus SealSuite** berdasarkan arsitektur Zero Trust dan [Release Notes resmi SealSuite](https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log).`;
-      const contentEn = `### Executive News Summary (${publisherName})\n${summaryEn}\n\n### Cybersecurity & Sovereign Data Context\nThis report on **"${cleanQuery}"** is sourced from **Indonesia's Top 10 Most Trusted News Media** ([GoodStats / Reuters Institute Digital News Report](${GOODSTATS_REFERENCE_URL})). Below, Promptara maps concrete **BytePlus SealSuite Zero Trust Mitigations** referenced from the [Official SealSuite Release Notes](https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log).`;
+      const isSecurityRelevant = /penyadapan|sadap|wiretap|interception|\blims\b|spyware|pegasus|ransomware|malware|trojan|backdoor|infostealer|phishing|credential|hijack|cve-\d{4}|zero[- ]?day|vulnerabilit|exploit|sql injection|supply[- ]?chain|slopsquatting|data leak|kebocoran data|data breach|\bdlp\b|keamanan siber|cybersecurity|serangan siber|peretasan|hacker|peretas|bssn|cisa|owasp/i.test(`${cleanTitle} ${rawSummary}`);
+
+      const contentId = isSecurityRelevant
+        ? `### Rangkuman Pemberitaan (${publisherName})\n${summaryId}\n\n### Konteks Keamanan Siber & Kedaulatan Data\nBerita terkait **"${cleanQuery}"** ini dihimpun dari daftar **10 Media Berita Kepercayaan Publik Tertinggi di Indonesia** ([GoodStats / Reuters Institute Digital News Report](${GOODSTATS_REFERENCE_URL})). Anda dapat membuka panel **Mitigasi & Solusi BytePlus SealSuite** pada kartu berita untuk melihat langkah pencegahan berbasis Zero Trust.`
+        : `### Rangkuman Pemberitaan (${publisherName})\n${summaryId}\n\n---\n*Dihimpun dari daftar [10 Media Berita Kepercayaan Publik RI - GoodStats Data](${GOODSTATS_REFERENCE_URL}).*`;
+      const contentEn = isSecurityRelevant
+        ? `### Executive News Summary (${publisherName})\n${summaryEn}\n\n### Cybersecurity & Sovereign Data Context\nThis report on **"${cleanQuery}"** is sourced from **Indonesia's Top 10 Most Trusted News Media** ([GoodStats / Reuters Institute Digital News Report](${GOODSTATS_REFERENCE_URL})). You can expand the **BytePlus SealSuite Solution** section on this card to view relevant Zero Trust mitigations.`
+        : `### Executive News Summary (${publisherName})\n${summaryEn}\n\n---\n*Sourced from [Indonesia's Top 10 Most Trusted News Media - GoodStats Data](${GOODSTATS_REFERENCE_URL}).*`;
 
       const sourcesJson = [
         { title: cleanTitle, publisher: publisherName, url: it.link },

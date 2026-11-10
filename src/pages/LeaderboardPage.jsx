@@ -46,10 +46,10 @@ export default function LeaderboardPage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Header */}
-      <div style={{ textAlign: 'center', padding: '3rem 1rem 1rem' }}>
-        <Trophy size={56} color="var(--warning)" style={{ margin: '0 auto 1rem', filter: 'drop-shadow(0 0 20px rgba(245,158,11,0.5))' }} />
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{label('title')}</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem' }}>{label('subtitle')}</p>
+      <div style={{ textAlign: 'center', padding: '1.5rem 0.75rem 0.5rem' }}>
+        <Trophy size={48} color="var(--warning)" style={{ margin: '0 auto 0.75rem', filter: 'drop-shadow(0 0 20px rgba(245,158,11,0.5))' }} />
+        <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', marginBottom: '0.4rem' }}>{label('title')}</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>{label('subtitle')}</p>
       </div>
 
       {/* My rank card (if found) */}
@@ -78,8 +78,8 @@ export default function LeaderboardPage() {
             const isMe = entry.id === user?.id || entry.isMe;
             return (
               <div key={entry.id || i} style={{
-                display: 'flex', alignItems: 'center', gap: '1.25rem',
-                padding: '1.25rem 2rem',
+                display: 'flex', alignItems: 'center', gap: '0.85rem',
+                padding: '0.9rem 1rem',
                 borderBottom: i < leaders.length - 1 ? '1px solid var(--border-light)' : 'none',
                 background: isMe
                   ? 'rgba(124,58,237,0.1)'
@@ -89,13 +89,13 @@ export default function LeaderboardPage() {
                 transition: 'background 0.2s',
               }}>
                 {/* Rank */}
-                <div style={{ width: 44, textAlign: 'center', fontWeight: 800, fontSize: isTop3 ? '1.5rem' : '1.1rem', flexShrink: 0 }}>
+                <div style={{ width: 34, textAlign: 'center', fontWeight: 800, fontSize: isTop3 ? '1.35rem' : '0.95rem', flexShrink: 0 }}>
                   {isTop3 ? RANK_MEDALS[i] : <span style={{ color: 'var(--text-muted)' }}>#{i + 1}</span>}
                 </div>
 
                 {/* Avatar */}
                 <div style={{
-                  width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                  width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
                   background: isMe
                     ? 'linear-gradient(135deg, var(--primary), var(--accent))'
                     : isTop3

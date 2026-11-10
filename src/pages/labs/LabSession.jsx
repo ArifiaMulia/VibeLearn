@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { Play, Save, Terminal as TerminalIcon, Sparkles, CheckCircle2, MessageSquare, Lightbulb, ChevronDown, ChevronUp, RotateCcw, Wrench } from 'lucide-react';
 
 // Starter codes for each lab type
@@ -587,6 +588,7 @@ export default function LabSession() {
   const { authFetch } = useAuth();
   const { success, error } = useAlert();
   const { lang, t } = useLanguage();
+  const isMobile = useIsMobile(768);
   const navigate = useNavigate();
 
   const [lab, setLab] = useState(null);
@@ -702,22 +704,22 @@ export default function LabSession() {
   const stepsList = STEPS_DATA[lang]?.[lab.type] || STEPS_DATA[lang]?.default || [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: 'calc(100vh - 120px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: isMobile ? 'auto' : 'calc(100vh - 120px)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
             <span className="badge badge-accent" style={{ textTransform: 'uppercase', fontSize: '0.68rem' }}>{lab.type || 'lab'}</span>
             <span className="badge badge-primary" style={{ fontSize: '0.68rem' }}>⚡ {lab.xp_reward || 150} XP</span>
           </div>
-          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>{lab.title}</h2>
+          <h2 style={{ fontSize: isMobile ? '1.15rem' : '1.3rem', margin: 0 }}>{lab.title}</h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.2rem 0 0' }}>{lab.description}</p>
         </div>
         
         {/* Controls */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center', width: isMobile ? '100%' : 'auto' }}>
           {/* Expert / Guided switch */}
-          <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '2px', marginRight: '0.5rem' }}>
+          <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '2px', marginRight: '0.25rem' }}>
             <button
               onClick={() => setGuidedMode(false)}
               className={`btn btn-sm ${!guidedMode ? 'btn-primary' : 'btn-ghost'}`}
@@ -737,19 +739,19 @@ export default function LabSession() {
           <button className="btn btn-ghost btn-sm" onClick={handleReset} title="Reset to starter code">
             <RotateCcw size={14} /> {t('reset') || 'Reset'}
           </button>
-          <button className="btn btn-ghost" onClick={handleRun} disabled={running}>
-            <Play size={16} /> {running ? t('running') || 'Running…' : t('run_code') || 'Run Code'}
+          <button className="btn btn-ghost btn-sm" onClick={handleRun} disabled={running}>
+            <Play size={15} /> {running ? t('running') || 'Running…' : t('run_code') || 'Run Code'}
           </button>
-          <button className="btn btn-primary" onClick={handleSubmit}>
-            <Save size={16} /> {t('submit_task') || 'Submit Task'}
+          <button className="btn btn-primary btn-sm" onClick={handleSubmit}>
+            <Save size={15} /> {t('submit_task') || 'Submit Task'}
           </button>
         </div>
       </div>
 
       {/* Main Grid: Editor | Console + Hints + Checklist */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem', flex: 1, minHeight: 0 }}>
         {/* Left: Code Editor */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: isMobile ? 280 : 0 }}>
           <div style={{
             padding: '0.6rem 1rem', background: 'var(--bg-surface)',
             borderBottom: '1px solid var(--border-light)',
@@ -776,8 +778,8 @@ export default function LabSession() {
             onChange={e => setCode(e.target.value)}
             spellCheck={false}
             style={{
-              flex: 1, background: '#0d0d28', color: '#a8d8ea',
-              border: 'none', padding: '1.25rem', fontSize: '0.85rem',
+              flex: 1, minHeight: isMobile ? 240 : 0, background: '#0d0d28', color: '#a8d8ea',
+              border: 'none', padding: isMobile ? '0.9rem' : '1.25rem', fontSize: '0.85rem',
               fontFamily: 'var(--font-mono)', resize: 'none', outline: 'none', lineHeight: 1.7,
             }}
           />
@@ -786,7 +788,7 @@ export default function LabSession() {
         {/* Right: Terminal + Hints + Guided Checklist */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', minHeight: 0 }}>
           {/* Terminal */}
-          <div className="card" style={{ flex: 1, padding: 0, overflow: 'hidden', background: '#07071a', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ flex: 1, minHeight: isMobile ? 180 : 0, padding: 0, overflow: 'hidden', background: '#07071a', display: 'flex', flexDirection: 'column' }}>
             <div style={{
               padding: '0.6rem 1rem', background: '#13133a',
               borderBottom: '1px solid rgba(255,255,255,0.05)',

@@ -1004,6 +1004,42 @@ pre { max-width: 100%; overflow-x: auto; }
 @media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
   .page-container div, .page-container section, .page-container form, .page-container article { min-width: 0; }
   input, select, textarea { max-width: 100%; }
+
+  /* Mobile-friendly Mermaid diagrams & Lesson Markdown readability */
+  .mermaid {
+    overflow-x: auto !important;
+    justify-content: flex-start;
+    padding: 0.75rem 0.5rem !important;
+  }
+  .mermaid svg {
+    min-height: 110px !important;
+    font-size: 13px !important;
+  }
+  .mermaid .nodeLabel,
+  .mermaid .node .label,
+  .mermaid .label,
+  .mermaid text {
+    font-size: 0.85rem !important;
+    line-height: 1.35 !important;
+  }
+  .mermaid .edgeLabel,
+  .mermaid .edgeLabel rect {
+    font-size: 0.75rem !important;
+  }
+  .mermaid .cluster .nodeLabel,
+  .mermaid .cluster span,
+  .mermaid .cluster .label {
+    font-size: 0.85rem !important;
+  }
+  .markdown-content {
+    font-size: 0.92rem !important;
+    line-height: 1.68 !important;
+  }
+  .markdown-content h1 { font-size: 1.35rem !important; margin-top: 1.25rem !important; }
+  .markdown-content h2 { font-size: 1.15rem !important; margin-top: 1.15rem !important; }
+  .markdown-content h3 { font-size: 1.02rem !important; margin-top: 1rem !important; }
+  .markdown-content ul, .markdown-content ol { margin-left: 1.15rem !important; }
+  .markdown-content pre { padding: 0.75rem !important; font-size: 0.78rem !important; }
 }
 
 

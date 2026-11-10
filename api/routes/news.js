@@ -356,6 +356,17 @@ async function ensureNewsTable() {
     await pool.query(`ALTER TABLE news_updates ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_news_published ON news_updates (published_at DESC)`);
 
+    // Purge any previously auto-ingested general/national non-tech news from CNN Nasional, Tempo.co Nasional, or Tribunnews
+    await pool.query(`
+      DELETE FROM news_updates
+      WHERE is_auto = TRUE
+        AND (
+          sources::text ILIKE '%CNN Indonesia Nasional%'
+          OR sources::text ILIKE '%Tempo.co%'
+          OR sources::text ILIKE '%Tribunnews%'
+        )
+    `).catch(() => {});
+
     for (const item of DEFAULT_NEWS_ITEMS) {
       await pool.query(
         `INSERT INTO news_updates (

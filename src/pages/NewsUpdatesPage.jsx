@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
   Newspaper, ShieldAlert, Cpu, Sparkles, ExternalLink, Clock, Search,
   ChevronDown, ChevronUp, Plus, Trash2, Flame, Shield, BookOpen, X, CheckCircle, AlertTriangle,
@@ -81,6 +82,7 @@ const TRUSTED_ID_MEDIA = [
 export default function NewsUpdatesPage() {
   const { authFetch, user } = useAuth();
   const { lang } = useLanguage();
+  const isMobile = useIsMobile();
   const isId = lang === 'id';
   const isAdmin = user?.role === 'super_admin' || user?.role === 'master';
 
@@ -93,7 +95,12 @@ export default function NewsUpdatesPage() {
   const [searchingTrusted, setSearchingTrusted] = useState(false);
   const [trustedSearchNotice, setTrustedSearchNotice] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedSlug, setExpandedSlug] = useState('penyadapan-presiden-indonesia-lims-mitigasi-sealsuite-zero-trust');
+  const [expandedSlug, setExpandedSlug] = useState(null);
+  const [openSealSuiteSlugs, setOpenSealSuiteSlugs] = useState({});
+
+  const toggleSealSuite = (slug) => {
+    setOpenSealSuiteSlugs(prev => ({ ...prev, [slug]: !prev[slug] }));
+  };
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [speakingSlug, setSpeakingSlug] = useState(null);
@@ -388,47 +395,48 @@ export default function NewsUpdatesPage() {
   const featuredBlackOctober = (scope === 'active' && !activeQuery) ? (items.find(i => (i.slug || '').includes('black-october')) || null) : null;
 
   return (
-    <div style={{ maxWidth: 1040, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2.5rem' }}>
+    <div style={{ maxWidth: 1040, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem', paddingBottom: '2.5rem' }}>
       {/* ── Page Header ── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        flexWrap: 'wrap', gap: '1rem'
+        flexWrap: 'wrap', gap: '0.85rem'
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <div style={{
-              width: 42, height: 42, borderRadius: 12,
+              width: isMobile ? 38 : 42, height: isMobile ? 38 : 42, borderRadius: 12, flexShrink: 0,
               background: 'linear-gradient(135deg, #ef4444, #f97316, #7c3aed)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 18px rgba(239, 68, 68, 0.3)'
             }}>
-              <Newspaper size={22} color="#fff" />
+              <Newspaper size={isMobile ? 20 : 22} color="#fff" />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: '1.55rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {isId ? 'Berita & Pembaruan Terkini (News & Updates)' : 'News & Cyber Intelligence Updates'}
+              <h1 style={{ margin: 0, fontSize: isMobile ? '1.22rem' : '1.55rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                {isId ? 'Berita & Pembaruan Terkini' : 'News & Cyber Updates'}
               </h1>
-              <p style={{ margin: '0.2rem 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '0.2rem 0 0', fontSize: isMobile ? '0.78rem' : '0.84rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
                 {isId
-                  ? 'Rangkuman eksekutif tren Vibe Coding, agen AI, serta insiden keamanan siber global (termasuk laporan khusus "Black October") lengkap dengan tautan sumber resmi.'
-                  : 'Executive summaries on Vibe Coding, AI agents, and global cybersecurity incidents (including the "Black October" special report) with verified source links.'}
+                  ? 'Rangkuman eksekutif tren Vibe Coding, agen AI, serta insiden keamanan siber lengkap dengan sumber resmi.'
+                  : 'Executive summaries on Vibe Coding, AI agents, and cybersecurity incidents with verified source links.'}
               </p>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
           <button
             onClick={() => setShowMobileModal(true)}
             className="btn btn-ghost btn-sm"
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
               border: '1px solid rgba(6, 182, 212, 0.45)',
               background: 'rgba(6, 182, 212, 0.1)',
-              color: 'var(--accent)', fontWeight: 700, padding: '0.55rem 0.95rem'
+              color: 'var(--accent)', fontWeight: 700, padding: '0.5rem 0.85rem',
+              flex: isMobile ? '1 1 auto' : 'initial'
             }}
           >
-            <Smartphone size={16} />
+            <Smartphone size={15} />
             {isId ? '📱 Baca di iOS & Android' : '📱 Read on iOS & Android'}
           </button>
 
@@ -437,13 +445,14 @@ export default function NewsUpdatesPage() {
               onClick={() => setShowAddModal(true)}
               className="btn btn-primary btn-sm"
               style={{
-                display: 'flex', alignItems: 'center', gap: '0.45rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
                 background: 'linear-gradient(135deg, #f97316, #7c3aed)',
-                border: 'none', padding: '0.6rem 1.1rem', fontWeight: 700
+                border: 'none', padding: '0.5rem 0.95rem', fontWeight: 700,
+                flex: isMobile ? '1 1 auto' : 'initial'
               }}
             >
-              <Plus size={16} />
-              {isId ? 'Tambah Berita / Update' : 'Publish Update'}
+              <Plus size={15} />
+              {isId ? 'Tambah Berita' : 'Publish Update'}
             </button>
           )}
         </div>
@@ -455,24 +464,24 @@ export default function NewsUpdatesPage() {
           background: 'radial-gradient(circle at 15% 20%, rgba(239, 68, 68, 0.22) 0%, rgba(249, 115, 22, 0.12) 45%, var(--bg-card) 100%)',
           border: '1.5px solid rgba(239, 68, 68, 0.45)',
           borderRadius: 'var(--radius-lg)',
-          padding: '1.5rem 1.75rem',
+          padding: isMobile ? '1rem' : '1.5rem 1.75rem',
           boxShadow: '0 10px 32px rgba(239, 68, 68, 0.12)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.85rem'
+          gap: '0.7rem'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.45rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
               <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                background: '#ef4444', color: '#fff', fontSize: '0.7rem', fontWeight: 800,
-                padding: '0.22rem 0.65rem', borderRadius: 20, letterSpacing: '0.05em'
+                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                background: '#ef4444', color: '#fff', fontSize: '0.68rem', fontWeight: 800,
+                padding: '0.2rem 0.6rem', borderRadius: 20, letterSpacing: '0.04em'
               }}>
-                <Flame size={13} />
-                {isId ? 'SOROTAN UTAMA · BLACK OCTOBER' : 'HEADLINE SPOTLIGHT · BLACK OCTOBER'}
+                <Flame size={12} />
+                {isId ? 'SOROTAN · BLACK OCTOBER' : 'SPOTLIGHT · BLACK OCTOBER'}
               </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                📅 {fmtDate(featuredBlackOctober.published_at)} • ⏱ {featuredBlackOctober.read_time_min} {isId ? 'menit baca' : 'min read'}
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                📅 {fmtDate(featuredBlackOctober.published_at)} • ⏱ {featuredBlackOctober.read_time_min} {isId ? 'mnt' : 'min'}
               </span>
             </div>
 
@@ -487,48 +496,23 @@ export default function NewsUpdatesPage() {
                 border: '1px solid rgba(239, 68, 68, 0.45)',
                 color: '#f87171',
                 borderRadius: 8,
-                padding: '0.38rem 0.85rem',
-                fontSize: '0.78rem',
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer'
               }}
             >
-              {isId ? 'Baca Rangkuman Lengkap & Sumber →' : 'Read Full Summary & Sources →'}
+              {isId ? 'Baca Lengkap →' : 'Read Full →'}
             </button>
           </div>
 
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+          <h2 style={{ margin: 0, fontSize: isMobile ? '1.02rem' : '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.35 }}>
             {isId ? featuredBlackOctober.title_id : featuredBlackOctober.title_en}
           </h2>
 
-          <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+          <p style={{ margin: 0, fontSize: isMobile ? '0.82rem' : '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
             {isId ? featuredBlackOctober.summary_id : featuredBlackOctober.summary_en}
           </p>
-
-          {/* Quick Source Pills inside Spotlight */}
-          {Array.isArray(featuredBlackOctober.sources) && featuredBlackOctober.sources.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', paddingTop: '0.25rem' }}>
-              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                {isId ? '🔗 Sumber Referensi Resmi:' : '🔗 Official Sources:'}
-              </span>
-              {featuredBlackOctober.sources.map((src, sIdx) => (
-                <a
-                  key={sIdx}
-                  href={src.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                    fontSize: '0.73rem', fontWeight: 700, color: 'var(--accent)',
-                    background: 'var(--bg-surface)', border: '1px solid var(--border-light)',
-                    padding: '0.22rem 0.65rem', borderRadius: 20, textDecoration: 'none'
-                  }}
-                >
-                  {src.publisher || src.title} <ExternalLink size={11} />
-                </a>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -543,7 +527,7 @@ export default function NewsUpdatesPage() {
             return (
               <button key={t.k} onClick={() => setScope(t.k)} style={{
                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.5rem 0.95rem', borderRadius: 10, cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem',
+                padding: '0.48rem 0.9rem', borderRadius: 10, cursor: 'pointer', fontWeight: 800, fontSize: '0.8rem',
                 border: on ? '1.5px solid var(--primary)' : '1px solid var(--border-light)',
                 background: on ? 'rgba(124,58,237,0.15)' : 'var(--bg-card)',
                 color: on ? 'var(--primary-light)' : 'var(--text-muted)',
@@ -554,15 +538,15 @@ export default function NewsUpdatesPage() {
             );
           })}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', fontSize: '0.72rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.72rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontWeight: 800 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-            LIVE • {isId ? `Auto-Sync tiap ${syncIntervalMin} mnt` : `Auto-Sync every ${syncIntervalMin}m`}
+            LIVE • {isId ? `Sync ${syncIntervalMin}m` : `Sync ${syncIntervalMin}m`}
           </span>
-          {lastSync && <span>{isId ? 'Diperbarui' : 'Updated'} {lastSync.toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>}
+          {lastSync && <span>{lastSync.toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>}
           {isAdmin && (
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-              ⏱ {isId ? 'Jadwal Sync:' : 'Sync Interval:'}
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+              ⏱
               <select
                 value={syncIntervalMin}
                 disabled={savingSyncInterval}
@@ -572,22 +556,22 @@ export default function NewsUpdatesPage() {
                   border: '1px solid var(--border-light)',
                   color: 'var(--text-primary)',
                   borderRadius: 6,
-                  padding: '0.18rem 0.45rem',
+                  padding: '0.18rem 0.4rem',
                   fontSize: '0.72rem',
                   fontWeight: 700,
                   cursor: 'pointer'
                 }}
               >
-                <option value={15}>15 {isId ? 'menit' : 'mins'}</option>
-                <option value={30}>30 {isId ? 'menit (Default)' : 'mins (Default)'}</option>
-                <option value={60}>60 {isId ? 'menit' : 'mins'}</option>
-                <option value={120}>2 {isId ? 'jam' : 'hours'}</option>
+                <option value={15}>15m</option>
+                <option value={30}>30m</option>
+                <option value={60}>60m</option>
+                <option value={120}>2h</option>
               </select>
             </label>
           )}
           {isAdmin && (
-            <button onClick={handleRefreshFeed} disabled={refreshingFeed} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem' }}>
-              <RefreshCw size={13} className={refreshingFeed ? 'animate-spin' : ''} /> {isId ? 'Tarik berita sekarang' : 'Fetch news now'}
+            <button onClick={handleRefreshFeed} disabled={refreshingFeed} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', padding: '0.28rem 0.6rem', minHeight: 30 }}>
+              <RefreshCw size={12} className={refreshingFeed ? 'animate-spin' : ''} /> {isId ? 'Sync' : 'Sync'}
             </button>
           )}
         </div>
@@ -604,19 +588,18 @@ export default function NewsUpdatesPage() {
 
       {activeQuery && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.6rem 0.9rem', borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--border-light)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-          <span>🔎 {isId ? 'Hasil pencarian' : 'Results for'} <strong>"{activeQuery}"</strong>: {filteredItems.length} {isId ? 'berita (termasuk arsip)' : 'article(s) (archive included)'}</span>
+          <span>🔎 {isId ? 'Hasil pencarian' : 'Results for'} <strong>"{activeQuery}"</strong>: {filteredItems.length} {isId ? 'berita' : 'article(s)'}</span>
           <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: 700 }}>{isId ? 'Hapus' : 'Clear'}</button>
         </div>
       )}
 
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        flexWrap: 'wrap', gap: '0.75rem',
-        background: 'var(--bg-card)', padding: '0.85rem 1rem',
+        display: 'flex', flexDirection: 'column', gap: '0.65rem',
+        background: 'var(--bg-card)', padding: isMobile ? '0.75rem' : '0.85rem 1rem',
         borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)'
       }}>
         <div style={{
-          display: 'flex', gap: '0.45rem', overflowX: 'auto', maxWidth: '100%',
+          display: 'flex', gap: '0.4rem', overflowX: 'auto', maxWidth: '100%',
           paddingBottom: '0.15rem', WebkitOverflowScrolling: 'touch'
         }}>
           {Object.entries(CATEGORY_META).map(([catKey, meta]) => {
@@ -626,9 +609,9 @@ export default function NewsUpdatesPage() {
                 key={catKey}
                 onClick={() => setActiveCategory(catKey)}
                 style={{
-                  padding: '0.42rem 0.85rem',
+                  padding: '0.38rem 0.78rem',
                   borderRadius: 20,
-                  fontSize: '0.78rem',
+                  fontSize: '0.75rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -645,21 +628,21 @@ export default function NewsUpdatesPage() {
           })}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 300px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', minWidth: 200, flex: '1 1 220px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 0 }}>
             <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSearchTrustedLive(searchQuery, activeMedia); }}
-              placeholder={isId ? 'Cari topik (misal: Penyadapan Presiden, Black October, DLP)...' : 'Search topics (e.g. Penyadapan Presiden, Black October, DLP)...'}
+              placeholder={isId ? 'Cari berita (misal: Penyadapan Presiden, Black October)...' : 'Search news (e.g. Penyadapan Presiden, Black October)...'}
               style={{
                 width: '100%',
                 background: 'var(--bg-surface)',
                 border: '1px solid var(--border-light)',
                 borderRadius: 20,
-                padding: '0.45rem 0.85rem 0.45rem 2.2rem',
+                padding: '0.45rem 0.85rem 0.45rem 2.15rem',
                 color: 'var(--text-primary)',
                 fontSize: '0.8rem'
               }}
@@ -669,11 +652,12 @@ export default function NewsUpdatesPage() {
             onClick={() => handleSearchTrustedLive(searchQuery, activeMedia)}
             disabled={searchingTrusted}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.38rem',
-              padding: '0.44rem 0.85rem', borderRadius: 20, fontSize: '0.75rem', fontWeight: 800,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem',
+              padding: '0.45rem 0.85rem', borderRadius: 20, fontSize: '0.75rem', fontWeight: 800,
               cursor: searchingTrusted ? 'wait' : 'pointer',
               background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-              border: 'none', color: '#fff', whiteSpace: 'nowrap'
+              border: 'none', color: '#fff', whiteSpace: 'nowrap',
+              flex: isMobile ? '1 1 100%' : 'initial'
             }}
           >
             <RefreshCw size={13} className={searchingTrusted ? 'animate-spin' : ''} />
@@ -687,41 +671,34 @@ export default function NewsUpdatesPage() {
         background: 'var(--bg-card)',
         border: '1px solid rgba(16, 185, 129, 0.32)',
         borderRadius: 'var(--radius-md)',
-        padding: '0.85rem 1rem',
+        padding: isMobile ? '0.75rem' : '0.85rem 1rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.65rem'
+        gap: '0.55rem'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-            <span style={{
-              fontSize: '0.72rem', fontWeight: 800, padding: '0.18rem 0.55rem', borderRadius: 6,
-              background: 'rgba(16, 185, 129, 0.14)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981'
-            }}>
-              🇮🇩 {isId ? 'SUMBER 10 MEDIA KEPERCAYAAN PUBLIK RI' : 'TOP 10 TRUSTED INDONESIAN NEWS MEDIA'}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {isId
-                ? 'Filter & tarik berita berdasarkan 10 media berita paling dipercaya publik Indonesia (dilengkapi analisis mitigasi BytePlus SealSuite):'
-                : 'Filter & live-search news from Indonesia’s 10 most trusted public news outlets (enriched with BytePlus SealSuite mitigations):'}
-            </span>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+          <span style={{
+            fontSize: '0.7rem', fontWeight: 800, padding: '0.18rem 0.55rem', borderRadius: 6,
+            background: 'rgba(16, 185, 129, 0.14)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981'
+          }}>
+            🇮🇩 {isId ? '10 MEDIA KEPERCAYAAN PUBLIK RI' : 'TOP 10 TRUSTED RI MEDIA'}
+          </span>
           <a
             href={goodstatsUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.28rem',
-              fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', textDecoration: 'none'
+              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+              fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent)', textDecoration: 'none'
             }}
           >
-            📊 {isId ? 'Referensi GoodStats Data (Reuters Digital News Report)' : 'GoodStats Reference (Reuters Digital News Report)'} <ExternalLink size={11} />
+            📊 {isId ? 'Data GoodStats' : 'GoodStats Data'} <ExternalLink size={11} />
           </a>
         </div>
 
         {/* 10 Media Outlet Pills */}
         <div style={{
-          display: 'flex', gap: '0.4rem', overflowX: 'auto', maxWidth: '100%',
+          display: 'flex', gap: '0.35rem', overflowX: 'auto', maxWidth: '100%',
           paddingBottom: '0.15rem', WebkitOverflowScrolling: 'touch'
         }}>
           {trustedMediaList.map((m) => {
@@ -734,9 +711,9 @@ export default function NewsUpdatesPage() {
                   setTrustedSearchNotice('');
                 }}
                 style={{
-                  padding: '0.34rem 0.72rem',
+                  padding: '0.32rem 0.68rem',
                   borderRadius: 16,
-                  fontSize: '0.73rem',
+                  fontSize: '0.72rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -753,16 +730,19 @@ export default function NewsUpdatesPage() {
           })}
         </div>
 
-        {/* Quick Topic Shortcuts */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', paddingTop: '0.15rem' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-            ⚡ {isId ? 'Topik Cepat:' : 'Quick Topics:'}
+        {/* Quick Topic Shortcuts (Horizontal scroll on mobile so it stays 1 clean line) */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.35rem', overflowX: 'auto',
+          maxWidth: '100%', paddingBottom: '0.1rem', WebkitOverflowScrolling: 'touch'
+        }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            ⚡ {isId ? 'Topik:' : 'Topics:'}
           </span>
           {[
-            { label: '🇮🇩 Penyadapan Presiden Indonesia (LIMS)', q: 'Penyadapan Presiden', slug: 'penyadapan-presiden-indonesia-lims-mitigasi-sealsuite-zero-trust' },
-            { label: '🔥 Black October 2026', q: 'Black October', slug: 'black-october-2026-ai-vulnpocalypse-cybersecurity' },
+            { label: '🇮🇩 Penyadapan Presiden RI', q: 'Penyadapan Presiden', slug: 'penyadapan-presiden-indonesia-lims-mitigasi-sealsuite-zero-trust' },
+            { label: '🔥 Black October', q: 'Black October', slug: 'black-october-2026-ai-vulnpocalypse-cybersecurity' },
             { label: '🛡️ DLP & Kebocoran Data', q: 'DLP', slug: null },
-            { label: '⚡ Slopsquatting & Vibe Coding', q: 'Slopsquatting', slug: 'vibe-coding-security-2026-slopsquatting-prompt-guardrails' },
+            { label: '⚡ Slopsquatting AI', q: 'Slopsquatting', slug: 'owasp-top-10-for-llm-and-vibe-coding-security-2026' },
           ].map((chip, idx) => (
             <button
               key={idx}
@@ -772,11 +752,13 @@ export default function NewsUpdatesPage() {
                 if (chip.slug) setExpandedSlug(chip.slug);
               }}
               style={{
-                padding: '0.24rem 0.62rem',
+                padding: '0.24rem 0.6rem',
                 borderRadius: 14,
-                fontSize: '0.71rem',
+                fontSize: '0.7rem',
                 fontWeight: 700,
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 background: 'rgba(6, 182, 212, 0.1)',
                 border: '1px solid rgba(6, 182, 212, 0.35)',
                 color: 'var(--accent)'
@@ -789,9 +771,9 @@ export default function NewsUpdatesPage() {
 
         {trustedSearchNotice && (
           <div style={{
-            fontSize: '0.76rem', color: '#34d399', fontWeight: 700,
+            fontSize: '0.74rem', color: '#34d399', fontWeight: 700,
             background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)',
-            padding: '0.45rem 0.75rem', borderRadius: 8
+            padding: '0.4rem 0.7rem', borderRadius: 8
           }}>
             {trustedSearchNotice}
           </div>
@@ -802,11 +784,11 @@ export default function NewsUpdatesPage() {
       {loading ? (
         <div className="skeleton" style={{ height: 320, borderRadius: 'var(--radius-lg)' }} />
       ) : filteredItems.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-muted)' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '2.5rem 1.25rem', color: 'var(--text-muted)' }}>
           {isId ? 'Tidak ada berita yang cocok dengan pencarian Anda.' : 'No news articles matched your filter.'}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.85rem' : '1.1rem' }}>
           {filteredItems.map(item => {
             const isExpanded = expandedSlug === item.slug;
             const sev = SEVERITY_STYLE[item.severity] || SEVERITY_STYLE.info;
@@ -817,6 +799,7 @@ export default function NewsUpdatesPage() {
             const badge = isId ? item.badge_id : item.badge_en;
             const tags = Array.isArray(item.tags) ? item.tags : [];
             const sources = Array.isArray(item.sources) ? item.sources : [];
+            const displayTags = isMobile ? tags.slice(0, 3) : tags;
 
             return (
               <div
@@ -832,35 +815,35 @@ export default function NewsUpdatesPage() {
                 }}
               >
                 {/* Card Header / Summary */}
-                <div style={{ padding: '1.35rem 1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.65rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ padding: isMobile ? '1rem' : '1.35rem 1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.55rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <span style={{
-                        fontSize: '0.68rem', fontWeight: 800,
-                        padding: '0.2rem 0.6rem', borderRadius: 6,
+                        fontSize: '0.66rem', fontWeight: 800,
+                        padding: '0.18rem 0.55rem', borderRadius: 6,
                         background: sev.bg, border: `1px solid ${sev.border}`, color: sev.text
                       }}>
                         {badge || (isId ? sev.label_id : sev.label_en)}
                       </span>
                       <span style={{
-                        fontSize: '0.7rem', fontWeight: 700,
-                        padding: '0.18rem 0.55rem', borderRadius: 6,
+                        fontSize: '0.68rem', fontWeight: 700,
+                        padding: '0.16rem 0.5rem', borderRadius: 6,
                         background: 'var(--bg-surface)', color: catMeta.color,
                         border: '1px solid var(--border-light)'
                       }}>
                         {isId ? catMeta.label_id : catMeta.label_en}
                       </span>
                       {item.archived && (
-                        <span style={{ fontSize: '0.66rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 6, background: 'rgba(148,163,184,0.15)', border: '1px solid rgba(148,163,184,0.4)', color: '#94a3b8' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.14rem 0.45rem', borderRadius: 6, background: 'rgba(148,163,184,0.15)', border: '1px solid rgba(148,163,184,0.4)', color: '#94a3b8' }}>
                           📦 {isId ? 'ARSIP' : 'ARCHIVED'}
                         </span>
                       )}
-                      <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Clock size={12} /> {fmtDate(item.published_at)} • {item.read_time_min || 5} {isId ? 'mnt baca' : 'min read'}
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.22rem' }}>
+                        <Clock size={11} /> {fmtDate(item.published_at)} • {item.read_time_min || 5} {isId ? 'mnt' : 'min'}
                       </span>
                     </div>
 
-                    {isAdmin && item.id && (<>
+                    {isAdmin && item.id && (<div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                       <button
                         onClick={() => handleArchiveToggle(item)}
                         title={item.archived ? (isId ? 'Kembalikan dari arsip' : 'Restore from archive') : (isId ? 'Arsipkan' : 'Archive')}
@@ -878,104 +861,166 @@ export default function NewsUpdatesPage() {
                       >
                         <Trash2 size={15} />
                       </button>
-                    </>)}
+                    </div>)}
                   </div>
 
                   <h3
                     onClick={() => setExpandedSlug(isExpanded ? null : item.slug)}
                     style={{
-                      margin: '0 0 0.55rem',
-                      fontSize: '1.15rem',
+                      margin: '0 0 0.5rem',
+                      fontSize: isMobile ? '1.02rem' : '1.15rem',
                       fontWeight: 800,
                       color: 'var(--text-primary)',
                       cursor: 'pointer',
-                      lineHeight: 1.35
+                      lineHeight: 1.38
                     }}
                   >
                     {title}
                   </h3>
 
-                  <p style={{ margin: '0 0 0.9rem', fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                  <p style={{ margin: '0 0 0.85rem', fontSize: isMobile ? '0.83rem' : '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                     {summary}
                   </p>
 
-                  {/* ── BytePlus SealSuite Security Resolution Preview (Visible on Card) ── */}
+                  {/* ── BytePlus SealSuite Security Resolution Accordion (Collapsed by default, only shown on relevant security articles) ── */}
                   {item.sealsuite_resolution && (
                     <div
                       data-testid="sealsuite-resolution-card"
                       style={{
-                        marginBottom: '0.95rem',
-                        padding: '0.85rem 1rem',
+                        marginBottom: '0.9rem',
                         borderRadius: 10,
-                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(6, 182, 212, 0.08))',
-                        border: '1px solid rgba(16, 185, 129, 0.38)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.45rem'
+                        background: openSealSuiteSlugs[item.slug]
+                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.11), rgba(6, 182, 212, 0.08))'
+                          : 'rgba(16, 185, 129, 0.06)',
+                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                        overflow: 'hidden',
+                        transition: 'all 0.2s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.45rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSealSuite(item.slug)}
+                        style={{
+                          width: '100%',
+                          padding: isMobile ? '0.65rem 0.85rem' : '0.7rem 1rem',
+                          background: 'transparent',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.5rem',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          color: 'var(--text-primary)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
+                          <Shield size={15} color="#10b981" style={{ flexShrink: 0 }} />
+                          <span style={{
+                            fontSize: isMobile ? '0.76rem' : '0.8rem',
+                            fontWeight: 800,
+                            color: '#10b981',
+                            lineHeight: 1.3
+                          }}>
+                            {isId ? '🛡️ Lihat Solusi & Mitigasi BytePlus SealSuite' : '🛡️ View BytePlus SealSuite Security Solution'}
+                          </span>
+                        </div>
                         <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                          fontSize: '0.73rem', fontWeight: 800, color: '#10b981', letterSpacing: '0.02em'
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: '#34d399',
+                          flexShrink: 0
                         }}>
-                          <Shield size={14} color="#10b981" />
-                          {isId ? '🛡️ MITIGASI & RESOLUSI BYTEPLUS SEALSUITE' : '🛡️ BYTEPLUS SEALSUITE SECURITY RESOLUTION'}
+                          {openSealSuiteSlugs[item.slug]
+                            ? (isId ? 'Tutup' : 'Hide')
+                            : (isId ? 'Buka' : 'Expand')}
+                          {openSealSuiteSlugs[item.slug] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </span>
-                        <a
-                          href={item.sealsuite_resolution.reference_url || 'https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '0.28rem',
-                            fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent)',
-                            textDecoration: 'none', padding: '0.16rem 0.55rem', borderRadius: 12,
-                            background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.35)'
-                          }}
-                        >
-                          {isId ? 'Release Notes SealSuite' : 'SealSuite Release Notes'} <ExternalLink size={11} />
-                        </a>
-                      </div>
+                      </button>
 
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
-                        {isId ? item.sealsuite_resolution.headline_id : item.sealsuite_resolution.headline_en}
-                      </div>
-
-                      <div style={{ fontSize: '0.79rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                        {isId ? item.sealsuite_resolution.summary_id : item.sealsuite_resolution.summary_en}
-                      </div>
-
-                      {Array.isArray(item.sealsuite_resolution.modules) && item.sealsuite_resolution.modules.length > 0 && (
-                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.1rem' }}>
-                          {item.sealsuite_resolution.modules.map((mod, mIdx) => (
-                            <span
-                              key={mIdx}
+                      {openSealSuiteSlugs[item.slug] && (
+                        <div style={{
+                          padding: isMobile ? '0.2rem 0.85rem 0.85rem' : '0.25rem 1rem 0.95rem',
+                          borderTop: '1px solid rgba(16, 185, 129, 0.2)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.55rem'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', paddingTop: '0.35rem' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4, flex: '1 1 200px' }}>
+                              {isId ? item.sealsuite_resolution.headline_id : item.sealsuite_resolution.headline_en}
+                            </div>
+                            <a
+                              href={item.sealsuite_resolution.reference_url || 'https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log'}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               style={{
-                                fontSize: '0.67rem', fontWeight: 700,
-                                padding: '0.14rem 0.5rem', borderRadius: 6,
-                                background: 'rgba(16, 185, 129, 0.15)',
-                                border: '1px solid rgba(16, 185, 129, 0.35)',
-                                color: '#34d399'
+                                display: 'inline-flex', alignItems: 'center', gap: '0.28rem',
+                                fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent)',
+                                textDecoration: 'none', padding: '0.2rem 0.6rem', borderRadius: 12,
+                                background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.35)'
                               }}
                             >
-                              ✓ {mod}
-                            </span>
-                          ))}
+                              {isId ? 'Release Notes SealSuite' : 'SealSuite Release Notes'} <ExternalLink size={11} />
+                            </a>
+                          </div>
+
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                            {isId ? item.sealsuite_resolution.summary_id : item.sealsuite_resolution.summary_en}
+                          </div>
+
+                          {Array.isArray(item.sealsuite_resolution.modules) && item.sealsuite_resolution.modules.length > 0 && (
+                            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                              {item.sealsuite_resolution.modules.map((mod, mIdx) => (
+                                <span
+                                  key={mIdx}
+                                  style={{
+                                    fontSize: '0.68rem', fontWeight: 700,
+                                    padding: '0.16rem 0.5rem', borderRadius: 6,
+                                    background: 'rgba(16, 185, 129, 0.15)',
+                                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                                    color: '#34d399'
+                                  }}
+                                >
+                                  ✓ {mod}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Detailed SealSuite Action Steps inside the collapsible panel */}
+                          <div className="markdown-content" style={{
+                            marginTop: '0.25rem',
+                            paddingTop: '0.55rem',
+                            borderTop: '1px dashed rgba(16, 185, 129, 0.25)',
+                            fontSize: '0.8rem',
+                            color: 'var(--text-secondary)',
+                            lineHeight: 1.65
+                          }}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {(isId ? item.sealsuite_resolution.actions_id : item.sealsuite_resolution.actions_en)
+                                ?.map((act, idx) => `${idx + 1}. ${act}`)
+                                .join('\n') || ''}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       )}
                     </div>
                   )}
 
                   {/* Tags + Action Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {tags.map((tag, idx) => (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                      {displayTags.map((tag, idx) => (
                         <span
                           key={idx}
                           style={{
-                            fontSize: '0.7rem',
+                            fontSize: '0.68rem',
                             fontWeight: 600,
-                            padding: '0.15rem 0.55rem',
+                            padding: '0.14rem 0.5rem',
                             borderRadius: 12,
                             background: 'var(--bg-surface)',
                             border: '1px solid var(--border-light)',
@@ -985,24 +1030,35 @@ export default function NewsUpdatesPage() {
                           #{tag}
                         </span>
                       ))}
+                      {isMobile && tags.length > 3 && (
+                        <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', alignSelf: 'center' }}>
+                          +{tags.length - 3}
+                        </span>
+                      )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      flexWrap: 'wrap',
+                      width: isMobile ? '100%' : 'auto',
+                    }}>
                       {/* Audio Briefing Button (Hands-free mobile listening) */}
                       <button
                         onClick={() => handleToggleAudioBriefing(item)}
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                          padding: '0.4rem 0.75rem', borderRadius: 8,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem',
+                          padding: isMobile ? '0.42rem 0.65rem' : '0.4rem 0.75rem', borderRadius: 8,
                           background: speakingSlug === item.slug ? 'rgba(16, 185, 129, 0.16)' : 'var(--bg-surface)',
                           border: `1px solid ${speakingSlug === item.slug ? '#10b981' : 'var(--border-light)'}`,
                           color: speakingSlug === item.slug ? '#10b981' : 'var(--text-secondary)',
-                          fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+                          fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer'
                         }}
                       >
-                        {speakingSlug === item.slug ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                        {speakingSlug === item.slug ? <VolumeX size={13} /> : <Volume2 size={13} />}
                         {speakingSlug === item.slug
-                          ? (isId ? 'Hentikan Audio' : 'Stop Audio')
+                          ? (isId ? 'Stop' : 'Stop')
                           : (isId ? 'Dengarkan' : 'Listen')}
                       </button>
 
@@ -1010,15 +1066,15 @@ export default function NewsUpdatesPage() {
                       <button
                         onClick={() => handleShareArticle(item)}
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                          padding: '0.4rem 0.75rem', borderRadius: 8,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem',
+                          padding: isMobile ? '0.42rem 0.65rem' : '0.4rem 0.75rem', borderRadius: 8,
                           background: 'var(--bg-surface)',
                           border: '1px solid var(--border-light)',
                           color: copiedSlug === item.slug ? '#10b981' : 'var(--text-secondary)',
-                          fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer'
+                          fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer'
                         }}
                       >
-                        {copiedSlug === item.slug ? <Check size={14} /> : <Share2 size={14} />}
+                        {copiedSlug === item.slug ? <Check size={13} /> : <Share2 size={13} />}
                         {copiedSlug === item.slug
                           ? (isId ? 'Tersalin!' : 'Copied!')
                           : (isId ? 'Bagikan' : 'Share')}
@@ -1027,19 +1083,20 @@ export default function NewsUpdatesPage() {
                       <button
                         onClick={() => setExpandedSlug(isExpanded ? null : item.slug)}
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                          padding: '0.42rem 0.9rem', borderRadius: 8,
+                          flex: isMobile ? 1 : 'initial',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem',
+                          padding: isMobile ? '0.42rem 0.75rem' : '0.42rem 0.9rem', borderRadius: 8,
                           background: isExpanded ? 'rgba(124, 58, 237, 0.15)' : 'var(--bg-surface)',
                           border: `1px solid ${isExpanded ? 'var(--primary)' : 'var(--border-light)'}`,
                           color: isExpanded ? 'var(--primary)' : 'var(--text-primary)',
-                          fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer'
+                          fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer'
                         }}
                       >
-                        <BookOpen size={14} />
+                        <BookOpen size={13} />
                         {isExpanded
-                          ? (isId ? 'Tutup Rangkuman' : 'Collapse Briefing')
-                          : (isId ? 'Baca Bedah Lengkap & Sumber' : 'Read Executive Breakdown & Sources')}
-                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          ? (isId ? 'Tutup Rangkuman' : 'Collapse')
+                          : (isMobile ? (isId ? 'Baca Lengkap' : 'Read More') : (isId ? 'Baca Bedah Lengkap & Sumber' : 'Read Executive Breakdown & Sources'))}
+                        {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                       </button>
                     </div>
                   </div>
@@ -1048,7 +1105,7 @@ export default function NewsUpdatesPage() {
                 {/* Expanded Deep-Dive Content + Source Links */}
                 {isExpanded && (
                   <div style={{
-                    padding: '1.25rem 1.5rem 1.5rem',
+                    padding: isMobile ? '1rem' : '1.25rem 1.5rem 1.5rem',
                     borderTop: '1px solid var(--border-light)',
                     background: 'var(--bg-surface)'
                   }}>
@@ -1080,51 +1137,6 @@ export default function NewsUpdatesPage() {
                         {content}
                       </ReactMarkdown>
                     </div>
-
-                    {/* ── Detailed BytePlus SealSuite Action Plan in Expanded View ── */}
-                    {item.sealsuite_resolution && (
-                      <div style={{
-                        marginTop: '1.25rem',
-                        padding: '1.1rem 1.25rem',
-                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.08))',
-                        border: '1.5px solid rgba(16, 185, 129, 0.45)',
-                        borderRadius: 'var(--radius-md)'
-                      }}>
-                        <div style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.65rem'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.86rem', fontWeight: 800, color: '#10b981' }}>
-                            <Shield size={16} color="#10b981" />
-                            {isId
-                              ? 'Apa yang Dapat Dilakukan BytePlus SealSuite Terhadap Masalah Ini:'
-                              : 'How BytePlus SealSuite Mitigates & Resolves This Threat:'}
-                          </div>
-                          <a
-                            href={item.sealsuite_resolution.reference_url || 'https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                              fontSize: '0.74rem', fontWeight: 800, color: '#10b981',
-                              background: 'var(--bg-card)', border: '1px solid rgba(16, 185, 129, 0.45)',
-                              padding: '0.3rem 0.7rem', borderRadius: 8, textDecoration: 'none'
-                            }}
-                          >
-                            📖 {isId ? item.sealsuite_resolution.reference_label_id : item.sealsuite_resolution.reference_label_en}
-                            <ExternalLink size={12} />
-                          </a>
-                        </div>
-
-                        <div className="markdown-content" style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {(isId ? item.sealsuite_resolution.actions_id : item.sealsuite_resolution.actions_en)
-                              ?.map((act, idx) => `${idx + 1}. ${act}`)
-                              .join('\n') || ''}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Verified External Sources Box */}
                     {sources.length > 0 && (
