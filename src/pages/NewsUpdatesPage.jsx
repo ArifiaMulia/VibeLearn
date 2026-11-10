@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
   Newspaper, ShieldAlert, Cpu, Sparkles, ExternalLink, Clock, Search,
   ChevronDown, ChevronUp, Plus, Trash2, Flame, Shield, BookOpen, X, CheckCircle, AlertTriangle,
-  Volume2, VolumeX, Share2, Smartphone, Check
+  Volume2, VolumeX, Share2, Smartphone, Check, Archive, ArchiveRestore, RefreshCw
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -96,28 +96,69 @@ export default function NewsUpdatesPage() {
     sourceUrl: '',
   });
 
-  const loadNews = () => {
-    setLoading(true);
-    authFetch('/news')
+  const [scope, setScope] = useState('active');          // 'active' | 'archive'
+  const [activeQuery, setActiveQuery] = useState('');    // debounced server-side keyword search (includes archive)
+  const [counts, setCounts] = useState({ active: 0, archive: 0, total: 0 });
+  const [lastSync, setLastSync] = useState(null);
+  const [newBanner, setNewBanner] = useState(0);
+  const [refreshingFeed, setRefreshingFeed] = useState(false);
+  const versionRef = useRef(null);
+  const reqSeq = useRef(0);
+
+  const loadNews = useCallback((silent = false) => {
+    const seq = ++reqSeq.current;
+    if (!silent) setLoading(true);
+    const qs = new URLSearchParams({ scope });
+    if (activeQuery) qs.set('q', activeQuery);
+    return authFetch('/news?' + qs.toString())
       .then(res => {
+        if (seq !== reqSeq.current) return; // ignore stale responses
         if (res && Array.isArray(res.items)) {
           setItems(res.items);
-          if (res.items.length > 0 && !expandedSlug) {
-            setExpandedSlug(res.items[0].slug);
-          }
+          if (res.counts) setCounts(res.counts);
+          setLastSync(new Date());
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  };
+      .finally(() => { if (seq === reqSeq.current && !silent) setLoading(false); });
+  }, [authFetch, scope, activeQuery]);
 
+  // Debounce the search box -> server-side search
   useEffect(() => {
-    loadNews();
-    return () => {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+    const t = setTimeout(() => setActiveQuery(searchQuery.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => { loadNews(false); }, [loadNews]);
+
+  // Real-time: poll a tiny "version" probe; when something new lands, refetch silently.
+  useEffect(() => {
+    let stopped = false;
+    const probe = async () => {
+      if (stopped || document.visibilityState !== 'visible') return;
+      try {
+        const v = await authFetch('/news/version');
+        if (stopped || !v || !v.version) return;
+        if (versionRef.current && versionRef.current !== v.version) {
+          const prevTotal = Number(String(versionRef.current).split(':')[0]) || 0;
+          const diff = (v.total || 0) - prevTotal;
+          if (diff > 0) setNewBanner(n => n + diff);
+          loadNews(true);
+        }
+        versionRef.current = v.version;
+      } catch {}
     };
+    probe();
+    const id = setInterval(probe, 15000);
+    const onVis = () => { if (document.visibilityState === 'visible') probe(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { stopped = true; clearInterval(id); document.removeEventListener('visibilitychange', onVis); };
+  }, [authFetch, loadNews]);
+
+  useEffect(() => () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
   }, []);
 
   const handleToggleAudioBriefing = (item) => {
@@ -232,6 +273,29 @@ export default function NewsUpdatesPage() {
     } catch {}
   };
 
+  const handleRefreshFeed = async () => {
+    setRefreshingFeed(true);
+    try { await authFetch('/news/refresh', { method: 'POST' }); await loadNews(true); } catch {}
+    setRefreshingFeed(false);
+  };
+
+  const handleArchiveToggle = async (item) => {
+    try {
+      await authFetch('/news/' + item.id + '/archive', { method: 'PATCH', body: JSON.stringify({ archived: !item.archived }) });
+      loadNews(true);
+    } catch {}
+  };
+
+  const fmtDate = (d) => {
+    if (!d) return '';
+    const t = new Date(d);
+    if (isNaN(t)) return d;
+    const hasTime = String(d).length > 10;
+    return t.toLocaleString(isId ? 'id-ID' : 'en-US', hasTime
+      ? { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+      : { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
   const filteredItems = items.filter(item => {
     const matchCategory = activeCategory === 'all' || item.category === activeCategory;
     const title = (isId ? item.title_id : item.title_en) || '';
@@ -245,7 +309,7 @@ export default function NewsUpdatesPage() {
     return matchCategory && matchQuery;
   });
 
-  const featuredBlackOctober = items.find(i => i.slug.includes('black-october')) || items[0];
+  const featuredBlackOctober = (scope === 'active' && !activeQuery) ? (items.find(i => (i.slug || '').includes('black-october')) || null) : null;
 
   return (
     <div style={{ maxWidth: 1040, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2.5rem' }}>
@@ -332,7 +396,7 @@ export default function NewsUpdatesPage() {
                 {isId ? 'SOROTAN UTAMA · BLACK OCTOBER' : 'HEADLINE SPOTLIGHT · BLACK OCTOBER'}
               </span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                📅 {featuredBlackOctober.published_at} • ⏱ {featuredBlackOctober.read_time_min} {isId ? 'menit baca' : 'min read'}
+                📅 {fmtDate(featuredBlackOctober.published_at)} • ⏱ {featuredBlackOctober.read_time_min} {isId ? 'menit baca' : 'min read'}
               </span>
             </div>
 
@@ -393,6 +457,56 @@ export default function NewsUpdatesPage() {
       )}
 
       {/* ── Filter Tabs & Search Bar (Touch-Scrollable on Mobile) ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', gap: '0.45rem' }}>
+          {[
+            { k: 'active', Icon: Newspaper, l_id: 'Terbaru', l_en: 'Latest', n: counts.active },
+            { k: 'archive', Icon: Archive, l_id: 'Arsip', l_en: 'Archive', n: counts.archive },
+          ].map(t => {
+            const on = scope === t.k;
+            return (
+              <button key={t.k} onClick={() => setScope(t.k)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.5rem 0.95rem', borderRadius: 10, cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem',
+                border: on ? '1.5px solid var(--primary)' : '1px solid var(--border-light)',
+                background: on ? 'rgba(124,58,237,0.15)' : 'var(--bg-card)',
+                color: on ? 'var(--primary-light)' : 'var(--text-muted)',
+              }}>
+                <t.Icon size={14} /> {isId ? t.l_id : t.l_en}
+                <span style={{ fontSize: '0.7rem', padding: '0.05rem 0.45rem', borderRadius: 10, background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>{t.n}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', fontSize: '0.72rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontWeight: 800 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} /> LIVE
+          </span>
+          {lastSync && <span>{isId ? 'Diperbarui' : 'Updated'} {lastSync.toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>}
+          {isAdmin && (
+            <button onClick={handleRefreshFeed} disabled={refreshingFeed} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem' }}>
+              <RefreshCw size={13} className={refreshingFeed ? 'animate-spin' : ''} /> {isId ? 'Tarik berita sekarang' : 'Fetch news now'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {newBanner > 0 && scope === 'active' && (
+        <button onClick={() => { setNewBanner(0); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{
+          width: '100%', padding: '0.7rem 1rem', borderRadius: 10, cursor: 'pointer', fontWeight: 800, fontSize: '0.84rem',
+          background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.45)', color: '#10b981',
+        }}>
+          🔔 {newBanner} {isId ? 'berita baru baru saja masuk' : 'new article(s) just arrived'}
+        </button>
+      )}
+
+      {activeQuery && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.6rem 0.9rem', borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--border-light)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+          <span>🔎 {isId ? 'Hasil pencarian' : 'Results for'} <strong>"{activeQuery}"</strong>: {filteredItems.length} {isId ? 'berita (termasuk arsip)' : 'article(s) (archive included)'}</span>
+          <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontWeight: 700 }}>{isId ? 'Hapus' : 'Clear'}</button>
+        </div>
+      )}
+
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         flexWrap: 'wrap', gap: '0.75rem',
@@ -501,12 +615,24 @@ export default function NewsUpdatesPage() {
                       }}>
                         {isId ? catMeta.label_id : catMeta.label_en}
                       </span>
+                      {item.archived && (
+                        <span style={{ fontSize: '0.66rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 6, background: 'rgba(148,163,184,0.15)', border: '1px solid rgba(148,163,184,0.4)', color: '#94a3b8' }}>
+                          📦 {isId ? 'ARSIP' : 'ARCHIVED'}
+                        </span>
+                      )}
                       <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Clock size={12} /> {item.published_at} • {item.read_time_min || 5} {isId ? 'mnt baca' : 'min read'}
+                        <Clock size={12} /> {fmtDate(item.published_at)} • {item.read_time_min || 5} {isId ? 'mnt baca' : 'min read'}
                       </span>
                     </div>
 
-                    {isAdmin && item.id && (
+                    {isAdmin && item.id && (<>
+                      <button
+                        onClick={() => handleArchiveToggle(item)}
+                        title={item.archived ? (isId ? 'Kembalikan dari arsip' : 'Restore from archive') : (isId ? 'Arsipkan' : 'Archive')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}
+                      >
+                        {item.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
+                      </button>
                       <button
                         onClick={() => handleDelete(item.id)}
                         title={isId ? 'Hapus Berita' : 'Delete Article'}
@@ -517,7 +643,7 @@ export default function NewsUpdatesPage() {
                       >
                         <Trash2 size={15} />
                       </button>
-                    )}
+                    </>)}
                   </div>
 
                   <h3

@@ -33,12 +33,22 @@ jobs:
             BYTE_SEC=$(kubectl -n secure-prod get secret secure-secrets -o jsonpath='{.data.BYTEPLUS_API_KEY}' 2>/dev/null | base64 -d || echo "")
             kubectl -n "$NAMESPACE" create secret generic vibelearn-api-secret \
               --from-literal=DATABASE_URL="postgres://vibelearn_user:vibelearn_pass@vibelearn-db:5432/vibelearn_db" \
-              --from-literal=JWT_SECRET="vibelearn_super_secret_jwt_2026" \
+              --from-literal=JWT_SECRET="$(head -c 48 /dev/urandom | base64 | tr -d '\n=+/' | head -c 64)" \
               --from-literal=NODE_ENV="production" \
               --from-literal=PORT="3000" \
               --from-literal=LARK_APP_ID="cli_a9c0eaefaa78deee" \
               --from-literal=LARK_APP_SECRET="${LARK_SEC}" \
               --from-literal=BYTEPLUS_API_KEY="${BYTE_SEC}"
+          fi
+
+          echo "🔒 Hardening: rotate JWT secret if it is missing/weak/the old public default..."
+          CURRENT_JWT=$(kubectl -n "$NAMESPACE" get secret vibelearn-api-secret -o jsonpath='{.data.JWT_SECRET}' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+          if [ "${#CURRENT_JWT}" -lt 32 ] || [ "$CURRENT_JWT" = "vibelearn_super_secret_jwt_2026" ]; then
+            NEW_JWT=$(head -c 48 /dev/urandom | base64 | tr -d '\n=+/' | head -c 64)
+            kubectl -n "$NAMESPACE" patch secret vibelearn-api-secret --type merge -p "{\"stringData\":{\"JWT_SECRET\":\"$NEW_JWT\"}}"
+            echo "✅ JWT_SECRET rotated (all existing sessions are invalidated once)."
+          else
+            echo "✅ JWT_SECRET already strong."
           fi
 
           echo "🗄️ Ensuring PostgreSQL 15 (vibelearn-db) in $NAMESPACE..."
@@ -226,14 +236,17 @@ jobs:
             await check('Fallback Logo 1', '/uploads/images/1793776302191-658592852.png');
             await check('Fallback Logo 2', '/uploads/images/1793776549788-625074971.png');
 
-            const loginRes = await fetch(base + '/api/auth/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: 'admin@vibelearn.id', password: 'Admin@2026!' })
-            });
-            const loginData = await loginRes.json();
-            if (!loginRes.ok) throw new Error('Login failed');
-            console.log('✅ Admin Login:', loginData.user.email);
+            // Default demo passwords are disabled at boot (security hardening): mint a short-lived
+            // admin token inside the pod with the real server secret instead of password login.
+            const jwt = require('jsonwebtoken');
+            const { jwtSecret } = require('/app/config/jwtSecret');
+            const pool = require('/app/db');
+            const first = await pool.query('SELECT id FROM users ORDER BY id LIMIT 1');
+            const loginData = {
+              user: { email: 'admin@vibelearn.id' },
+              token: jwt.sign({ id: first.rows[0].id, email: 'admin@vibelearn.id', role: 'super_admin', name: 'CI Smoke', plan: 'enterprise' }, jwtSecret, { expiresIn: '10m' })
+            };
+            console.log('✅ Admin token minted in-pod for E2E:', loginData.user.email);
             const headers = { 'Authorization': 'Bearer ' + loginData.token, 'Content-Type': 'application/json' };
 
             await check('Auth Me', '/api/auth/me', { headers });

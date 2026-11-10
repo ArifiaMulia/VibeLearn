@@ -164,7 +164,8 @@ router.get('/settings', async (req, res) => {
     manual_bank_recipient: 'PT Vibe Learn / Arifia Mulia',
     app_name: 'Promptara',
     app_tagline: 'AI Coding Academy',
-    app_logo_url: '/icons/icon-512.png'
+    app_logo_url: '/icons/icon-512.png',
+    access_mode: 'public'
   };
   try {
     // Ensure table exists first
@@ -176,7 +177,7 @@ router.get('/settings', async (req, res) => {
     `);
     const result = await pool.query(
       `SELECT key, value FROM system_settings 
-       WHERE key IN ('manual_bank_name', 'manual_bank_account', 'manual_bank_recipient', 'app_name', 'app_tagline', 'app_logo_url')`
+       WHERE key IN ('manual_bank_name', 'manual_bank_account', 'manual_bank_recipient', 'app_name', 'app_tagline', 'app_logo_url', 'access_mode')`
     );
     result.rows.forEach(row => {
       defaults[row.key] = (row.key === 'app_logo_url' && (row.value === '/logo.png' || row.value === '/icon-512.png' || row.value === '/app-icon-512.png' || (row.value && row.value.startsWith('/uploads/images/')))) ? '/icons/icon-512.png' : row.value;
@@ -196,8 +197,15 @@ router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, 
     manual_bank_recipient,
     app_name,
     app_tagline,
-    app_logo_url
+    app_logo_url,
+    access_mode
   } = req.body;
+
+  // Access mode (public / closed-loop) is security-critical: super_admin only, strictly validated.
+  if (access_mode !== undefined) {
+    if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only super admin can change the access mode' });
+    if (!['public', 'closed'].includes(access_mode)) return res.status(400).json({ error: 'Invalid access mode' });
+  }
   try {
     // Ensure table exists before inserting
     await pool.query(`
@@ -215,7 +223,8 @@ router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, 
       manual_bank_recipient,
       app_name,
       app_tagline,
-      app_logo_url
+      app_logo_url,
+      access_mode
     };
 
     for (const [key, value] of Object.entries(settingsMap)) {
@@ -229,6 +238,7 @@ router.put('/settings', auth, requireRole('super_admin', 'master'), async (req, 
     }
     
     await pool.query('COMMIT');
+    require('../services/accessPolicy').invalidate();
     res.json({ message: 'Settings updated successfully' });
   } catch (err) {
     await pool.query('ROLLBACK').catch(() => {});

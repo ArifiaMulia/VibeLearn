@@ -73,7 +73,7 @@ export default function Sidebar() {
   };
 
   const navItems = NAV_ITEMS[user?.role] || NAV_ITEMS.participant;
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => { logout(); };
 
   const NAV_SUBS = {
     nav_dashboard:           t('nav_dashboard_sub'),

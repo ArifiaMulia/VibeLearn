@@ -19,18 +19,40 @@ export function AuthProvider({ children }) {
     document.cookie = 'virtuenet_sso_jwt=; Max-Age=0; path=/; domain=.virtuenet.space;';
   };
 
-  const logout = useCallback((reason = 'manual') => {
-    localStorage.removeItem('vl_token');
-    localStorage.removeItem('vl_user');
-    localStorage.removeItem('vl_last_active');
-    localStorage.setItem('vl_explicit_logout', '1');
-    if (reason === 'idle' && typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('vl_logout_reason', 'idle');
-    }
+  /**
+   * Hardened sign-out:
+   *  1. revoke the JWT on the server (so a copied token can no longer be replayed),
+   *  2. wipe every local trace (tokens, user, cached API responses, Cache Storage),
+   *  3. end the platform SSO session and land on the login page (full page navigation,
+   *     so nothing from the signed-in app stays in memory or in the back/forward cache).
+   */
+  const logout = useCallback((reason = 'manual', opts = {}) => {
+    const oldToken = localStorage.getItem('vl_token');
+    try {
+      fetch(`${API}/auth/logout`, {
+        method: 'POST', credentials: 'include', keepalive: true,
+        headers: oldToken ? { Authorization: `Bearer ${oldToken}` } : {},
+      }).catch(() => {});
+    } catch { /* noop */ }
+
+    try {
+      const KEEP = new Set(['vl_theme', 'vl_lang']);
+      Object.keys(localStorage).forEach((k) => { if (k.startsWith('vl_') && !KEEP.has(k)) localStorage.removeItem(k); });
+      ['token', 'jwt', 'auth_token', 'user'].forEach((k) => localStorage.removeItem(k));
+      localStorage.setItem('vl_explicit_logout', '1');
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear();
+        if (reason === 'idle') sessionStorage.setItem('vl_logout_reason', 'idle');
+      }
+      if (typeof caches !== 'undefined') caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {});
+    } catch { /* noop */ }
+
     clearSsoCookieClientSide();
-    fetch(`${API}/auth/session-clear`, { method: 'POST', credentials: 'include' }).catch(() => {});
     setToken(null);
     setUser(null);
+
+    const target = opts.navigateTo || '/logout';
+    setTimeout(() => window.location.replace(target), 120);
   }, []);
 
   useEffect(() => {

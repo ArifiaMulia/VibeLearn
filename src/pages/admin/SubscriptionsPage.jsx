@@ -91,7 +91,7 @@ const INVOICE_PRESETS = {
 import { useBranding } from '../../contexts/BrandingContext';
 
 export default function SubscriptionsPage() {
-  const { authFetch } = useAuth();
+  const { authFetch, user } = useAuth();
   const { success, error } = useAlert();
   const branding = useBranding();
   const canvasRef = useRef(null);
@@ -112,8 +112,10 @@ export default function SubscriptionsPage() {
     manual_bank_recipient: '',
     app_name: '',
     app_tagline: '',
-    app_logo_url: ''
+    app_logo_url: '',
+    access_mode: 'public'
   });
+  const [savingAccess, setSavingAccess] = useState(false);
   const [savingBranding, setSavingBranding] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -267,6 +269,26 @@ export default function SubscriptionsPage() {
       error(err.message || 'Failed to save branding settings.');
     } finally {
       setSavingBranding(false);
+    }
+  };
+
+  // Access mode: public (everyone) vs closed-loop (Prasetia Lark users only)
+  const handleSaveAccessMode = async (mode) => {
+    if (mode === (bankSettings.access_mode || 'public')) return;
+    const msg = mode === 'closed'
+      ? 'Aktifkan CLOSED-LOOP?\n\nHanya akun Lark Prasetia yang bisa masuk. Login email/password dan pendaftaran publik akan ditutup (kecuali recovery Super Admin).'
+      : 'Buka akses PUBLIK?\n\nSiapa pun dapat mendaftar dan masuk memakai email/password maupun Lark.';
+    if (!window.confirm(msg)) return;
+    setSavingAccess(true);
+    try {
+      await authFetch('/subscriptions/settings', { method: 'PUT', body: JSON.stringify({ access_mode: mode }) });
+      setBankSettings(prev => ({ ...prev, access_mode: mode }));
+      success(mode === 'closed' ? 'Mode CLOSED-LOOP aktif: hanya login dengan Lark (Prasetia).' : 'Mode PUBLIK aktif: semua perusahaan/pengguna dapat mengakses.');
+      if (branding && branding.refreshBranding) branding.refreshBranding();
+    } catch (err) {
+      error(err.message || 'Gagal mengubah mode akses.');
+    } finally {
+      setSavingAccess(false);
     }
   };
 
@@ -1245,6 +1267,47 @@ export default function SubscriptionsPage() {
                 {savingBranding ? 'Saving...' : '💾 Save Branding'}
               </button>
             </form>
+          </div>
+
+          {/* Access Mode — Public vs Closed-loop */}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '1.5rem', marginTop: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🔐 Access Mode
+            </h3>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+              Pilih siapa yang boleh menggunakan aplikasi ini. Perubahan langsung berlaku di halaman login.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+              {[
+                { key: 'public', icon: '🌐', title: 'Publik (All companies)', desc: 'Semua perusahaan & pengguna dapat melihat, mendaftar, dan masuk (email/password atau Lark).' },
+                { key: 'closed', icon: '🔒', title: 'Closed-loop (Prasetia only)', desc: 'Hanya pengguna Lark Prasetia. Satu-satunya pilihan login: "Login with Lark".' },
+              ].map(opt => {
+                const active = (bankSettings.access_mode || 'public') === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    disabled={savingAccess || user?.role !== 'super_admin'}
+                    onClick={() => handleSaveAccessMode(opt.key)}
+                    style={{
+                      textAlign: 'left', cursor: 'pointer', padding: '1rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: active ? '2px solid var(--primary)' : '1px solid var(--border-light)',
+                      background: active ? 'rgba(124,58,237,0.12)' : 'var(--bg-surface)',
+                      color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0.35rem',
+                    }}
+                  >
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>
+                      {opt.icon} {opt.title} {active && <span style={{ color: 'var(--success)', fontSize: '0.72rem' }}>● AKTIF</span>}
+                    </span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{opt.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {user?.role !== 'super_admin' && (
+              <p style={{ margin: '0.85rem 0 0', fontSize: '0.76rem', color: 'var(--warning)' }}>Hanya Super Admin yang dapat mengubah mode akses.</p>
+            )}
           </div>
         </div>
       )}

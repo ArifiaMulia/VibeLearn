@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
+const newsIngest = require('../services/newsIngest');
 
 const requireRole = (...roles) => (req, res, next) =>
   roles.includes(req.user?.role) ? next() : res.status(403).json({ error: 'Insufficient permissions' });
@@ -247,6 +248,12 @@ async function ensureNewsTable() {
       )
     `);
 
+    await pool.query(`ALTER TABLE news_updates ADD COLUMN IF NOT EXISTS source_url TEXT`);
+    await pool.query(`ALTER TABLE news_updates ADD COLUMN IF NOT EXISTS is_auto BOOLEAN DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE news_updates ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE news_updates ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_news_published ON news_updates (published_at DESC)`);
+
     for (const item of DEFAULT_NEWS_ITEMS) {
       await pool.query(
         `INSERT INTO news_updates (
@@ -283,16 +290,93 @@ async function ensureNewsTable() {
   }
 }
 
-// GET /api/news — list all news & updates
+const ARCHIVE_AFTER_DAYS = Math.max(3, parseInt(process.env.NEWS_ARCHIVE_AFTER_DAYS || '14', 10));
+const archiveCutoff = () => new Date(Date.now() - ARCHIVE_AFTER_DAYS * 86400000).toISOString().slice(0, 10);
+// An article is "archived" when manually archived, or older than ARCHIVE_AFTER_DAYS and not pinned.
+const ARCHIVED_SQL = '(is_archived = TRUE OR (is_pinned = FALSE AND published_at < $1))';
+const escLike = (t) => t.replace(/[\\%_]/g, (m) => '\\' + m);
+
+// GET /api/news?scope=active|archive|all&q=keyword&category=...
 router.get('/', auth, async (req, res) => {
   await ensureNewsTable();
+  res.setHeader('Cache-Control', 'no-store');
   try {
-    const result = await pool.query(
-      `SELECT * FROM news_updates ORDER BY is_pinned DESC, published_at DESC, id DESC`
+    const q = String(req.query.q || '').trim().slice(0, 120);
+    const category = String(req.query.category || '').trim();
+    // Searching always looks through the archive too, so old articles stay findable.
+    const scope = q ? 'all' : (['active', 'archive', 'all'].includes(req.query.scope) ? req.query.scope : 'active');
+    const cutoff = archiveCutoff();
+
+    const params = [cutoff];
+    const where = [];
+    if (scope === 'active') where.push(`NOT ${ARCHIVED_SQL}`);
+    if (scope === 'archive') where.push(ARCHIVED_SQL);
+    if (category && category !== 'all') { params.push(category); where.push(`category = $${params.length}`); }
+    q.split(/\s+/).filter(Boolean).slice(0, 6).forEach((term) => {
+      params.push(`%${escLike(term)}%`);
+      where.push(`concat_ws(' ', title_en, title_id, summary_en, summary_id, tags::text, content_en, content_id, sources::text) ILIKE $${params.length}`);
+    });
+
+    const order = scope === 'active' ? 'is_pinned DESC, published_at DESC, id DESC' : 'published_at DESC, id DESC';
+    const list = await pool.query(
+      `SELECT *, ${ARCHIVED_SQL} AS archived FROM news_updates ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${order} LIMIT 300`,
+      params
     );
-    res.json({ items: result.rows });
+    const counts = await pool.query(
+      `SELECT COUNT(*) FILTER (WHERE NOT ${ARCHIVED_SQL})::int AS active, COUNT(*) FILTER (WHERE ${ARCHIVED_SQL})::int AS archive, COUNT(*)::int AS total FROM news_updates`,
+      [cutoff]
+    );
+    res.json({ items: list.rows, counts: counts.rows[0], scope, query: q, archive_after_days: ARCHIVE_AFTER_DAYS });
   } catch (err) {
-    res.json({ items: DEFAULT_NEWS_ITEMS });
+    console.error('GET /api/news error:', err.message);
+    res.json({ items: DEFAULT_NEWS_ITEMS, counts: { active: DEFAULT_NEWS_ITEMS.length, archive: 0, total: DEFAULT_NEWS_ITEMS.length }, scope: 'active', query: '' });
+  }
+});
+
+// GET /api/news/version — cheap "anything new?" probe used by clients for real-time refresh
+router.get('/version', auth, async (req, res) => {
+  await ensureNewsTable();
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const r = await pool.query(
+      `SELECT COUNT(*)::int AS total, COALESCE(MAX(id),0) AS max_id,
+              COALESCE(MAX(EXTRACT(EPOCH FROM GREATEST(created_at, COALESCE(updated_at, created_at)))),0)::bigint AS stamp
+       FROM news_updates`
+    );
+    const latest = await pool.query(
+      `SELECT id, slug, title_en, title_id, category, published_at FROM news_updates ORDER BY published_at DESC, id DESC LIMIT 1`
+    );
+    const v = r.rows[0];
+    res.json({ version: `${v.total}:${v.max_id}:${v.stamp}`, total: v.total, latest: latest.rows[0] || null, ingest: newsIngest.getStatus(), server_time: new Date().toISOString() });
+  } catch (err) {
+    res.status(500).json({ error: 'version unavailable' });
+  }
+});
+
+// POST /api/news/refresh — admin: fetch live feeds right now
+router.post('/refresh', auth, requireRole('super_admin', 'master'), async (req, res) => {
+  await ensureNewsTable();
+  try {
+    const result = await newsIngest.runOnce();
+    res.json({ ok: true, status: result });
+  } catch (err) {
+    res.status(500).json({ error: 'Refresh failed' });
+  }
+});
+
+// PATCH /api/news/:id/archive — admin: manually archive / restore an article
+router.patch('/:id/archive', auth, requireRole('super_admin', 'master'), async (req, res) => {
+  await ensureNewsTable();
+  try {
+    const archived = req.body?.archived !== false;
+    const r = await pool.query(
+      'UPDATE news_updates SET is_archived = $1, updated_at = NOW() WHERE id = $2 RETURNING id, is_archived',
+      [archived, req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json({ success: true, item: r.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update article' });
   }
 });
 
@@ -368,5 +452,7 @@ router.delete('/:id', auth, requireRole('super_admin', 'master'), async (req, re
     res.status(500).json({ error: 'Failed to delete news item' });
   }
 });
+
+newsIngest.start(ensureNewsTable);
 
 module.exports = router;

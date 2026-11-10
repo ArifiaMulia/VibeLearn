@@ -41,7 +41,8 @@ router.get('/verify/:cert_id', async (req, res) => {
     const issueDate = enrollment?.completed_at || enrollment?.created_at || new Date();
     
     // Generate verification signature hash
-    const secret = process.env.JWT_SECRET || 'vibelearn_super_secret_jwt_2026';
+    // Display-only fingerprint key (NOT an authentication secret) - kept stable so already issued certificate hashes still match
+    const secret = process.env.CERT_HASH_KEY || 'vibelearn_super_secret_jwt_2026';
     const hash = crypto.createHmac('sha256', secret)
       .update(`${userId}:${courseId}:${user.name}:${course.title}`)
       .digest('hex')

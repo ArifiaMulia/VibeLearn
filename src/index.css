@@ -1006,3 +1006,7 @@ pre { max-width: 100%; overflow-x: auto; }
   input, select, textarea { max-width: 100%; }
 }
 
+
+
+/* Security: never show the gateway account-chooser (leaks the last signed-in identity) */
+#vn-sso-account-chooser { display: none !important; }

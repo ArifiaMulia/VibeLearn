@@ -4,7 +4,11 @@ const pool = require('../db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const jwtSecret = process.env.JWT_SECRET || 'vibelearn_super_secret_jwt_2026';
+const { jwtSecret } = require('../config/jwtSecret');
+const tokenRevocation = require('../services/tokenRevocation');
+const { getAccessMode, isAllowedClosedLoopEmail } = require('../services/accessPolicy');
+
+const CLOSED_LOOP_MSG = 'Closed-loop mode is active: please sign in with your Prasetia Lark account.';
 
 const generateToken = (user) =>
   jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name, plan: user.plan }, jwtSecret, { expiresIn: '24h' });
@@ -18,6 +22,9 @@ router.post('/login', async (req, res) => {
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
+    if ((await getAccessMode()) === 'closed' && user.role !== 'super_admin') {
+      return res.status(403).json({ error: CLOSED_LOOP_MSG, code: 'CLOSED_LOOP' });
+    }
     // Log login activity
     await pool.query('INSERT INTO usage_logs (user_id, action, resource_type) VALUES ($1, $2, $3)', [user.id, 'login', 'auth']);
     await pool.query('UPDATE users SET last_activity = NOW() WHERE id = $1', [user.id]);
@@ -33,6 +40,9 @@ router.post('/login', async (req, res) => {
 
 // POST /api/auth/register (public self-registration — free plan)
 router.post('/register', async (req, res) => {
+  if ((await getAccessMode()) === 'closed') {
+    return res.status(403).json({ error: CLOSED_LOOP_MSG, code: 'CLOSED_LOOP' });
+  }
   let { name, email, password } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, and password are required' });
 
@@ -113,9 +123,9 @@ router.get('/me', async (req, res) => {
   }
 
   // 1. Try existing local Bearer token
-  if (bearerToken) {
+  if (bearerToken && !tokenRevocation.isRevoked(bearerToken)) {
     try {
-      const decoded = jwt.verify(bearerToken, jwtSecret);
+      const decoded = jwt.verify(bearerToken, jwtSecret, { algorithms: ['HS256'] });
       const userRes = await pool.query('SELECT id, name, email, role, plan, avatar FROM users WHERE id = $1', [decoded.id]);
       if (userRes.rows.length > 0) {
         return res.json({ user: userRes.rows[0], token: bearerToken });
@@ -145,15 +155,8 @@ router.get('/me', async (req, res) => {
         console.warn('SSO verify endpoint unreachable, attempting JWT decode fallback:', verifyErr.message);
       }
 
-      // Fallback: if ssoJwt is a valid non-expired JWT with email & open_id (issued by assistant.virtuenet.space)
-      if (!ssoUser) {
-        try {
-          const decodedSso = jwt.decode(ssoJwt);
-          if (decodedSso && (decodedSso.email || decodedSso.open_id) && (!decodedSso.exp || decodedSso.exp * 1000 > Date.now())) {
-            ssoUser = decodedSso;
-          }
-        } catch {}
-      }
+      // SECURITY: no unverified fallback. A token that the SSO authority did not validate is rejected
+      // (jwt.decode() does not check the signature and would let anyone forge an identity).
 
       if (ssoUser) {
         let email = (ssoUser.email || '').toLowerCase().trim();
@@ -162,6 +165,9 @@ router.get('/me', async (req, res) => {
         }
         if (!email && ssoUser.open_id) {
           email = `${ssoUser.open_id}@lark.vibelearn.id`;
+        }
+        if (email && (await getAccessMode()) === 'closed' && !isAllowedClosedLoopEmail(email)) {
+          return res.status(403).json({ error: CLOSED_LOOP_MSG, code: 'CLOSED_LOOP' });
         }
         if (email) {
           let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -221,7 +227,12 @@ router.get('/me', async (req, res) => {
 });
 
 // POST /api/auth/logout & /api/auth/session-clear
-const handleLogout = (req, res) => {
+const handleLogout = async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const bearer = authHeader && authHeader.split(' ')[1];
+  if (bearer) await tokenRevocation.revoke(bearer);
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Clear-Site-Data', '"cache", "storage"');
   res.clearCookie('virtuenet_sso_jwt', { path: '/' });
   res.clearCookie('virtuenet_sso_jwt', { path: '/', domain: '.virtuenet.space' });
   res.clearCookie('token', { path: '/' });
@@ -291,6 +302,10 @@ router.post('/lark/callback', async (req, res) => {
     }
 
     const { name, email: larkEmail, avatar_url, open_id } = userTokenData.data;
+
+    if ((await getAccessMode()) === 'closed' && !isAllowedClosedLoopEmail(larkEmail)) {
+      return res.status(403).json({ error: CLOSED_LOOP_MSG, code: 'CLOSED_LOOP' });
+    }
 
     // Safeguard: Fallback email if email is not shared or empty
     const email = larkEmail || `${open_id}@lark.vibelearn.id`;
@@ -387,7 +402,7 @@ router.post('/reset-password-confirm', async (req, res) => {
   if (new_password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters long' });
 
   try {
-    const decoded = jwt.verify(reset_token, jwtSecret);
+    const decoded = jwt.verify(reset_token, jwtSecret, { algorithms: ['HS256'] });
     if (decoded.type !== 'reset') return res.status(400).json({ error: 'Invalid reset token' });
 
     const hashed = await bcrypt.hash(new_password, 10);

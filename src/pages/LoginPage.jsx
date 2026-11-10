@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
-import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy, Bird, Smartphone, Download } from 'lucide-react';
+import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy, Lock, Smartphone, Download } from 'lucide-react';
 import MobileInstallModal from '../components/MobileInstallModal';
 import { useBranding } from '../contexts/BrandingContext';
 
@@ -21,6 +21,9 @@ export default function LoginPage() {
   const [resetToken, setResetToken] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [mobileModalPlatform, setMobileModalPlatform] = useState(null);
+  const [showRecovery, setShowRecovery] = useState(false);
+  // Closed-loop mode (set by super admin): only Prasetia Lark accounts may sign in.
+  const closedLoop = branding.access_mode === 'closed';
 
   useEffect(() => { if (user) navigate('/dashboard'); }, [user]);
 
@@ -28,6 +31,10 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('reset_token');
     if (token) setResetToken(token);
+    // Drop the ?logged_out=1 marker from the address bar after a sign-out
+    if (params.get('logged_out') === '1' && window.history?.replaceState) {
+      window.history.replaceState({}, document.title, '/login');
+    }
 
     if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vl_logout_reason') === 'idle') {
       sessionStorage.removeItem('vl_logout_reason');
@@ -221,11 +228,47 @@ export default function LoginPage() {
       {/* Right Panel — Form */}
       <div className="login-right" style={{ flex: '1 1 380px', maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
+          {closedLoop && !showRecovery ? (
+            <div data-testid="closed-loop-panel">
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.28rem 0.75rem', borderRadius: 20, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981', fontSize: '0.72rem', fontWeight: 800, marginBottom: '1.1rem' }}>
+                <Lock size={13} /> CLOSED-LOOP · PRASETIA GROUP
+              </div>
+              <h2 style={{ marginBottom: '0.5rem' }}>Masuk dengan akun Lark</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                Aplikasi ini khusus untuk pengguna Lark Prasetia. Gunakan akun Lark perusahaan Anda untuk melanjutkan.
+              </p>
+              <button
+                type="button"
+                onClick={handleLarkLogin}
+                disabled={loading}
+                className="btn btn-primary btn-lg w-full"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem' }}
+              >
+                <img src="/icons/lark-logo.png" alt="Lark" width={24} height={24} style={{ borderRadius: 6 }} />
+                Login with Lark
+                <ArrowRight size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRecovery(true)}
+                style={{ display: 'block', margin: '1.25rem auto 0', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.74rem', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Admin recovery login
+              </button>
+            </div>
+          ) : (<>
           {/* Toggle */}
+          {closedLoop ? (
+            <div style={{ marginBottom: '1.25rem', fontSize: '0.78rem', color: 'var(--warning)', fontWeight: 700 }}>
+              🔐 Admin recovery — hanya akun Super Admin yang dapat masuk dengan password.{' '}
+              <button type="button" onClick={() => setShowRecovery(false)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.78rem' }}>← Kembali</button>
+            </div>
+          ) : (
           <div className="tab-bar" style={{ marginBottom: '1.75rem' }}>
             <button className={`tab-btn ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Sign In</button>
             <button className={`tab-btn ${mode === 'register' ? 'active' : ''}`} onClick={() => setMode('register')}>Sign Up</button>
           </div>
+          )}
 
           <h2 style={{ marginBottom: '0.5rem' }}>{mode === 'login' ? 'Welcome back' : 'Create account'}</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', fontSize: '0.9rem' }}>
@@ -294,7 +337,7 @@ export default function LoginPage() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  <Bird size={18} />
+                  <img src="/icons/lark-logo.png" alt="Lark" width={22} height={22} style={{ borderRadius: 5 }} />
                   Sign In with Lark
                 </button>
               </>
@@ -306,6 +349,7 @@ export default function LoginPage() {
               Free plan includes 1 course and 2 labs. <Link to="/" style={{ color: 'var(--accent)' }}>See all plans →</Link>
             </p>
           )}
+          </>)}
 
           {/* Powered-by footer */}
           <div style={{

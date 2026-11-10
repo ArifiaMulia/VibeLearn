@@ -179,12 +179,13 @@ app.get('/api/config', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT key, value FROM system_settings 
-       WHERE key IN ('app_name', 'app_tagline', 'app_logo_url')`
+       WHERE key IN ('app_name', 'app_tagline', 'app_logo_url', 'access_mode')`
     );
     const config = {
       app_name: 'Promptara',
       app_tagline: 'AI Coding Academy',
-      app_logo_url: '/icons/icon-512.png'
+      app_logo_url: '/icons/icon-512.png',
+      access_mode: 'public'
     };
     result.rows.forEach(row => {
       config[row.key] = (row.key === 'app_logo_url' && (row.value === '/logo.png' || row.value === '/icon-512.png' || row.value === '/app-icon-512.png' || (row.value && row.value.startsWith('/uploads/images/')))) ? '/icons/icon-512.png' : row.value;
@@ -201,7 +202,7 @@ app.get('/api/config', async (req, res) => {
 // Only restores content that is MISSING images — never overwrites existing ones
 app.post('/api/admin/restore-lesson-images', async (req, res) => {
   const jwt = require('jsonwebtoken');
-  const jwtSecret = process.env.JWT_SECRET || 'vibelearn_super_secret_jwt_2026';
+  const { jwtSecret } = require('./config/jwtSecret');
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -730,6 +731,42 @@ app.use((err, req, res, next) => {
   }
 });
 
-initDb().then(() => {
+// SECURITY: demo accounts are seeded with passwords that are written in the source code.
+// Anyone who knows them could sign in as Super Admin / Master. Disable them at boot.
+// Re-enable password login for the admin only by setting a strong ADMIN_BOOTSTRAP_PASSWORD (>=12 chars)
+// in the vibelearn-api-secret; Lark SSO and "forgot password" keep working regardless.
+async function hardenDefaultAccounts() {
+  try {
+    const bcrypt = require('bcrypt');
+    const crypto = require('crypto');
+    const known = [
+      { email: 'admin@vibelearn.id', password: 'Admin@2026!', envKey: 'ADMIN_BOOTSTRAP_PASSWORD' },
+      { email: 'master@vibelearn.id', password: 'Master@2026!', envKey: 'MASTER_BOOTSTRAP_PASSWORD' },
+    ];
+    for (const acc of known) {
+      const r = await pool.query('SELECT id, password FROM users WHERE email = $1', [acc.email]);
+      if (!r.rows.length) continue;
+      const boot = (process.env[acc.envKey] || '').trim();
+      if (boot.length >= 12 && boot !== acc.password) {
+        if (!(await bcrypt.compare(boot, r.rows[0].password))) {
+          await pool.query('UPDATE users SET password = $1 WHERE id = $2', [await bcrypt.hash(boot, 12), r.rows[0].id]);
+          console.log('[security] ' + acc.email + ': password set from ' + acc.envKey);
+        }
+        continue;
+      }
+      if (await bcrypt.compare(acc.password, r.rows[0].password)) {
+        const random = crypto.randomBytes(32).toString('hex');
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [await bcrypt.hash(random, 12), r.rows[0].id]);
+        console.warn('[security] ' + acc.email + ': the default source-code password was still active and has been DISABLED. Use Lark login, or set ' + acc.envKey + '.');
+      }
+    }
+  } catch (err) {
+    console.warn('hardenDefaultAccounts warning:', err.message);
+  }
+}
+
+initDb().then(async () => {
+  await hardenDefaultAccounts();
+  await require('./services/tokenRevocation').init();
   app.listen(port, () => console.log(`🚀 VibeLearn API running on port ${port}`));
 });

@@ -11,6 +11,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 // Eagerly loaded core routes
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import LogoutPage from './pages/LogoutPage';
 import Dashboard from './pages/Dashboard';
 
 // Lazy-loaded routes for code-splitting & optimal bundle performance
@@ -55,6 +56,7 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<LoginPage />} />
+            <Route path="/logout" element={<LogoutPage />} />
                   <Route path="/lark-callback" element={<LarkCallbackPage />} />
                   <Route path="/verify/:cert_id" element={<VerifyCertificatePage />} />
 
