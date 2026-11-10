@@ -114,7 +114,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       localStorage.removeItem('vl_explicit_logout');
-      const returnTo = `${window.location.origin}/login`;
+      localStorage.setItem('vl_lark_pending', '1');
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('vl_lark_pending', '1');
+      document.cookie = 'vl_logged_out=; Max-Age=0; path=/;';
+      document.cookie = 'vl_logged_out=; Max-Age=0; path=/; domain=.virtuenet.space;';
+      document.cookie = 'vl_lark_pending=1; Max-Age=600; path=/; SameSite=Lax';
+      const returnTo = `${window.location.origin}/dashboard`;
       window.location.href = `https://assistant.virtuenet.space/api/auth/lark/login?return_to=${encodeURIComponent(returnTo)}`;
     } catch (err) {
       showError(err.message);

@@ -73,31 +73,46 @@ export function AuthProvider({ children }) {
       if (saved) { try { setUser(JSON.parse(saved)); } catch {} }
       setLoading(false);
     } else {
-      // Check Virtuenet SSO session ONLY if user did not explicitly log out (unless returning with ?sso_token= or ?token=)
+      // Check Virtuenet SSO session ONLY if user did not explicitly log out (unless returning with ?sso_token= / ?token= or pending Lark login)
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const ssoToken = params ? (params.get('sso_token') || params.get('token')) : null;
+      const larkPending = localStorage.getItem('vl_lark_pending') === '1' || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vl_lark_pending') === '1');
+      if (ssoToken || larkPending) {
+        localStorage.removeItem('vl_explicit_logout');
+        if (typeof document !== 'undefined') {
+          document.cookie = 'vl_logged_out=; Max-Age=0; path=/;';
+          document.cookie = 'vl_logged_out=; Max-Age=0; path=/; domain=.virtuenet.space;';
+        }
+      }
       const explicitLogout = localStorage.getItem('vl_explicit_logout') === '1';
 
-      if (explicitLogout && !ssoToken) {
+      if (explicitLogout && !ssoToken && !larkPending) {
         setLoading(false);
         return;
       }
 
-      const ssoUrl = ssoToken ? `${API}/auth/me?sso_token=${encodeURIComponent(ssoToken)}` : `${API}/auth/me`;
+      const qs = new URLSearchParams();
+      if (ssoToken) qs.set('sso_token', ssoToken);
+      if (larkPending) qs.set('lark_pending', '1');
+      const ssoUrl = qs.toString() ? `${API}/auth/me?${qs.toString()}` : `${API}/auth/me`;
       fetch(ssoUrl, { credentials: 'include' })
         .then((res) => res.ok ? res.json() : null)
         .then((data) => {
           if (data && data.user && data.token) {
             const now = Date.now();
             localStorage.removeItem('vl_explicit_logout');
+            localStorage.removeItem('vl_lark_pending');
+            if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('vl_lark_pending');
             localStorage.setItem('vl_last_active', String(now));
             lastActiveRef.current = now;
             localStorage.setItem('vl_token', data.token);
             localStorage.setItem('vl_user', JSON.stringify(data.user));
             setToken(data.token);
             setUser(data.user);
-            if (ssoToken && window.history?.replaceState) {
-              const cleanUrl = window.location.pathname;
+            if ((ssoToken || larkPending) && window.history?.replaceState) {
+              const cleanUrl = window.location.pathname === '/' || window.location.pathname === '/login'
+                ? '/dashboard'
+                : window.location.pathname;
               window.history.replaceState({}, document.title, cleanUrl);
             }
           }

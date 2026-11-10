@@ -18,7 +18,8 @@ export default function LarkCallbackPage() {
     if (ssoToken) {
       loginAttempted.current = true;
       localStorage.removeItem('vl_explicit_logout');
-      window.location.replace(`/login?token=${encodeURIComponent(ssoToken)}`);
+      localStorage.setItem('vl_lark_pending', '1');
+      window.location.replace(`/dashboard?token=${encodeURIComponent(ssoToken)}`);
       return;
     }
 

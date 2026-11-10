@@ -4,15 +4,30 @@ import { Zap, Code2, Rocket, Play, Shield, CheckCircle, X, Building2, Users, Sta
 import UpgradeModal from '../components/UpgradeModal';
 import MobileInstallModal from '../components/MobileInstallModal';
 import { useBranding } from '../contexts/BrandingContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // ── Main Landing Page ──────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
   const branding = useBranding();
+  const { user, loading: authLoading } = useAuth();
   const [modal, setModal] = useState(null); // null | 'pro' | 'enterprise'
   const [mobileModalPlatform, setMobileModalPlatform] = useState(null); // null | 'android' | 'ios'
   const [apiPlans, setApiPlans] = useState([]);
   const [currency, setCurrency] = useState('IDR');
+
+  // Direct post-login & closed-loop routing:
+  // 1. If the user is already authenticated, go straight into the app (/dashboard).
+  // 2. If the app is in Closed-Loop mode and unauthenticated, go straight to /login (no second login/marketing page).
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    if (!authLoading && branding.access_mode === 'closed') {
+      navigate('/login', { replace: true });
+    }
+  }, [user, authLoading, branding.access_mode, navigate]);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || '/api'}/subscriptions/plans`)

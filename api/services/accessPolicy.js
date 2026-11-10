@@ -4,7 +4,7 @@
  */
 const pool = require('../db');
 
-const DEFAULT_DOMAINS = (process.env.CLOSED_LOOP_DOMAINS || 'prasetia.co.id')
+const DEFAULT_DOMAINS = (process.env.CLOSED_LOOP_DOMAINS || 'prasetia.co.id,virtuenet.id,virtuenet.space,lark.vibelearn.id')
   .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
 let cache = { mode: 'public', at: 0 };

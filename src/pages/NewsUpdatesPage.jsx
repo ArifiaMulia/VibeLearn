@@ -100,6 +100,8 @@ export default function NewsUpdatesPage() {
   const [activeQuery, setActiveQuery] = useState('');    // debounced server-side keyword search (includes archive)
   const [counts, setCounts] = useState({ active: 0, archive: 0, total: 0 });
   const [lastSync, setLastSync] = useState(null);
+  const [syncIntervalMin, setSyncIntervalMin] = useState(30);
+  const [savingSyncInterval, setSavingSyncInterval] = useState(false);
   const [newBanner, setNewBanner] = useState(0);
   const [refreshingFeed, setRefreshingFeed] = useState(false);
   const versionRef = useRef(null);
@@ -116,6 +118,7 @@ export default function NewsUpdatesPage() {
         if (res && Array.isArray(res.items)) {
           setItems(res.items);
           if (res.counts) setCounts(res.counts);
+          if (res.ingest?.syncIntervalMinutes) setSyncIntervalMin(res.ingest.syncIntervalMinutes);
           setLastSync(new Date());
         }
       })
@@ -277,6 +280,22 @@ export default function NewsUpdatesPage() {
     setRefreshingFeed(true);
     try { await authFetch('/news/refresh', { method: 'POST' }); await loadNews(true); } catch {}
     setRefreshingFeed(false);
+  };
+
+  const handleSyncIntervalChange = async (e) => {
+    const minutes = Number(e.target.value) || 30;
+    setSyncIntervalMin(minutes);
+    setSavingSyncInterval(true);
+    try {
+      const res = await authFetch('/news/sync-settings', {
+        method: 'PUT',
+        body: JSON.stringify({ sync_interval_minutes: minutes }),
+      });
+      if (res?.status?.syncIntervalMinutes) {
+        setSyncIntervalMin(res.status.syncIntervalMinutes);
+      }
+    } catch {}
+    setSavingSyncInterval(false);
   };
 
   const handleArchiveToggle = async (item) => {
@@ -480,9 +499,35 @@ export default function NewsUpdatesPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', fontSize: '0.72rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontWeight: 800 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} /> LIVE
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+            LIVE • {isId ? `Auto-Sync tiap ${syncIntervalMin} mnt` : `Auto-Sync every ${syncIntervalMin}m`}
           </span>
           {lastSync && <span>{isId ? 'Diperbarui' : 'Updated'} {lastSync.toLocaleTimeString(isId ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>}
+          {isAdmin && (
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+              ⏱ {isId ? 'Jadwal Sync:' : 'Sync Interval:'}
+              <select
+                value={syncIntervalMin}
+                disabled={savingSyncInterval}
+                onChange={handleSyncIntervalChange}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-primary)',
+                  borderRadius: 6,
+                  padding: '0.18rem 0.45rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value={15}>15 {isId ? 'menit' : 'mins'}</option>
+                <option value={30}>30 {isId ? 'menit (Default)' : 'mins (Default)'}</option>
+                <option value={60}>60 {isId ? 'menit' : 'mins'}</option>
+                <option value={120}>2 {isId ? 'jam' : 'hours'}</option>
+              </select>
+            </label>
+          )}
           {isAdmin && (
             <button onClick={handleRefreshFeed} disabled={refreshingFeed} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem' }}>
               <RefreshCw size={13} className={refreshingFeed ? 'animate-spin' : ''} /> {isId ? 'Tarik berita sekarang' : 'Fetch news now'}
@@ -664,6 +709,73 @@ export default function NewsUpdatesPage() {
                     {summary}
                   </p>
 
+                  {/* ── BytePlus SealSuite Security Resolution Preview (Visible on Card) ── */}
+                  {item.sealsuite_resolution && (
+                    <div
+                      data-testid="sealsuite-resolution-card"
+                      style={{
+                        marginBottom: '0.95rem',
+                        padding: '0.85rem 1rem',
+                        borderRadius: 10,
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(6, 182, 212, 0.08))',
+                        border: '1px solid rgba(16, 185, 129, 0.38)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.45rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.45rem' }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                          fontSize: '0.73rem', fontWeight: 800, color: '#10b981', letterSpacing: '0.02em'
+                        }}>
+                          <Shield size={14} color="#10b981" />
+                          {isId ? '🛡️ MITIGASI & RESOLUSI BYTEPLUS SEALSUITE' : '🛡️ BYTEPLUS SEALSUITE SECURITY RESOLUTION'}
+                        </span>
+                        <a
+                          href={item.sealsuite_resolution.reference_url || 'https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.28rem',
+                            fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent)',
+                            textDecoration: 'none', padding: '0.16rem 0.55rem', borderRadius: 12,
+                            background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.35)'
+                          }}
+                        >
+                          {isId ? 'Release Notes SealSuite' : 'SealSuite Release Notes'} <ExternalLink size={11} />
+                        </a>
+                      </div>
+
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                        {isId ? item.sealsuite_resolution.headline_id : item.sealsuite_resolution.headline_en}
+                      </div>
+
+                      <div style={{ fontSize: '0.79rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                        {isId ? item.sealsuite_resolution.summary_id : item.sealsuite_resolution.summary_en}
+                      </div>
+
+                      {Array.isArray(item.sealsuite_resolution.modules) && item.sealsuite_resolution.modules.length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.1rem' }}>
+                          {item.sealsuite_resolution.modules.map((mod, mIdx) => (
+                            <span
+                              key={mIdx}
+                              style={{
+                                fontSize: '0.67rem', fontWeight: 700,
+                                padding: '0.14rem 0.5rem', borderRadius: 6,
+                                background: 'rgba(16, 185, 129, 0.15)',
+                                border: '1px solid rgba(16, 185, 129, 0.35)',
+                                color: '#34d399'
+                              }}
+                            >
+                              ✓ {mod}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Tags + Action Row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -778,6 +890,51 @@ export default function NewsUpdatesPage() {
                         {content}
                       </ReactMarkdown>
                     </div>
+
+                    {/* ── Detailed BytePlus SealSuite Action Plan in Expanded View ── */}
+                    {item.sealsuite_resolution && (
+                      <div style={{
+                        marginTop: '1.25rem',
+                        padding: '1.1rem 1.25rem',
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.08))',
+                        border: '1.5px solid rgba(16, 185, 129, 0.45)',
+                        borderRadius: 'var(--radius-md)'
+                      }}>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.65rem'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.86rem', fontWeight: 800, color: '#10b981' }}>
+                            <Shield size={16} color="#10b981" />
+                            {isId
+                              ? 'Apa yang Dapat Dilakukan BytePlus SealSuite Terhadap Masalah Ini:'
+                              : 'How BytePlus SealSuite Mitigates & Resolves This Threat:'}
+                          </div>
+                          <a
+                            href={item.sealsuite_resolution.reference_url || 'https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                              fontSize: '0.74rem', fontWeight: 800, color: '#10b981',
+                              background: 'var(--bg-card)', border: '1px solid rgba(16, 185, 129, 0.45)',
+                              padding: '0.3rem 0.7rem', borderRadius: 8, textDecoration: 'none'
+                            }}
+                          >
+                            📖 {isId ? item.sealsuite_resolution.reference_label_id : item.sealsuite_resolution.reference_label_en}
+                            <ExternalLink size={12} />
+                          </a>
+                        </div>
+
+                        <div className="markdown-content" style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {(isId ? item.sealsuite_resolution.actions_id : item.sealsuite_resolution.actions_en)
+                              ?.map((act, idx) => `${idx + 1}. ${act}`)
+                              .join('\n') || ''}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Verified External Sources Box */}
                     {sources.length > 0 && (

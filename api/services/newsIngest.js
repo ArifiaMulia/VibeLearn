@@ -21,8 +21,9 @@ const MAX_PER_FEED = 6;
 const MAX_AGE_DAYS = 21;
 const MAX_AI_PER_RUN = 6;
 const FETCH_TIMEOUT_MS = 12000;
+const DEFAULT_SYNC_MINUTES = 30;
 
-const status = { running: false, lastRunAt: null, lastAdded: 0, lastErrors: [], totalAdded: 0 };
+const status = { running: false, lastRunAt: null, nextRunAt: null, syncIntervalMinutes: DEFAULT_SYNC_MINUTES, lastAdded: 0, lastErrors: [], totalAdded: 0 };
 
 /* ───────────── tiny RSS / Atom parsing ───────────── */
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: "'", lsquo: "'", ldquo: '"', rdquo: '"', ndash: '-', mdash: '-', hellip: '...' };
@@ -201,6 +202,7 @@ async function runOnce() {
   } finally {
     status.running = false;
     status.lastRunAt = new Date().toISOString();
+    status.nextRunAt = new Date(Date.now() + status.syncIntervalMinutes * 60 * 1000).toISOString();
     status.lastAdded = added;
     status.totalAdded += added;
     status.lastErrors = status.lastErrors.slice(0, 10);
@@ -210,13 +212,68 @@ async function runOnce() {
 }
 
 let timer = null;
-function start(ensureTable) {
-  if (process.env.NEWS_INGEST === 'off' || timer) return;
-  const everyMin = Math.max(5, parseInt(process.env.NEWS_INGEST_MINUTES || '20', 10));
-  const tick = async () => { try { await ensureTable(); await runOnce(); } catch (e) { console.warn('news ingest tick:', e.message); } };
-  setTimeout(tick, 25000).unref();
-  timer = setInterval(tick, everyMin * 60 * 1000);
-  timer.unref();
+let ensureTableFn = null;
+
+async function loadSyncIntervalMinutes() {
+  try {
+    const r = await pool.query("SELECT value FROM system_settings WHERE key = 'news_sync_interval_minutes'");
+    const val = parseInt(r.rows[0]?.value, 10);
+    if (!isNaN(val) && val >= 5 && val <= 1440) {
+      return val;
+    }
+  } catch {}
+  return Math.max(5, parseInt(process.env.NEWS_INGEST_MINUTES || String(DEFAULT_SYNC_MINUTES), 10));
 }
 
-module.exports = { start, runOnce, getStatus: () => ({ ...status, feeds: FEEDS.length }), parseFeed };
+function scheduleTimer(minutes) {
+  if (timer) clearInterval(timer);
+  const everyMin = Math.max(5, Math.min(1440, parseInt(minutes, 10) || DEFAULT_SYNC_MINUTES));
+  status.syncIntervalMinutes = everyMin;
+  status.nextRunAt = new Date(Date.now() + everyMin * 60 * 1000).toISOString();
+  const tick = async () => {
+    try {
+      if (ensureTableFn) await ensureTableFn();
+      await runOnce();
+    } catch (e) {
+      console.warn('news ingest tick:', e.message);
+    }
+  };
+  timer = setInterval(tick, everyMin * 60 * 1000);
+  if (timer.unref) timer.unref();
+}
+
+async function setSyncIntervalMinutes(minutes) {
+  const clean = Math.max(5, Math.min(1440, parseInt(minutes, 10) || DEFAULT_SYNC_MINUTES));
+  try {
+    await pool.query(
+      `INSERT INTO system_settings (key, value) VALUES ('news_sync_interval_minutes', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [String(clean)]
+    );
+  } catch {}
+  scheduleTimer(clean);
+  return getStatus();
+}
+
+function getStatus() {
+  return { ...status, feeds: FEEDS.length };
+}
+
+function start(ensureTable) {
+  ensureTableFn = ensureTable;
+  if (process.env.NEWS_INGEST === 'off' || timer) return;
+  loadSyncIntervalMinutes().then((everyMin) => {
+    scheduleTimer(everyMin);
+    const initialTick = async () => {
+      try {
+        if (ensureTableFn) await ensureTableFn();
+        await runOnce();
+      } catch (e) {
+        console.warn('news ingest initial tick:', e.message);
+      }
+    };
+    setTimeout(initialTick, 25000).unref();
+  });
+}
+
+module.exports = { start, runOnce, getStatus, setSyncIntervalMinutes, DEFAULT_SYNC_MINUTES, parseFeed };

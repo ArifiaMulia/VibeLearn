@@ -3,6 +3,19 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 const newsIngest = require('../services/newsIngest');
+const { buildSealSuiteResolution, SEALSUITE_RELEASE_NOTES_URL } = require('../services/sealsuiteAdvisor');
+
+function attachSealSuiteResolution(item) {
+  if (!item) return item;
+  const resolution = item.sealsuite_resolution && typeof item.sealsuite_resolution === 'object' && item.sealsuite_resolution.reference_url
+    ? item.sealsuite_resolution
+    : buildSealSuiteResolution(item);
+  return {
+    ...item,
+    sealsuite_resolution: resolution,
+    sealsuite_release_notes_url: SEALSUITE_RELEASE_NOTES_URL,
+  };
+}
 
 const requireRole = (...roles) => (req, res, next) =>
   roles.includes(req.user?.role) ? next() : res.status(403).json({ error: 'Insufficient permissions' });
@@ -326,10 +339,27 @@ router.get('/', auth, async (req, res) => {
       `SELECT COUNT(*) FILTER (WHERE NOT ${ARCHIVED_SQL})::int AS active, COUNT(*) FILTER (WHERE ${ARCHIVED_SQL})::int AS archive, COUNT(*)::int AS total FROM news_updates`,
       [cutoff]
     );
-    res.json({ items: list.rows, counts: counts.rows[0], scope, query: q, archive_after_days: ARCHIVE_AFTER_DAYS });
+    const enrichedItems = list.rows.map(attachSealSuiteResolution);
+    res.json({
+      items: enrichedItems,
+      counts: counts.rows[0],
+      scope,
+      query: q,
+      archive_after_days: ARCHIVE_AFTER_DAYS,
+      ingest: newsIngest.getStatus(),
+      sealsuite_release_notes_url: SEALSUITE_RELEASE_NOTES_URL,
+    });
   } catch (err) {
     console.error('GET /api/news error:', err.message);
-    res.json({ items: DEFAULT_NEWS_ITEMS, counts: { active: DEFAULT_NEWS_ITEMS.length, archive: 0, total: DEFAULT_NEWS_ITEMS.length }, scope: 'active', query: '' });
+    const fallbackItems = DEFAULT_NEWS_ITEMS.map(attachSealSuiteResolution);
+    res.json({
+      items: fallbackItems,
+      counts: { active: fallbackItems.length, archive: 0, total: fallbackItems.length },
+      scope: 'active',
+      query: '',
+      ingest: newsIngest.getStatus(),
+      sealsuite_release_notes_url: SEALSUITE_RELEASE_NOTES_URL,
+    });
   }
 });
 
@@ -361,6 +391,18 @@ router.post('/refresh', auth, requireRole('super_admin', 'master'), async (req, 
     res.json({ ok: true, status: result });
   } catch (err) {
     res.status(500).json({ error: 'Refresh failed' });
+  }
+});
+
+// PUT /api/news/sync-settings — admin: configure automatic news sync interval (default 30 mins)
+router.put('/sync-settings', auth, requireRole('super_admin', 'master'), async (req, res) => {
+  await ensureNewsTable();
+  try {
+    const minutes = parseInt(req.body?.sync_interval_minutes, 10) || newsIngest.DEFAULT_SYNC_MINUTES;
+    const status = await newsIngest.setSyncIntervalMinutes(minutes);
+    res.json({ ok: true, status });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update sync interval' });
   }
 });
 
@@ -435,7 +477,7 @@ router.post('/', auth, requireRole('super_admin', 'master'), async (req, res) =>
         JSON.stringify(Array.isArray(sources) ? sources : [])
       ]
     );
-    res.status(201).json({ item: result.rows[0] });
+    res.status(201).json({ item: attachSealSuiteResolution(result.rows[0]) });
   } catch (err) {
     console.error('POST /api/news error:', err);
     res.status(500).json({ error: 'Failed to create news item' });
