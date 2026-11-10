@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
-import { Zap, Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy, Lock, Smartphone, Download } from 'lucide-react';
+import {
+  Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy,
+  Lock, Smartphone, ShieldAlert, KeyRound, X,
+} from 'lucide-react';
 import MobileInstallModal from '../components/MobileInstallModal';
 import { useBranding } from '../contexts/BrandingContext';
 
 export default function LoginPage() {
-  const { login, register, user } = useAuth();
+  const { login, breakGlassLogin, register, user, sessionIdleLabel } = useAuth();
   const { error: showError, success } = useAlert();
   const branding = useBranding();
   const navigate = useNavigate();
@@ -21,27 +24,87 @@ export default function LoginPage() {
   const [resetToken, setResetToken] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [mobileModalPlatform, setMobileModalPlatform] = useState(null);
-  const [showRecovery, setShowRecovery] = useState(false);
+
+  // Break-Glass Emergency 2FA Access Modal (Ctrl+Shift+M or 5x logo click)
+  const [showBreakGlassModal, setShowBreakGlassModal] = useState(false);
+  const [breakGlassCode, setBreakGlassCode] = useState('');
+  const [breakGlassError, setBreakGlassError] = useState('');
+  const [breakGlassLoading, setBreakGlassLoading] = useState(false);
+  const breakGlassInputRef = useRef(null);
+  const logoClickRef = useRef({ count: 0, timer: null });
+
   // Closed-loop mode (set by super admin): only Prasetia Lark accounts may sign in.
-  // (while the policy is still loading we show the safest option: Lark only)
+  // No password recovery form is exposed in closed-loop mode — emergency access is strictly via Break-Glass 2FA (Ctrl+Shift+M).
   const closedLoop = branding.access_mode === 'closed' || branding.loading === true;
 
-  useEffect(() => { if (user) navigate('/dashboard'); }, [user]);
+  useEffect(() => { if (user) navigate('/dashboard'); }, [user, navigate]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('reset_token');
-    if (token) setResetToken(token);
-    // Drop the ?logged_out=1 marker from the address bar after a sign-out
+    if (token && !closedLoop) setResetToken(token);
     if (params.get('logged_out') === '1' && window.history?.replaceState) {
       window.history.replaceState({}, document.title, '/login');
     }
 
     if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vl_logout_reason') === 'idle') {
       sessionStorage.removeItem('vl_logout_reason');
-      showError('Sesi Anda telah berakhir otomatis karena tidak ada aktivitas selama 30 menit demi keamanan akun.');
+      showError(`Sesi Anda telah berakhir otomatis karena tidak ada aktivitas (${sessionIdleLabel || '30m'}) demi keamanan akun.`);
     }
-  }, []);
+  }, [closedLoop, sessionIdleLabel, showError]);
+
+  // Global Hotkey: Ctrl+Shift+M or Ctrl+Alt+M opens Break-Glass 2FA Emergency Access Modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.shiftKey || e.altKey) && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        setBreakGlassCode('');
+        setBreakGlassError('');
+        setShowBreakGlassModal(true);
+        setTimeout(() => breakGlassInputRef.current?.focus(), 80);
+      } else if (e.key === 'Escape' && showBreakGlassModal) {
+        setShowBreakGlassModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showBreakGlassModal]);
+
+  const handleLogoSecretTrigger = () => {
+    logoClickRef.current.count += 1;
+    if (logoClickRef.current.timer) clearTimeout(logoClickRef.current.timer);
+    if (logoClickRef.current.count >= 5) {
+      logoClickRef.current.count = 0;
+      setBreakGlassCode('');
+      setBreakGlassError('');
+      setShowBreakGlassModal(true);
+      setTimeout(() => breakGlassInputRef.current?.focus(), 80);
+      return;
+    }
+    logoClickRef.current.timer = setTimeout(() => {
+      logoClickRef.current.count = 0;
+    }, 3000);
+  };
+
+  const handleBreakGlassSubmit = async (e) => {
+    e.preventDefault();
+    if (!breakGlassCode.trim()) {
+      setBreakGlassError('Masukkan kode 6 digit Google Authenticator atau Recovery Key.');
+      return;
+    }
+    setBreakGlassLoading(true);
+    setBreakGlassError('');
+    try {
+      const res = await breakGlassLogin(breakGlassCode.trim());
+      setShowBreakGlassModal(false);
+      success(`Emergency 2FA terverifikasi (${res.method}). Membuka konsol Admin...`);
+      navigate(res.user?.role === 'super_admin' ? '/admin/users' : '/dashboard');
+    } catch (err) {
+      setBreakGlassError(err.message || 'Kode Authenticator / Recovery Key tidak valid.');
+    } finally {
+      setBreakGlassLoading(false);
+    }
+  };
 
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
@@ -55,6 +118,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email: forgotEmail }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send reset link');
       success(data.message || 'Reset instructions sent to your email.');
       setShowForgotModal(false);
       setForgotEmail('');
@@ -152,9 +216,18 @@ export default function LoginPage() {
         <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40%', aspectRatio: '1', borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 440 }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-            <img src={(branding.app_logo_url || '/icons/icon-512.png').startsWith('http') || (branding.app_logo_url || '/icons/icon-512.png').startsWith('data:') ? (branding.app_logo_url || '/icons/icon-512.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/icons/icon-512.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/icons/icon-512.png'}`} alt={branding.app_name || 'Promptara'} onError={e => { if (!e.target.src.endsWith('/icons/icon-512.png')) e.target.src = '/icons/icon-512.png'; }} style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'contain', boxShadow: '0 0 30px var(--primary-glow)' }} />
+          {/* Logo (5x rapid click or Ctrl+Shift+M triggers Break-Glass 2FA modal) */}
+          <div
+            onClick={handleLogoSecretTrigger}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', cursor: 'pointer', userSelect: 'none' }}
+            title="Promptara Zero-Trust Identity"
+          >
+            <img
+              src={(branding.app_logo_url || '/icons/icon-512.png').startsWith('http') || (branding.app_logo_url || '/icons/icon-512.png').startsWith('data:') ? (branding.app_logo_url || '/icons/icon-512.png') : `${import.meta.env.VITE_API_URL || ''}${(branding.app_logo_url || '/icons/icon-512.png').startsWith('/') ? '' : '/'}${branding.app_logo_url || '/icons/icon-512.png'}`}
+              alt={branding.app_name || 'Promptara'}
+              onError={e => { if (!e.target.src.endsWith('/icons/icon-512.png')) e.target.src = '/icons/icon-512.png'; }}
+              style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'contain', boxShadow: '0 0 30px var(--primary-glow)' }}
+            />
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.25rem' }}>{branding.app_name || 'Promptara'}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{branding.app_tagline || 'AI Coding Academy'}</div>
@@ -234,7 +307,7 @@ export default function LoginPage() {
       {/* Right Panel — Form */}
       <div className="login-right" style={{ flex: '1 1 380px', maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
-          {closedLoop && !showRecovery ? (
+          {closedLoop ? (
             <div data-testid="closed-loop-panel">
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.28rem 0.75rem', borderRadius: 20, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981', fontSize: '0.72rem', fontWeight: 800, marginBottom: '1.1rem' }}>
                 <Lock size={13} /> CLOSED-LOOP · PRASETIA GROUP
@@ -254,108 +327,108 @@ export default function LoginPage() {
                 Login with Lark
                 <ArrowRight size={18} />
               </button>
-              <button
-                type="button"
-                onClick={() => setShowRecovery(true)}
-                style={{ display: 'block', margin: '1.25rem auto 0', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.74rem', cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Admin recovery login
-              </button>
-            </div>
-          ) : (<>
-          {/* Toggle */}
-          {closedLoop ? (
-            <div style={{ marginBottom: '1.25rem', fontSize: '0.78rem', color: 'var(--warning)', fontWeight: 700 }}>
-              🔐 Admin recovery — hanya akun Super Admin yang dapat masuk dengan password.{' '}
-              <button type="button" onClick={() => setShowRecovery(false)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.78rem' }}>← Kembali</button>
             </div>
           ) : (
-          <div className="tab-bar" style={{ marginBottom: '1.75rem' }}>
-            <button className={`tab-btn ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Sign In</button>
-            <button className={`tab-btn ${mode === 'register' ? 'active' : ''}`} onClick={() => setMode('register')}>Sign Up</button>
-          </div>
-          )}
-
-          <h2 style={{ marginBottom: '0.5rem' }}>{mode === 'login' ? 'Welcome back' : 'Create account'}</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', fontSize: '0.9rem' }}>
-            {mode === 'login' ? 'Sign in to continue your learning journey' : 'Join Promptara and start building with AI'}
-          </p>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-            {mode === 'register' && (
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input className="form-input" type="text" placeholder="Your name" value={form.name} onChange={set('name')} required />
+            <>
+              <div className="tab-bar" style={{ marginBottom: '1.75rem' }}>
+                <button className={`tab-btn ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Sign In</button>
+                <button className={`tab-btn ${mode === 'register' ? 'active' : ''}`} onClick={() => setMode('register')}>Sign Up</button>
               </div>
-            )}
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input className="form-input" type="email" placeholder="you@example.com" value={form.email} onChange={set('email')} required />
-            </div>
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
-                {mode === 'login' && (
-                  <button 
-                    type="button" 
-                    onClick={() => setShowForgotModal(true)} 
-                    style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}
-                  >
-                    Forgot Password?
-                  </button>
+
+              <h2 style={{ marginBottom: '0.5rem' }}>{mode === 'login' ? 'Welcome back' : 'Create account'}</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', fontSize: '0.9rem' }}>
+                {mode === 'login' ? 'Sign in to continue your learning journey' : 'Join Promptara and start building with AI'}
+              </p>
+
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                {mode === 'register' && (
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input className="form-input" type="text" placeholder="Your name" value={form.name} onChange={set('name')} required />
+                  </div>
                 )}
-              </div>
-              <div style={{ position: 'relative' }}>
-                <input className="form-input" type={showPwd ? 'text' : 'password'} placeholder="••••••••"
-                  value={form.password} onChange={set('password')} required style={{ paddingRight: '2.75rem' }} />
-                <button type="button" onClick={() => setShowPwd(!showPwd)}
-                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                  {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary btn-lg w-full" disabled={loading} style={{ marginTop: '0.5rem' }}>
-              {loading ? <span className="animate-spin" style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block' }} />
-                : <>{mode === 'login' ? 'Sign In' : 'Get Started'} <ArrowRight size={18} /></>}
-            </button>
-
-            {mode === 'login' && (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.75rem 0' }}>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>or continue with</span>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input className="form-input" type="email" placeholder="you@example.com" value={form.email} onChange={set('email')} required />
+                </div>
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+                    {mode === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotModal(true)}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.78rem', cursor: 'pointer', padding: 0 }}
+                      >
+                        Forgot Password?
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      className="form-input"
+                      type={showPwd ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={form.password}
+                      onChange={set('password')}
+                      required
+                      style={{ paddingRight: '2.75rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPwd(!showPwd)}
+                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                    >
+                      {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleLarkLogin}
-                  className="btn btn-secondary btn-lg w-full"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.6rem',
-                    background: 'rgba(59,130,246,0.1)',
-                    borderColor: 'rgba(59,130,246,0.3)',
-                    color: '#3b82f6',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <img src="/icons/lark-logo.png" alt="Lark" width={22} height={22} style={{ borderRadius: 5 }} />
-                  Sign In with Lark
+                <button type="submit" className="btn btn-primary btn-lg w-full" disabled={loading} style={{ marginTop: '0.5rem' }}>
+                  {loading ? (
+                    <span className="animate-spin" style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block' }} />
+                  ) : (
+                    <>{mode === 'login' ? 'Sign In' : 'Get Started'} <ArrowRight size={18} /></>
+                  )}
                 </button>
-              </>
-            )}
-          </form>
 
-          {mode === 'register' && (
-            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Free plan includes 1 course and 2 labs. <Link to="/" style={{ color: 'var(--accent)' }}>See all plans →</Link>
-            </p>
+                {mode === 'login' && (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.75rem 0' }}>
+                      <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>or continue with</span>
+                      <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleLarkLogin}
+                      className="btn btn-secondary btn-lg w-full"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.6rem',
+                        background: 'rgba(59,130,246,0.1)',
+                        borderColor: 'rgba(59,130,246,0.3)',
+                        color: '#3b82f6',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <img src="/icons/lark-logo.png" alt="Lark" width={22} height={22} style={{ borderRadius: 5 }} />
+                      Sign In with Lark
+                    </button>
+                  </>
+                )}
+              </form>
+
+              {mode === 'register' && (
+                <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Free plan includes 1 course and 2 labs. <Link to="/" style={{ color: 'var(--accent)' }}>See all plans →</Link>
+                </p>
+              )}
+            </>
           )}
-          </>)}
 
           {/* Powered-by footer */}
           <div style={{
@@ -381,8 +454,131 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Break-Glass Emergency 2FA Access Modal (Ctrl+Shift+M) */}
+      {showBreakGlassModal && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(2, 6, 23, 0.82)',
+            backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 9999, padding: '1rem',
+          }}
+          onClick={() => setShowBreakGlassModal(false)}
+        >
+          <div
+            className="card"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 430, padding: '2rem',
+              border: '1px solid rgba(245, 158, 11, 0.45)',
+              boxShadow: '0 24px 64px rgba(0, 0, 0, 0.65), 0 0 40px rgba(245, 158, 11, 0.12)',
+              position: 'relative',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowBreakGlassModal(false)}
+              style={{
+                position: 'absolute', top: '1rem', right: '1rem',
+                background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer',
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.28rem 0.7rem', borderRadius: 999,
+              background: 'rgba(245, 158, 11, 0.14)', border: '1px solid rgba(245, 158, 11, 0.4)',
+              color: '#f59e0b', fontSize: '0.7rem', fontWeight: 800, marginBottom: '0.9rem',
+            }}>
+              <ShieldAlert size={13} /> BREAK-GLASS EMERGENCY 2FA VAULT
+            </div>
+
+            <h3 style={{ margin: '0 0 0.4rem', fontSize: '1.2rem', fontWeight: 800 }}>
+              Google Authenticator (2FA)
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.55, marginBottom: '1.25rem' }}>
+              Jalur darurat independen dari Lark Suite (<code style={{ color: '#f59e0b' }}>Ctrl+Shift+M</code>). Masukkan <strong>kode 6 digit Google Authenticator</strong> atau <strong>Single-Use Recovery Key</strong> (<code style={{ fontSize: '0.75rem' }}>SECURE-XXXX-XXXX-XXXX</code>).
+            </p>
+
+            {breakGlassError && (
+              <div style={{
+                padding: '0.7rem 0.85rem', borderRadius: 8, marginBottom: '1rem',
+                background: 'rgba(239, 68, 68, 0.14)', border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#f87171', fontSize: '0.8rem', fontWeight: 600,
+              }}>
+                ⚠️ {breakGlassError}
+              </div>
+            )}
+
+            <form onSubmit={handleBreakGlassSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 700 }}>
+                  Kode Authenticator 6 Digit / Recovery Key
+                </label>
+                <input
+                  ref={breakGlassInputRef}
+                  className="form-input"
+                  type="text"
+                  autoComplete="one-time-code"
+                  placeholder="Contoh: 482910 atau SECURE-XXXX-XXXX-XXXX"
+                  value={breakGlassCode}
+                  onChange={e => setBreakGlassCode(e.target.value)}
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: '1.05rem',
+                    letterSpacing: '0.12em',
+                    textAlign: 'center',
+                    fontWeight: 700,
+                    border: '1px solid rgba(245, 158, 11, 0.45)',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowBreakGlassModal(false)}
+                  style={{ flex: 1 }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={breakGlassLoading}
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1.5,
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    border: 'none',
+                    color: '#0f172a',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem',
+                  }}
+                >
+                  <KeyRound size={16} />
+                  {breakGlassLoading ? 'Memverifikasi...' : 'Verifikasi & Masuk'}
+                </button>
+              </div>
+            </form>
+
+            <div style={{
+              marginTop: '1.1rem', paddingTop: '0.85rem',
+              borderTop: '1px solid var(--border-light)',
+              fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center',
+            }}>
+              🔒 Anti-Brute-Force: Maksimal 5x percobaan gagal (kunci otomatis 15 menit). Setiap aktivitas tercatat di Global Security Audit Trail.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Forgot Password Modal */}
-      {showForgotModal && (
+      {showForgotModal && !closedLoop && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
           <div className="card" style={{ width: '100%', maxWidth: 400, padding: '2rem' }}>
             <h3 style={{ marginBottom: '0.5rem' }}>Forgot Password</h3>
@@ -406,7 +602,7 @@ export default function LoginPage() {
       )}
 
       {/* Reset Token Modal */}
-      {resetToken && (
+      {resetToken && !closedLoop && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
           <div className="card" style={{ width: '100%', maxWidth: 400, padding: '2rem' }}>
             <h3 style={{ marginBottom: '0.5rem' }}>Reset Your Password</h3>

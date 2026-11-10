@@ -1,4 +1,5 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
@@ -7,13 +8,30 @@ import GuidedTour from '../components/GuidedTour';
 import { useLanguage } from '../contexts/LanguageContext';
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useAuth } from '../contexts/AuthContext';
 
 // Inner layout reads sidebar state
 function InnerLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { collapsed } = useSidebar();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+
+  // Global Admin Hotkey: Ctrl+Shift+M jumps directly to User & Access Control (/admin/users)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.shiftKey || e.altKey) && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        if (user?.role === 'super_admin') {
+          navigate('/admin/users');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [user, navigate]);
 
   const PAGE_TITLES = {
     '/dashboard':           { title: t('page_dashboard'),   subtitle: t('page_dashboard_sub') },

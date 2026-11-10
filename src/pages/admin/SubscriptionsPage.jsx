@@ -276,7 +276,7 @@ export default function SubscriptionsPage() {
   const handleSaveAccessMode = async (mode) => {
     if (mode === (bankSettings.access_mode || 'public')) return;
     const msg = mode === 'closed'
-      ? 'Aktifkan CLOSED-LOOP?\n\nHanya akun Lark Prasetia yang bisa masuk. Login email/password dan pendaftaran publik akan ditutup (kecuali recovery Super Admin).'
+      ? 'Aktifkan CLOSED-LOOP?\n\nHanya akun Lark Prasetia yang bisa masuk. Login email/password dan pendaftaran publik akan ditutup sepenuhnya (akses darurat hanya melalui Break-Glass 2FA Ctrl+Shift+M).'
       : 'Buka akses PUBLIK?\n\nSiapa pun dapat mendaftar dan masuk memakai email/password maupun Lark.';
     if (!window.confirm(msg)) return;
     setSavingAccess(true);

@@ -115,6 +115,7 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/news', require('./routes/news'));
+app.use('/api/rbac', require('./routes/rbac'));
 
 
 // Serve static uploads from disk first, then fallback to PostgreSQL uploaded_files table
@@ -768,5 +769,6 @@ async function hardenDefaultAccounts() {
 initDb().then(async () => {
   await hardenDefaultAccounts();
   await require('./services/tokenRevocation').init();
+  await require('./services/securityGovernance').initSecurityTables();
   app.listen(port, () => console.log(`🚀 VibeLearn API running on port ${port}`));
 });

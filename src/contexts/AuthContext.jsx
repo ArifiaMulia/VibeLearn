@@ -5,13 +5,16 @@ const AuthContext = createContext(null);
 export const ROLES = { SUPER_ADMIN: 'super_admin', MASTER: 'master', PARTICIPANT: 'participant' };
 
 const API = import.meta.env.VITE_API_URL || '/api';
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes of inactivity
+const DEFAULT_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes default
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('vl_token'));
   const [loading, setLoading] = useState(true);
+  const [idleTimeoutMs, setIdleTimeoutMs] = useState(DEFAULT_IDLE_TIMEOUT_MS);
+  const [sessionIdleLabel, setSessionIdleLabel] = useState('30m');
   const lastActiveRef = useRef(Date.now());
+  const idleTimeoutRef = useRef(DEFAULT_IDLE_TIMEOUT_MS);
 
   const clearSsoCookieClientSide = () => {
     if (typeof document === 'undefined') return;
@@ -19,12 +22,30 @@ export function AuthProvider({ children }) {
     document.cookie = 'virtuenet_sso_jwt=; Max-Age=0; path=/; domain=.virtuenet.space;';
   };
 
+  const refreshSessionConfig = useCallback(() => {
+    fetch(`${API}/auth/session-config`, { credentials: 'include' })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.timeoutMs) {
+          idleTimeoutRef.current = Number(data.timeoutMs);
+          setIdleTimeoutMs(Number(data.timeoutMs));
+        }
+        if (data?.sessionIdleTimeout) {
+          setSessionIdleLabel(data.sessionIdleTimeout);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refreshSessionConfig();
+  }, [refreshSessionConfig]);
+
   /**
    * Hardened sign-out:
-   *  1. revoke the JWT on the server (so a copied token can no longer be replayed),
+   *  1. revoke the JWT & device session on the server,
    *  2. wipe every local trace (tokens, user, cached API responses, Cache Storage),
-   *  3. end the platform SSO session and land on the login page (full page navigation,
-   *     so nothing from the signed-in app stays in memory or in the back/forward cache).
+   *  3. end the platform SSO session and land on the login page.
    */
   const logout = useCallback((reason = 'manual', opts = {}) => {
     const oldToken = localStorage.getItem('vl_token');
@@ -57,9 +78,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      // Check if session already exceeded 30-min idle window while tab was closed
       const savedLastActive = Number(localStorage.getItem('vl_last_active') || 0);
-      if (savedLastActive > 0 && Date.now() - savedLastActive >= IDLE_TIMEOUT_MS) {
+      if (savedLastActive > 0 && Date.now() - savedLastActive >= idleTimeoutRef.current) {
         logout('idle');
         setLoading(false);
         return;
@@ -73,7 +93,6 @@ export function AuthProvider({ children }) {
       if (saved) { try { setUser(JSON.parse(saved)); } catch {} }
       setLoading(false);
     } else {
-      // Check Virtuenet SSO session ONLY if user did not explicitly log out (unless returning with ?sso_token= / ?token= or pending Lark login)
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const ssoToken = params ? (params.get('sso_token') || params.get('token')) : null;
       const larkPending = localStorage.getItem('vl_lark_pending') === '1' || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vl_lark_pending') === '1');
@@ -122,20 +141,18 @@ export function AuthProvider({ children }) {
     }
   }, [token, logout]);
 
-  // Track user activity & enforce 30-minute idle auto-logout
+  // Track user activity & enforce dynamic idle auto-logout (Session Governance)
   useEffect(() => {
     if (!token) return;
 
     const recordActivity = () => {
       const now = Date.now();
       const prev = Number(localStorage.getItem('vl_last_active') || lastActiveRef.current || now);
-      // If the user came back after > 30 mins of inactivity (e.g., laptop woke from sleep), log out immediately
-      if (now - prev >= IDLE_TIMEOUT_MS) {
+      if (now - prev >= idleTimeoutRef.current) {
         logout('idle');
         return;
       }
       lastActiveRef.current = now;
-      // Throttle localStorage writes to once every 10 seconds
       if (now - prev >= 10000) {
         localStorage.setItem('vl_last_active', String(now));
       }
@@ -143,7 +160,7 @@ export function AuthProvider({ children }) {
 
     const checkIdle = () => {
       const lastActive = Number(localStorage.getItem('vl_last_active') || lastActiveRef.current || Date.now());
-      if (Date.now() - lastActive >= IDLE_TIMEOUT_MS) {
+      if (Date.now() - lastActive >= idleTimeoutRef.current) {
         logout('idle');
       }
     };
@@ -167,7 +184,7 @@ export function AuthProvider({ children }) {
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
       clearInterval(idleCheckTimer);
     };
-  }, [token, logout]);
+  }, [token, logout, idleTimeoutMs]);
 
   // Heartbeat every 3 min — only send if user was actually active in the last 3 minutes
   useEffect(() => {
@@ -183,13 +200,7 @@ export function AuthProvider({ children }) {
     return () => clearInterval(id);
   }, [token]);
 
-  const login = async (email, password) => {
-    const res = await fetch(`${API}/auth/login`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
+  const applySessionFromAuthResponse = (data) => {
     const now = Date.now();
     localStorage.removeItem('vl_explicit_logout');
     localStorage.setItem('vl_last_active', String(now));
@@ -199,6 +210,26 @@ export function AuthProvider({ children }) {
     setToken(data.token);
     setUser(data.user);
     return data.user;
+  };
+
+  const login = async (email, password) => {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    return applySessionFromAuthResponse(data);
+  };
+
+  const breakGlassLogin = async (code) => {
+    const res = await fetch(`${API}/auth/break-glass/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kode Break-Glass 2FA tidak valid');
+    return { ...data, user: applySessionFromAuthResponse(data) };
   };
 
   const register = async (name, email, password) => {
@@ -208,15 +239,7 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');
-    const now = Date.now();
-    localStorage.removeItem('vl_explicit_logout');
-    localStorage.setItem('vl_last_active', String(now));
-    lastActiveRef.current = now;
-    localStorage.setItem('vl_token', data.token);
-    localStorage.setItem('vl_user', JSON.stringify(data.user));
-    setToken(data.token);
-    setUser(data.user);
-    return data.user;
+    return applySessionFromAuthResponse(data);
   };
 
   const larkLogin = async (code, redirectUri) => {
@@ -226,15 +249,7 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Lark Login failed');
-    const now = Date.now();
-    localStorage.removeItem('vl_explicit_logout');
-    localStorage.setItem('vl_last_active', String(now));
-    lastActiveRef.current = now;
-    localStorage.setItem('vl_token', data.token);
-    localStorage.setItem('vl_user', JSON.stringify(data.user));
-    setToken(data.token);
-    setUser(data.user);
-    return data.user;
+    return applySessionFromAuthResponse(data);
   };
 
   const authFetch = useCallback(async (path, options = {}) => {
@@ -243,11 +258,14 @@ export function AuthProvider({ children }) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...options.headers },
     });
     if (res.status === 401) { logout(); throw new Error('Session expired'); }
-    if (res.status === 403) { throw new Error('Insufficient permissions'); }
+    if (res.status === 403) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Insufficient permissions');
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
-  }, [token]);
+  }, [token, logout]);
 
   const [previewRole, setPreviewRole] = useState(null);
   const [previewPlan, setPreviewPlan] = useState(null);
@@ -255,7 +273,7 @@ export function AuthProvider({ children }) {
   const previewAs = (role) => {
     if (user?.role !== 'super_admin') return;
     setPreviewRole(role);
-    if (!role) setPreviewPlan(null); // Reset plan preview when exiting preview mode
+    if (!role) setPreviewPlan(null);
   };
 
   const upgradePlanClientSide = (newPlan) => {
@@ -265,7 +283,6 @@ export function AuthProvider({ children }) {
     setUser(updatedUser);
   };
 
-  // Merge both role and plan previewing into the effective user
   const effectiveUser = (previewRole || previewPlan)
     ? {
         ...user,
@@ -278,7 +295,28 @@ export function AuthProvider({ children }) {
   const isRole = (...roles) => roles.includes(effectiveUser?.role);
 
   return (
-    <AuthContext.Provider value={{ user: effectiveUser, realUser: user, token, loading, login, register, larkLogin, logout, authFetch, isRole, ROLES, previewRole, previewPlan, previewAs, setPreviewPlan, upgradePlanClientSide }}>
+    <AuthContext.Provider value={{
+      user: effectiveUser,
+      realUser: user,
+      token,
+      loading,
+      login,
+      breakGlassLogin,
+      register,
+      larkLogin,
+      logout,
+      authFetch,
+      isRole,
+      ROLES,
+      previewRole,
+      previewPlan,
+      previewAs,
+      setPreviewPlan,
+      upgradePlanClientSide,
+      idleTimeoutMs,
+      sessionIdleLabel,
+      refreshSessionConfig,
+    }}>
       {children}
     </AuthContext.Provider>
   );
