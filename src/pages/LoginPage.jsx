@@ -23,7 +23,8 @@ export default function LoginPage() {
   const [mobileModalPlatform, setMobileModalPlatform] = useState(null);
   const [showRecovery, setShowRecovery] = useState(false);
   // Closed-loop mode (set by super admin): only Prasetia Lark accounts may sign in.
-  const closedLoop = branding.access_mode === 'closed';
+  // (while the policy is still loading we show the safest option: Lark only)
+  const closedLoop = branding.access_mode === 'closed' || branding.loading === true;
 
   useEffect(() => { if (user) navigate('/dashboard'); }, [user]);
 

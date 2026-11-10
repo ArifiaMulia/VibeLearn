@@ -18,9 +18,14 @@ export function BrandingProvider({ children }) {
       if (res.ok) {
         const data = await res.json();
         setBranding(data);
+      } else {
+        // Fail closed: if the access policy cannot be read, only offer the Lark (SSO) sign-in.
+        setBranding(prev => ({ ...prev, access_mode: 'closed' }));
       }
     } catch (err) {
       console.error('Failed to fetch branding configuration:', err);
+      // The gateway redirects anonymous API calls to Lark SSO; treat that as closed-loop (fail closed).
+      setBranding(prev => ({ ...prev, access_mode: 'closed' }));
     } finally {
       setLoading(false);
     }
