@@ -10,6 +10,36 @@ const SEALSUITE_DOCS_URL = 'https://docs.byteplus.com/en/docs/sealsuite/docs-wha
 
 const PROFILES = [
   {
+    id: 'interception_wiretapping_insider_lims',
+    match: /penyadapan|sadap|wiretap|interception|lawful interception|\blims\b|spyware|pegasus|espionage|spionase|insider threat|telecom|telekomunikasi|presiden|kepala negara|vip|signal|ss7|imsi/i,
+    modules: [
+      'Zero Trust Encrypted Tunnel (SealSuite VPN / ZTNA)',
+      'Privileged Insider & Admin Audit Log (Immutable Telemetry)',
+      'Endpoint Security (Anti-Spyware / Mobile & Desktop Baseline)',
+      'Data Loss Prevention (DLP v3.3.2+ Anti-Deletion & Exfiltration)',
+    ],
+    headline_id:
+      'Enkripsi Komunikasi End-to-End (Zero Trust Tunnel), Kontrol Akses Privileged (Zero Standing Privilege) & Pencegahan Penghapusan Jejak Log (DLP)',
+    headline_en:
+      'End-to-End Encrypted Zero Trust Tunneling, Privileged Insider Governance & Immutable Audit/DLP Protection',
+    summary_id:
+      'Menghadapi ancaman penyadapan ilegal (seperti penyalahgunaan sistem monitoring/LIMS oleh orang dalam maupun intersepsi jaringan telekomunikasi terhadap pejabat tinggi/VIP), BytePlus SealSuite mengamankan jalur komunikasi dengan enkripsi terowongan Zero Trust (ZTNA), memblokir spyware di perangkat seluler/kerja, mewajibkan otorisasi multi-faktor (MFA) untuk setiap akses sistem sensitif, serta mencegah penghapusan barang bukti/berkas secara ilegal melalui kebijakan DLP dan log audit terpusat.',
+    summary_en:
+      'To counter illegal wiretapping, abuse of lawful interception (LIMS) systems by privileged insiders, and targeted VIP mobile/network surveillance, BytePlus SealSuite enforces encrypted Zero Trust tunnels (ZTNA), detects mobile/endpoint spyware via Device Baselines, enforces step-up MFA on sensitive monitoring consoles, and blocks unauthorized log/file deletion via Endpoint DLP.',
+    actions_id: [
+      '**Enkripsi Jalur Komunikasi & Anti-Intersepsi (SealSuite ZTNA / Enterprise VPN)**: Alihkan seluruh lalu lintas data, panggilan kerja, dan akses aplikasi VIP/eksekutif melalui terowongan terenkripsi *SealSuite Zero Trust Network Access (ZTNA)* sehingga penyadapan di tingkat operator seluler/jaringan publik tidak dapat membaca isi paket data.',
+      '**Kontrol Ketat Akses Admin & Pencegahan Penyalahgunaan Wewenang (IAM OneId & Dynamic Control)**: Terapkan prinsip *Least Privilege* dan *Step-Up MFA* (Google Authenticator / Hardware Token) setiap kali operator hendak mengakses server sensitif (seperti sistem monitoring/LIMS), serta batasi akses hanya dari perangkat dinas resmi yang terdaftar (*Device-Bound Certificate*).',
+      '**Pencegahan Penghapusan Barang Bukti & Eksfiltrasi Data (Endpoint DLP V3.3.2+)**: Aktifkan kebijakan *Data Loss Prevention (DLP)* untuk memblokir penyalinan rekaman/log ke *flashdisk* (USB), melarang pengiriman data sadapan ke luar jaringan, dan mencatat seluruh upaya penghapusan berkas (*File Deletion Audit*) ke server log terpusat yang tidak bisa dihapus oleh operator lokal.',
+      '**Deteksi Spyware & Kepatuhan Perangkat VIP (Mobile & Endpoint Baseline)**: Gunakan agen SealSuite di perangkat Android, iOS, Windows, dan macOS untuk mendeteksi *root/jailbreak*, aplikasi perekam liar (*stalkerware/spyware*), atau konfigurasi profil mencurigakan secara real-time sesuai *SealSuite Release Notes*.',
+    ],
+    actions_en: [
+      '**End-to-End Encrypted Communications (SealSuite ZTNA / Enterprise VPN)**: Route all executive and corporate traffic through encrypted *SealSuite Zero Trust Network Access* tunnels so carrier-level or network-layer interception cannot inspect payloads.',
+      '**Privileged Access Governance & Step-Up MFA (IAM OneId & Dynamic Control)**: Enforce strict *Least Privilege* and mandatory *Step-Up MFA* before any administrator can query sensitive monitoring systems (such as LIMS), bound strictly to authorized corporate hardware certificates.',
+      '**Anti-Tampering & Evidence Preservation (Endpoint DLP V3.3.2+)**: Configure *SealSuite DLP* to block unauthorized USB/flash-drive transfers of sensitive recordings and stream immutable file-access/deletion audit logs to a centralized SIEM so insiders cannot wipe forensic evidence.',
+      '**VIP Mobile & Endpoint Spyware Posture Check**: Continuously verify iOS, Android, macOS, and Windows devices against *Device Baselines* to detect jailbreaks/rooting, unauthorized recording processes, or rogue configuration profiles.',
+    ],
+  },
+  {
     id: 'ransomware_malware_edr',
     match: /ransomware|malware|trojan|backdoor|wiper|botnet|loader|rootkit|lockbit|cobalt strike/i,
     modules: ['Endpoint Security (EDR & Anti-Virus)', 'Device Baseline & Patch Management', 'Zero Trust Network Access (ZTNA)'],

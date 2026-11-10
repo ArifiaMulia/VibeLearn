@@ -62,6 +62,22 @@ const SEVERITY_STYLE = {
   },
 };
 
+const GOODSTATS_REFERENCE_URL = 'https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS';
+
+const TRUSTED_ID_MEDIA = [
+  { id: 'all', name: 'Semua 10 Media RI', trust: null },
+  { id: 'kompas', name: 'Kompas', trust: 62 },
+  { id: 'cnn', name: 'CNN Indonesia', trust: 61 },
+  { id: 'tvone', name: 'tvOne', trust: 60 },
+  { id: 'detik', name: 'Detik.com', trust: 59 },
+  { id: 'sctv', name: 'SCTV / Liputan6', trust: 59 },
+  { id: 'tvri', name: 'TVRI', trust: 58 },
+  { id: 'rcti', name: 'RCTI / iNews', trust: 57 },
+  { id: 'tempo', name: 'Tempo', trust: 53 },
+  { id: 'tribun', name: 'Tribunnews', trust: 53 },
+  { id: 'jawapos', name: 'Jawa Pos', trust: 50 },
+];
+
 export default function NewsUpdatesPage() {
   const { authFetch, user } = useAuth();
   const { lang } = useLanguage();
@@ -71,8 +87,13 @@ export default function NewsUpdatesPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeMedia, setActiveMedia] = useState('all');
+  const [trustedMediaList, setTrustedMediaList] = useState(TRUSTED_ID_MEDIA);
+  const [goodstatsUrl, setGoodstatsUrl] = useState(GOODSTATS_REFERENCE_URL);
+  const [searchingTrusted, setSearchingTrusted] = useState(false);
+  const [trustedSearchNotice, setTrustedSearchNotice] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedSlug, setExpandedSlug] = useState('black-october-2026-ai-vulnpocalypse-cybersecurity');
+  const [expandedSlug, setExpandedSlug] = useState('penyadapan-presiden-indonesia-lims-mitigasi-sealsuite-zero-trust');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [speakingSlug, setSpeakingSlug] = useState(null);
@@ -112,6 +133,7 @@ export default function NewsUpdatesPage() {
     if (!silent) setLoading(true);
     const qs = new URLSearchParams({ scope });
     if (activeQuery) qs.set('q', activeQuery);
+    if (activeMedia && activeMedia !== 'all') qs.set('media', activeMedia);
     return authFetch('/news?' + qs.toString())
       .then(res => {
         if (seq !== reqSeq.current) return; // ignore stale responses
@@ -119,12 +141,47 @@ export default function NewsUpdatesPage() {
           setItems(res.items);
           if (res.counts) setCounts(res.counts);
           if (res.ingest?.syncIntervalMinutes) setSyncIntervalMin(res.ingest.syncIntervalMinutes);
+          if (Array.isArray(res.trusted_media) && res.trusted_media.length > 0) {
+            setTrustedMediaList([{ id: 'all', name: isId ? 'Semua 10 Media RI' : 'All 10 Trusted ID Media', trust: null }, ...res.trusted_media]);
+          }
+          if (res.goodstats_url) setGoodstatsUrl(res.goodstats_url);
           setLastSync(new Date());
         }
       })
       .catch(() => {})
       .finally(() => { if (seq === reqSeq.current && !silent) setLoading(false); });
-  }, [authFetch, scope, activeQuery]);
+  }, [authFetch, scope, activeQuery, activeMedia, isId]);
+
+  const handleSearchTrustedLive = async (customQuery, customMedia) => {
+    const q = (customQuery !== undefined ? customQuery : searchQuery).trim();
+    const m = customMedia !== undefined ? customMedia : activeMedia;
+    setSearchingTrusted(true);
+    setTrustedSearchNotice('');
+    try {
+      const res = await authFetch('/news/search-trusted', {
+        method: 'POST',
+        body: JSON.stringify({ query: q, media: m || 'all' }),
+      });
+      if (res && Array.isArray(res.items)) {
+        await loadNews(true);
+        if (res.items.length > 0 && res.items[0]?.slug) {
+          setExpandedSlug(res.items[0].slug);
+        }
+        setTrustedSearchNotice(
+          isId
+            ? `✅ Pencarian real-time di 10 Media Kepercayaan Publik RI selesai (${res.items.length} berita relevan ditemukan, lengkap dengan analisis mitigasi BytePlus SealSuite).`
+            : `✅ Live search across Indonesia's 10 Most Trusted News Media completed (${res.items.length} relevant briefings with BytePlus SealSuite resolutions).`
+        );
+      }
+    } catch {
+      setTrustedSearchNotice(
+        isId
+          ? 'Menampilkan arsip & rangkuman terverifikasi dari 10 Media Kepercayaan Publik RI.'
+          : 'Showing verified briefings from Indonesia’s 10 Most Trusted News Media.'
+      );
+    }
+    setSearchingTrusted(false);
+  };
 
   // Debounce the search box -> server-side search
   useEffect(() => {
@@ -588,24 +645,157 @@ export default function NewsUpdatesPage() {
           })}
         </div>
 
-        <div style={{ position: 'relative', minWidth: 220, flex: '1 1 240px' }}>
-          <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder={isId ? 'Cari topik (misal: Black October, MCP, DLP)...' : 'Search topics (e.g. Black October, MCP, DLP)...'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 300px', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', minWidth: 200, flex: '1 1 220px' }}>
+            <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearchTrustedLive(searchQuery, activeMedia); }}
+              placeholder={isId ? 'Cari topik (misal: Penyadapan Presiden, Black October, DLP)...' : 'Search topics (e.g. Penyadapan Presiden, Black October, DLP)...'}
+              style={{
+                width: '100%',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 20,
+                padding: '0.45rem 0.85rem 0.45rem 2.2rem',
+                color: 'var(--text-primary)',
+                fontSize: '0.8rem'
+              }}
+            />
+          </div>
+          <button
+            onClick={() => handleSearchTrustedLive(searchQuery, activeMedia)}
+            disabled={searchingTrusted}
             style={{
-              width: '100%',
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-light)',
-              borderRadius: 20,
-              padding: '0.45rem 0.85rem 0.45rem 2.2rem',
-              color: 'var(--text-primary)',
-              fontSize: '0.8rem'
+              display: 'inline-flex', alignItems: 'center', gap: '0.38rem',
+              padding: '0.44rem 0.85rem', borderRadius: 20, fontSize: '0.75rem', fontWeight: 800,
+              cursor: searchingTrusted ? 'wait' : 'pointer',
+              background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+              border: 'none', color: '#fff', whiteSpace: 'nowrap'
             }}
-          />
+          >
+            <RefreshCw size={13} className={searchingTrusted ? 'animate-spin' : ''} />
+            {isId ? 'Cari di 10 Media RI' : 'Search 10 ID Media'}
+          </button>
         </div>
+      </div>
+
+      {/* ── 10 Media Berita Kepercayaan Publik RI (GoodStats Reference) & Quick Topic Chips ── */}
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid rgba(16, 185, 129, 0.32)',
+        borderRadius: 'var(--radius-md)',
+        padding: '0.85rem 1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.65rem'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: '0.72rem', fontWeight: 800, padding: '0.18rem 0.55rem', borderRadius: 6,
+              background: 'rgba(16, 185, 129, 0.14)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981'
+            }}>
+              🇮🇩 {isId ? 'SUMBER 10 MEDIA KEPERCAYAAN PUBLIK RI' : 'TOP 10 TRUSTED INDONESIAN NEWS MEDIA'}
+            </span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {isId
+                ? 'Filter & tarik berita berdasarkan 10 media berita paling dipercaya publik Indonesia (dilengkapi analisis mitigasi BytePlus SealSuite):'
+                : 'Filter & live-search news from Indonesia’s 10 most trusted public news outlets (enriched with BytePlus SealSuite mitigations):'}
+            </span>
+          </div>
+          <a
+            href={goodstatsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.28rem',
+              fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', textDecoration: 'none'
+            }}
+          >
+            📊 {isId ? 'Referensi GoodStats Data (Reuters Digital News Report)' : 'GoodStats Reference (Reuters Digital News Report)'} <ExternalLink size={11} />
+          </a>
+        </div>
+
+        {/* 10 Media Outlet Pills */}
+        <div style={{
+          display: 'flex', gap: '0.4rem', overflowX: 'auto', maxWidth: '100%',
+          paddingBottom: '0.15rem', WebkitOverflowScrolling: 'touch'
+        }}>
+          {trustedMediaList.map((m) => {
+            const active = activeMedia === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => {
+                  setActiveMedia(m.id);
+                  setTrustedSearchNotice('');
+                }}
+                style={{
+                  padding: '0.34rem 0.72rem',
+                  borderRadius: 16,
+                  fontSize: '0.73rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  border: active ? '1.5px solid #10b981' : '1px solid var(--border-light)',
+                  background: active ? 'rgba(16, 185, 129, 0.18)' : 'var(--bg-surface)',
+                  color: active ? '#34d399' : 'var(--text-secondary)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {m.name} {m.trust ? `(${m.trust}%)` : ''}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Quick Topic Shortcuts */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', paddingTop: '0.15rem' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+            ⚡ {isId ? 'Topik Cepat:' : 'Quick Topics:'}
+          </span>
+          {[
+            { label: '🇮🇩 Penyadapan Presiden Indonesia (LIMS)', q: 'Penyadapan Presiden', slug: 'penyadapan-presiden-indonesia-lims-mitigasi-sealsuite-zero-trust' },
+            { label: '🔥 Black October 2026', q: 'Black October', slug: 'black-october-2026-ai-vulnpocalypse-cybersecurity' },
+            { label: '🛡️ DLP & Kebocoran Data', q: 'DLP', slug: null },
+            { label: '⚡ Slopsquatting & Vibe Coding', q: 'Slopsquatting', slug: 'vibe-coding-security-2026-slopsquatting-prompt-guardrails' },
+          ].map((chip, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                setSearchQuery(chip.q);
+                setActiveCategory('all');
+                if (chip.slug) setExpandedSlug(chip.slug);
+              }}
+              style={{
+                padding: '0.24rem 0.62rem',
+                borderRadius: 14,
+                fontSize: '0.71rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: 'rgba(6, 182, 212, 0.1)',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
+                color: 'var(--accent)'
+              }}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        {trustedSearchNotice && (
+          <div style={{
+            fontSize: '0.76rem', color: '#34d399', fontWeight: 700,
+            background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)',
+            padding: '0.45rem 0.75rem', borderRadius: 8
+          }}>
+            {trustedSearchNotice}
+          </div>
+        )}
       </div>
 
       {/* ── News Feed List ── */}

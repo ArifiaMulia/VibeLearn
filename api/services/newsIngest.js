@@ -15,7 +15,28 @@ const FEEDS = [
   { url: 'https://www.cisa.gov/cybersecurity-advisories/all.xml', name: 'CISA Advisories', category: 'cybersecurity', severity: 'high' },
   { url: 'https://simonwillison.net/atom/everything/', name: 'Simon Willison', category: 'vibe-coding' },
   { url: 'https://github.blog/ai-and-ml/feed/', name: 'GitHub Blog (AI & ML)', category: 'ai-agents' },
+  // 10 Media Berita Kepercayaan Publik RI (GoodStats / Reuters Institute Digital News Report)
+  { url: 'https://www.cnnindonesia.com/teknologi/rss', name: 'CNN Indonesia', category: 'cybersecurity' },
+  { url: 'https://www.cnnindonesia.com/nasional/rss', name: 'CNN Indonesia Nasional', category: 'cybersecurity' },
+  { url: 'https://rss.tempo.co/nasional', name: 'Tempo.co', category: 'cybersecurity' },
+  { url: 'https://www.tribunnews.com/rss', name: 'Tribunnews', category: 'cybersecurity' },
 ];
+
+// 10 Media Berita Kepercayaan Publik RI (GoodStats Data: https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS)
+const TRUSTED_ID_MEDIA = [
+  { id: 'kompas', name: 'Kompas', trust: '62%', domains: ['kompas.com', 'kompas.id', 'kompas.tv'] },
+  { id: 'cnn', name: 'CNN Indonesia', trust: '61%', domains: ['cnnindonesia.com'] },
+  { id: 'tvone', name: 'tvOne', trust: '60%', domains: ['tvonenews.com'] },
+  { id: 'detik', name: 'Detik.com', trust: '59%', domains: ['detik.com'] },
+  { id: 'sctv', name: 'SCTV / Liputan6', trust: '59%', domains: ['liputan6.com'] },
+  { id: 'tvri', name: 'TVRI', trust: '58%', domains: ['tvrinews.com', 'tvri.go.id'] },
+  { id: 'rcti', name: 'RCTI / iNews', trust: '57%', domains: ['rctiplus.com', 'inews.id', 'sindonews.com'] },
+  { id: 'tempo', name: 'Tempo', trust: '53%', domains: ['tempo.co'] },
+  { id: 'tribun', name: 'Tribunnews', trust: '53%', domains: ['tribunnews.com'] },
+  { id: 'jawapos', name: 'Jawa Pos', trust: '50%', domains: ['jawapos.com'] },
+];
+
+const GOODSTATS_REFERENCE_URL = 'https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS';
 
 const MAX_PER_FEED = 6;
 const MAX_AGE_DAYS = 21;
@@ -259,6 +280,140 @@ function getStatus() {
   return { ...status, feeds: FEEDS.length };
 }
 
+/**
+ * Live search across the Top 10 Indonesian Trusted Media Sources
+ * (GoodStats / Reuters Institute Digital News Report: https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS)
+ * Searches Google News Indonesia RSS filtered by the 10 trusted domains (or a selected outlet),
+ * optionally summarizes via BytePlus ModelArk, and persists matching articles into news_updates.
+ */
+async function searchTrustedIndonesianMedia(query, mediaId = 'all') {
+  const cleanQuery = String(query || '').trim().slice(0, 140);
+  if (!cleanQuery) return { added: 0, items: [], trustedMedia: TRUSTED_ID_MEDIA, referenceUrl: GOODSTATS_REFERENCE_URL };
+
+  const selectedOutlets = mediaId && mediaId !== 'all'
+    ? TRUSTED_ID_MEDIA.filter(m => m.id === mediaId || m.name.toLowerCase().includes(String(mediaId).toLowerCase()))
+    : TRUSTED_ID_MEDIA;
+
+  const targetDomains = (selectedOutlets.length ? selectedOutlets : TRUSTED_ID_MEDIA).flatMap(m => m.domains);
+  const siteFilter = targetDomains.map(d => `site:${d}`).join(' OR ');
+  const fullQuery = `${cleanQuery} (${siteFilter})`;
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(fullQuery)}&hl=id&gl=ID&ceid=ID:id`;
+
+  let parsed = [];
+  try {
+    const xml = await fetchText(rssUrl);
+    parsed = parseFeed(xml).slice(0, 8);
+  } catch (err) {
+    console.warn('[searchTrustedIndonesianMedia] RSS fetch warning:', err.message);
+  }
+
+  const aiCfg = await loadAiConfig();
+  let aiCount = 0;
+  let added = 0;
+  const insertedOrFound = [];
+
+  for (const it of parsed) {
+    // Extract publisher from title if formatted like "Judul Berita - CNN Indonesia"
+    let cleanTitle = it.title;
+    let publisherName = 'Media Terpercaya RI';
+    const dashIdx = it.title.lastIndexOf(' - ');
+    if (dashIdx > 15) {
+      publisherName = it.title.slice(dashIdx + 3).trim();
+      cleanTitle = it.title.slice(0, dashIdx).trim();
+    }
+    const matchedOutlet = TRUSTED_ID_MEDIA.find(
+      m => m.name.toLowerCase().includes(publisherName.toLowerCase()) ||
+           publisherName.toLowerCase().includes(m.id) ||
+           m.domains.some(d => it.link.toLowerCase().includes(d) || publisherName.toLowerCase().includes(d))
+    );
+    if (matchedOutlet) {
+      publisherName = `${matchedOutlet.name} (Trust ${matchedOutlet.trust})`;
+    }
+
+    const slug = `idmedia-${crypto.createHash('sha1').update(cleanTitle + '|' + publisherName).digest('hex').slice(0, 20)}`;
+    try {
+      const existing = await pool.query('SELECT * FROM news_updates WHERE slug = $1 OR source_url = $2 LIMIT 1', [slug, it.link]);
+      if (existing.rows.length > 0) {
+        insertedOrFound.push(existing.rows[0]);
+        continue;
+      }
+
+      const rawSummary = stripHtml(it.text || cleanTitle).slice(0, 420);
+      let titleId = cleanTitle;
+      let summaryId = rawSummary || `${cleanTitle} — dilaporkan oleh ${publisherName}.`;
+      let summaryEn = rawSummary || `${cleanTitle} — reported by ${publisherName}.`;
+
+      if (aiCfg && aiCount < 3) {
+        aiCount++;
+        try {
+          const ai = await aiSummarize(aiCfg, { title: cleanTitle, text: `${cleanTitle}. ${rawSummary}` });
+          titleId = ai.title_id || titleId;
+          summaryId = ai.summary_id || summaryId;
+          summaryEn = ai.summary_en || summaryEn;
+        } catch {}
+      }
+
+      const sev = /penyadapan|sadap|makar|darurat|kritis|bocor|ransomware|zero-day|tersangka/i.test(`${cleanTitle} ${rawSummary}`)
+        ? 'critical'
+        : 'high';
+
+      const tags = [
+        matchedOutlet ? matchedOutlet.name : publisherName,
+        'Top 10 Media Kepercayaan Publik RI',
+        'GoodStats Reference',
+        ...tagsOf({ title: cleanTitle, text: rawSummary, categories: it.categories || [] }, { name: publisherName, category: 'cybersecurity' }),
+      ].slice(0, 8);
+
+      const contentId = `### Rangkuman Pemberitaan (${publisherName})\n${summaryId}\n\n### Konteks Keamanan Siber & Kedaulatan Data\nBerita terkait **"${cleanQuery}"** ini dihimpun dari daftar **10 Media Berita Kepercayaan Publik Tertinggi di Indonesia** ([GoodStats / Reuters Institute Digital News Report](${GOODSTATS_REFERENCE_URL})). Di bawah artikel ini, sistem secara otomatis memetakan **Resolusi & Mitigasi BytePlus SealSuite** berdasarkan arsitektur Zero Trust dan [Release Notes resmi SealSuite](https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log).`;
+      const contentEn = `### Executive News Summary (${publisherName})\n${summaryEn}\n\n### Cybersecurity & Sovereign Data Context\nThis report on **"${cleanQuery}"** is sourced from **Indonesia's Top 10 Most Trusted News Media** ([GoodStats / Reuters Institute Digital News Report](${GOODSTATS_REFERENCE_URL})). Below, Promptara maps concrete **BytePlus SealSuite Zero Trust Mitigations** referenced from the [Official SealSuite Release Notes](https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log).`;
+
+      const sourcesJson = [
+        { title: cleanTitle, publisher: publisherName, url: it.link },
+        { title: '10 Media Berita Kepercayaan Publik RI, Ada Apa Saja? - GoodStats Data', publisher: 'GoodStats.id (Reuters Institute)', url: GOODSTATS_REFERENCE_URL },
+      ];
+
+      const ins = await pool.query(
+        `INSERT INTO news_updates (
+          slug, category, severity, is_pinned, published_at, read_time_min,
+          badge_en, badge_id, title_en, title_id, summary_en, summary_id,
+          content_en, content_id, tags, sources, source_url, is_auto
+        ) VALUES ($1,'cybersecurity',$2,false,$3,4,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,true)
+        ON CONFLICT (slug) DO NOTHING
+        RETURNING *`,
+        [
+          slug,
+          sev,
+          it.published.toISOString(),
+          `🇮🇩 ${matchedOutlet ? matchedOutlet.name.toUpperCase() : 'INDONESIA TRUSTED MEDIA'}`,
+          `🇮🇩 ${matchedOutlet ? matchedOutlet.name.toUpperCase() : 'MEDIA TERPERCAYA RI'}`,
+          cleanTitle,
+          titleId,
+          summaryEn,
+          summaryId,
+          contentEn,
+          contentId,
+          JSON.stringify(tags),
+          JSON.stringify(sourcesJson),
+          it.link,
+        ]
+      );
+      if (ins.rows.length > 0) {
+        added++;
+        insertedOrFound.push(ins.rows[0]);
+      }
+    } catch (err) {
+      console.warn('[searchTrustedIndonesianMedia] insert warning:', err.message);
+    }
+  }
+
+  return {
+    added,
+    items: insertedOrFound,
+    trustedMedia: TRUSTED_ID_MEDIA,
+    referenceUrl: GOODSTATS_REFERENCE_URL,
+  };
+}
+
 function start(ensureTable) {
   ensureTableFn = ensureTable;
   if (process.env.NEWS_INGEST === 'off' || timer) return;
@@ -276,4 +431,14 @@ function start(ensureTable) {
   });
 }
 
-module.exports = { start, runOnce, getStatus, setSyncIntervalMinutes, DEFAULT_SYNC_MINUTES, parseFeed };
+module.exports = {
+  start,
+  runOnce,
+  getStatus,
+  setSyncIntervalMinutes,
+  DEFAULT_SYNC_MINUTES,
+  parseFeed,
+  searchTrustedIndonesianMedia,
+  TRUSTED_ID_MEDIA,
+  GOODSTATS_REFERENCE_URL,
+};

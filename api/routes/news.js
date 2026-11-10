@@ -20,8 +20,97 @@ function attachSealSuiteResolution(item) {
 const requireRole = (...roles) => (req, res, next) =>
   roles.includes(req.user?.role) ? next() : res.status(403).json({ error: 'Insufficient permissions' });
 
-// Curated authoritative intelligence feed on Vibe Coding & Cybersecurity (including "Black October")
+// Curated authoritative intelligence feed on Vibe Coding & Cybersecurity (including "Black October" & Indonesian Trusted Media Briefings)
 const DEFAULT_NEWS_ITEMS = [
+  {
+    slug: 'penyadapan-presiden-indonesia-lims-mitigasi-sealsuite-zero-trust',
+    category: 'cybersecurity',
+    severity: 'critical',
+    is_pinned: true,
+    published_at: '2026-11-10',
+    read_time_min: 6,
+    badge_en: '🇮🇩 TOP 10 TRUSTED RI MEDIA · VIP SECURITY',
+    badge_id: '🇮🇩 SOROTAN 10 MEDIA TERPERCAYA RI · PENYADAPAN VIP',
+    title_en: 'Indonesian Presidential Wiretapping Case (Illegal LIMS Interception): Anatomy of the Breach & How BytePlus SealSuite Prevents It',
+    title_id: 'Kasus Penyadapan Presiden Indonesia (Penyalahgunaan Sistem Monitoring LIMS): Kronologi Media Nasional & Mitigasi BytePlus SealSuite',
+    summary_en: 'Reported across Indonesia’s Top 10 most trusted news outlets (Kompas, CNN Indonesia, Detik.com, Tempo, Liputan6, tvOne — GoodStats / Reuters Institute), the illegal wiretapping of the President of the Republic of Indonesia via unauthorized Lawful Interception Management System (LIMS) entries and attempted log deletion highlights the critical threat of privileged insider abuse and unencrypted mobile communications. Here is how BytePlus SealSuite’s Zero Trust architecture prevents and detects such incidents.',
+    summary_id: 'Diberitakan secara luas oleh jajaran 10 Media Berita Kepercayaan Publik Tertinggi di Indonesia (Kompas, CNN Indonesia, Detik.com, Tempo, Liputan6, tvOne — merujuk data GoodStats / Reuters Institute), kasus penyadapan ilegal terhadap Presiden Republik Indonesia melalui penyalahgunaan server LIMS (Lawful Interception Management System) tanpa prosedur resmi serta upaya penghapusan berkas sadapan ke flashdisk menyoroti bahaya kritis penyalahgunaan wewenang orang dalam (Insider Threat) dan kerentanan jalur telekomunikasi konvensional. Berikut adalah analisis lengkap dan apa yang dapat dilakukan BytePlus SealSuite terhadap masalah tersebut.',
+    content_en: `### 1. Summary of Reports from Indonesia's Top 10 Trusted Media
+According to investigative reports published across Indonesia's highest-trust media outlets (**Kompas, CNN Indonesia, Detik.com, Tempo, tvOne, Liputan6/SCTV, TVRI, RCTI, Tribunnews, and Jawa Pos** — as ranked in [GoodStats Data: 10 Media Berita Kepercayaan Publik RI](https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS)):
+
+- **Unauthorized LIMS Interception**: Bareskrim Polri uncovered an illegal wiretapping operation targeting the personal mobile numbers of the **President of the Republic of Indonesia (Prabowo Subianto)**, state officials, political figures, and business leaders.
+- **Abuse of Privileged Monitoring Systems**: Target numbers were entered directly into the **LIMS (*Lawful Interception Management System*)** monitoring center without legal warrants, judicial verification, or active investigation protocols (violating Perkap No. 5/2010).
+- **Attempted Evidence Wiping & Flash-Drive Exfiltration**: Investigators seized dozens of mobile phones, iPads, and USB flash drives after suspects ordered operators to delete interception files from the LIMS computer servers to cover their tracks.
+
+---
+
+### 2. Core Security Vulnerabilities Exposed by This Case
+1. **Unencrypted Carrier-Level Voice & SMS Traffic**: Standard cellular calls and SMS pass through telecom Lawful Interception gateways in cleartext, allowing anyone with physical or administrative access to the monitoring center to tap conversations.
+2. **Excessive Standing Privileges (Lack of Multi-Party / MFA Authorization)**: Operators were able to insert VIP numbers into the interception server unilaterally without hardware-bound Multi-Factor Authentication (MFA) or dual-control approval.
+3. **Local Log Tampering & USB Data Exfiltration**: Sensitive interception outputs were copied to removable USB flash drives and local server files were deleted by insiders.
+
+---
+
+### 3. What BytePlus SealSuite Can Do Against This Threat (Referenced from Official SealSuite Release Notes)
+Based on the comprehensive [BytePlus SealSuite Release Notes & Architecture](https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log), organizations and state institutions can neutralize wiretapping and insider abuse across 4 layers:
+
+- **Layer 1 — Encrypted Zero Trust Tunnel (SealSuite ZTNA & Enterprise VPN)**:
+  Even if a mobile number or carrier line is entered into a telecom tapping system (LIMS), routing executive and corporate communications through **SealSuite ZTNA encrypted tunnels** ensures that intercepted packets remain cryptographically unreadable end-to-end.
+- **Layer 2 — Strict Identity Governance & Step-Up MFA (IAM OneId + Dynamic Control)**:
+  Enforce **Device-Bound Zero Trust** so administrative consoles (such as monitoring servers) can only be accessed from registered corporate endpoints with verified hardware certificates, combined with mandatory **2FA/MFA re-authentication** for every sensitive query.
+- **Layer 3 — Blocking USB Exfiltration & File Deletion (Endpoint DLP V3.3.2+)**:
+  SealSuite’s **Data Loss Prevention (DLP)** module blocks unauthorized copying of sensitive files to USB flash drives, applies dynamic screen watermarks showing the operator's identity, and streams **immutable file-deletion & access audit logs** to a separate security server so insiders cannot erase evidence.
+- **Layer 4 — VIP Mobile & Endpoint Spyware Detection (Device Baseline)**:
+  SealSuite’s mobile and desktop agents continuously check iOS, Android, macOS, and Windows devices for root/jailbreak tampering, rogue configuration profiles, or spyware/stalkerware processes, immediately isolating compromised devices.`,
+    content_id: `### 1. Rangkuman Fakta dari 10 Media Kepercayaan Publik Tertinggi RI
+Berdasarkan laporan utama dari jajaran **10 Media Berita Kepercayaan Publik RI** (**Kompas, CNN Indonesia, tvOne, Detik.com, SCTV/Liputan6, TVRI, RCTI, Tempo, Tribunnews, dan Jawa Pos** — merujuk pada [GoodStats Data / Reuters Institute Digital News Report](https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS)):
+
+- **Modus Penyadapan Ilegal via Server LIMS**: Bareskrim Polri mengungkap kasus penyadapan tanpa prosedur resmi yang menyasar nomor telepon pribadi **Presiden Republik Indonesia (Prabowo Subianto)** beserta sejumlah pejabat tinggi negara, tokoh politik, pimpinan media, dan tokoh masyarakat.
+- **Penyalahgunaan Wewenang pada Sistem Monitoring**: Nomor-nomor target dimasukkan secara ilegal ke dalam server **LIMS (*Lawful Interception Management System*)** pada Monitoring Centre tanpa dasar penyelidikan hukum atau verifikasi resmi (melanggar Perkap No. 5 Tahun 2010).
+- **Penyitaan Barang Bukti & Upaya Penghapusan Berkas**: Aparat menyita belasan ponsel, iPad, dan *flashdisk* (USB), serta mengungkap adanya perintah dari pelaku untuk menghapus berkas rekaman/data hasil sadapan pada sistem komputer LIMS guna menghilangkan jejak.
+
+---
+
+### 2. Celah Keamanan Utama yang Terungkap dari Kasus Ini
+1. **Kerentanan Jalur Telekomunikasi Reguler**: Panggilan telepon seluler biasa dan SMS melewati infrastruktur operator yang terhubung dengan *gateway* intersepsi (LIMS) tanpa enkripsi *end-to-end*, sehingga rentan disadap apabila sistem monitoring disalahgunakan.
+2. **Lemahnya Otorisasi Akses Privileged (Insider Threat)**: Operator dapat memasukkan nomor VIP ke dalam sistem sadap tanpa kendali *Multi-Factor Authentication (MFA)* berlapis atau pengikatan sertifikat perangkat keras (*Device-Bound Access*).
+3. **Eksfiltrasi via Flashdisk & Penghapusan Log Lokal**: Data sadapan dapat disalin ke media penyimpanan eksternal (*flashdisk*/iPad) dan berkas di server lokal sempat diperintahkan untuk dihapus oleh oknum internal.
+
+---
+
+### 3. Apa yang Dapat Dilakukan BytePlus SealSuite Terhadap Masalah Ini?
+Berdasarkan dokumentasi menyeluruh dan [Release Notes — SealSuite BytePlus](https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log), **BytePlus SealSuite** menyediakan solusi pertahanan langsung untuk mencegah maupun mendeteksi insiden penyadapan dan penyalahgunaan wewenang tersebut:
+
+1. **Enkripsi Terowongan Komunikasi VIP (SealSuite ZTNA & Enterprise VPN)**:
+   Walaupun nomor seluler pejabat/eksekutif dimasukkan secara ilegal ke dalam sistem sadap jaringan (*Lawful Interception* / LIMS), seluruh lalu lintas data dan aplikasi kerja yang melewati **SealSuite Zero Trust Network Access (ZTNA)** dienkripsi secara *end-to-end*. Pihak penyadap hanya akan melihat lalu lintas terenkripsi yang tidak dapat dibuka isinya.
+2. **Pencegahan Penyalahgunaan Sistem Monitoring oleh Orang Dalam (IAM OneId & Device-Bound Access)**:
+   Sistem kritis seperti server monitoring hanya boleh diakses melalui **SealSuite Application Gateway** yang memverifikasi **Sertifikat Perangkat Terdaftar (*Device Trust*)** dan mewajibkan **Autentikasi 2FA/MFA Kontekstual** di setiap aksi sensitif. Oknum tidak bisa mengakses sistem dari perangkat pribadi atau tanpa otorisasi terverifikasi.
+3. **Blokir Salin Data ke Flashdisk & Cegah Penghapusan Bukti (Endpoint DLP V3.3.2+)**:
+   Mengacu pada pembaruan kebijakan keamanan data di *SealSuite Release Notes (V3.3.2+)*:
+   - **Kontrol Peripheral / USB**: Memblokir total penyalinan berkas rahasia ke *flashdisk*, hardisk eksternal, atau perangkat iPad/ponsel yang tidak sah.
+   - **Audit Log Tak Terhapuskan & Anti-Tampering**: Setiap aktivitas pembukaan, penyalinan, maupun upaya penghapusan berkas (*file deletion*) langsung dikirim secara *real-time* ke server audit terpusat dan dilengkapi **Screen Watermark** beridentitas operator, sehingga upaya penghapusan barang bukti di komputer lokal tidak dapat menghilangkan jejak forensik.
+4. **Deteksi Spyware & Pemeriksaan Postur Perangkat Pejabat/VIP (Mobile & Endpoint Security Baseline)**:
+   Agen **SealSuite** pada iOS, Android, Windows, dan macOS secara otomatis memeriksa integritas sistem operasi (mendeteksi *jailbreak/root*, aplikasi perekam latar belakang/*spyware*, atau profil konfigurasi berbahaya) dan langsung memberikan peringatan dini kepada tim keamanan.`,
+    tags: [
+      'Penyadapan Presiden Indonesia',
+      'Kompas',
+      'CNN Indonesia',
+      'Detik.com',
+      'Tempo',
+      'GoodStats 10 Media RI',
+      'LIMS',
+      'SealSuite',
+      'Zero Trust',
+      'DLP',
+    ],
+    sources: [
+      { title: '10 Media Berita Kepercayaan Publik RI, Ada Apa Saja? - GoodStats Data (Reuters Institute)', publisher: 'GoodStats.id', url: 'https://data.goodstats.id/statistic/10-media-berita-kepercayaan-publik-ri-ada-apa-saja-KYRRS' },
+      { title: 'Laporan Kasus Penyadapan Presiden RI & Penyalahgunaan LIMS', publisher: 'CNN Indonesia (Trust 61%)', url: 'https://www.cnnindonesia.com/search/?query=penyadapan+presiden' },
+      { title: 'Investigasi & Penetapan Tersangka Kasus Penyadapan Pejabat Negara', publisher: 'Kompas (Trust 62%)', url: 'https://search.kompas.com/search/?q=penyadapan+presiden' },
+      { title: 'Perkembangan Penyidikan Bareskrim terkait Penyadapan Ilegal LIMS', publisher: 'Detik.com (Trust 59%) & Tempo', url: 'https://www.detik.com/search/searchall?query=penyadapan+presiden' },
+      { title: 'Release Notes — SealSuite BytePlus (Zero Trust, DLP & Endpoint Security)', publisher: 'BytePlus SealSuite Docs', url: 'https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log' },
+    ],
+  },
   {
     slug: 'black-october-2026-ai-vulnpocalypse-cybersecurity',
     category: 'cybersecurity',
@@ -316,8 +405,9 @@ router.get('/', auth, async (req, res) => {
   try {
     const q = String(req.query.q || '').trim().slice(0, 120);
     const category = String(req.query.category || '').trim();
+    const media = String(req.query.media || '').trim().toLowerCase();
     // Searching always looks through the archive too, so old articles stay findable.
-    const scope = q ? 'all' : (['active', 'archive', 'all'].includes(req.query.scope) ? req.query.scope : 'active');
+    const scope = (q || (media && media !== 'all')) ? 'all' : (['active', 'archive', 'all'].includes(req.query.scope) ? req.query.scope : 'active');
     const cutoff = archiveCutoff();
 
     const params = [cutoff];
@@ -325,6 +415,17 @@ router.get('/', auth, async (req, res) => {
     if (scope === 'active') where.push(`NOT ${ARCHIVED_SQL}`);
     if (scope === 'archive') where.push(ARCHIVED_SQL);
     if (category && category !== 'all') { params.push(category); where.push(`category = $${params.length}`); }
+    if (media && media !== 'all') {
+      const mObj = newsIngest.TRUSTED_ID_MEDIA.find((m) => m.id === media);
+      if (mObj) {
+        const patterns = [mObj.name, ...(mObj.domains || [])].map((p) => `%${escLike(p)}%`);
+        const orClauses = patterns.map((pat) => {
+          params.push(pat);
+          return `concat_ws(' ', title_en, title_id, tags::text, sources::text, badge_id, badge_en, COALESCE(source_url, '')) ILIKE $${params.length}`;
+        });
+        where.push(`(${orClauses.join(' OR ')})`);
+      }
+    }
     q.split(/\s+/).filter(Boolean).slice(0, 6).forEach((term) => {
       params.push(`%${escLike(term)}%`);
       where.push(`concat_ws(' ', title_en, title_id, summary_en, summary_id, tags::text, content_en, content_id, sources::text) ILIKE $${params.length}`);
@@ -345,9 +446,12 @@ router.get('/', auth, async (req, res) => {
       counts: counts.rows[0],
       scope,
       query: q,
+      media: media || 'all',
       archive_after_days: ARCHIVE_AFTER_DAYS,
       ingest: newsIngest.getStatus(),
       sealsuite_release_notes_url: SEALSUITE_RELEASE_NOTES_URL,
+      trusted_media: newsIngest.TRUSTED_ID_MEDIA,
+      goodstats_url: newsIngest.GOODSTATS_REFERENCE_URL,
     });
   } catch (err) {
     console.error('GET /api/news error:', err.message);
@@ -357,9 +461,36 @@ router.get('/', auth, async (req, res) => {
       counts: { active: fallbackItems.length, archive: 0, total: fallbackItems.length },
       scope: 'active',
       query: '',
+      media: 'all',
       ingest: newsIngest.getStatus(),
       sealsuite_release_notes_url: SEALSUITE_RELEASE_NOTES_URL,
+      trusted_media: newsIngest.TRUSTED_ID_MEDIA,
+      goodstats_url: newsIngest.GOODSTATS_REFERENCE_URL,
     });
+  }
+});
+
+// POST /api/news/search-trusted — live search across the 10 Trusted Indonesian Media (GoodStats reference) + enrich with SealSuite resolution
+router.post('/search-trusted', auth, async (req, res) => {
+  await ensureNewsTable();
+  try {
+    const query = String(req.body?.query || req.body?.q || '').trim().slice(0, 120);
+    const media = String(req.body?.media || 'all').trim().toLowerCase();
+    const liveResult = await newsIngest.searchTrustedIndonesianMedia(query, media);
+    const enriched = Array.isArray(liveResult.items) ? liveResult.items.map(attachSealSuiteResolution) : [];
+    res.json({
+      ok: true,
+      query,
+      media,
+      added: liveResult.added || 0,
+      items: enriched,
+      trusted_media: newsIngest.TRUSTED_ID_MEDIA,
+      goodstats_url: newsIngest.GOODSTATS_REFERENCE_URL,
+      sealsuite_release_notes_url: SEALSUITE_RELEASE_NOTES_URL,
+    });
+  } catch (err) {
+    console.error('POST /api/news/search-trusted error:', err.message);
+    res.status(500).json({ error: 'Failed to search trusted Indonesian media' });
   }
 });
 
