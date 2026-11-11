@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAlert } from '../../contexts/AlertContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { BookOpen, Play, CheckCircle, Lock, Clock, Zap, ArrowLeft, Users, Trophy, Star } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -477,6 +478,7 @@ export default function CourseDetailPage() {
   const { authFetch, user } = useAuth();
   const { success, error } = useAlert();
   const { t, lang } = useLanguage();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
@@ -555,12 +557,27 @@ export default function CourseDetailPage() {
       )}
 
       {/* Hero */}
-      <div style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.1))', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', gap: '1.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{
+        padding: isMobile ? '1.15rem' : '2rem',
+        background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.1))',
+        borderRadius: 'var(--radius-xl)',
+        border: '1px solid var(--border)',
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '1rem' : '1.75rem',
+          alignItems: isMobile ? 'stretch' : 'center',
+        }}>
           {course.thumbnail && (
             <div style={{
-              width: 200, height: 200, borderRadius: 'var(--radius-lg)', overflow: 'hidden', flexShrink: 0,
-              border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+              width: isMobile ? '100%' : 200,
+              height: isMobile ? 175 : 200,
+              borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden',
+              flexShrink: 0,
+              border: '1px solid rgba(255,255,255,0.15)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
               background: 'var(--bg-card)',
             }}>
               <img
@@ -571,33 +588,37 @@ export default function CourseDetailPage() {
               />
             </div>
           )}
-          <div style={{ flex: 1, minWidth: 240 }}>
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
+            <div style={{ display: 'flex', gap: '0.45rem', marginBottom: '0.65rem', flexWrap: 'wrap' }}>
               <span className={`badge diff-${course.level}`}>{course.level}</span>
               <span className="badge badge-muted">{course.category}</span>
               <span className="badge badge-accent" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 <Zap size={11} /> {totalXP} XP Total
               </span>
             </div>
-            <h1 style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }}>{course.title}</h1>
-            <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '1.25rem' }}>{course.description}</p>
-            <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><BookOpen size={14} />{course.lessons?.length || 0} lessons</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Users size={14} />{course.enrolled_count} enrolled</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={14} />By {course.instructor_name}</span>
+            <h1 style={{ fontSize: isMobile ? '1.35rem' : '1.75rem', marginBottom: '0.55rem', lineHeight: 1.25 }}>
+              {course.title}
+            </h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: isMobile ? '0.88rem' : '0.95rem', lineHeight: 1.65, marginBottom: '1rem' }}>
+              {course.description}
+            </p>
+            <div style={{ display: 'flex', gap: isMobile ? '0.85rem' : '1.5rem', fontSize: isMobile ? '0.8rem' : '0.85rem', color: 'var(--text-muted)', marginBottom: '1.15rem', flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><BookOpen size={14} />{course.lessons?.length || 0} lessons</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Users size={14} />{course.enrolled_count} enrolled</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={14} />By {course.instructor_name}</span>
             </div>
             {enrolled ? (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: 8 }}>
-                  <div style={{ fontWeight: 700, marginBottom: '0.3rem' }}>{completedIds.size}/{course.lessons?.length} {t('completed')}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: 6 }}>
+                  <div style={{ fontWeight: 700 }}>{completedIds.size}/{course.lessons?.length} {t('completed')}</div>
                   <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{pct}%</span>
                 </div>
-                <div className="progress-track" style={{ height: 10, marginBottom: '1rem' }}>
+                <div className="progress-track" style={{ height: 10 }}>
                   <div className="progress-fill" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             ) : (
-              <button className="btn btn-primary btn-lg" onClick={handleEnroll} disabled={enrolling}>
+              <button className="btn btn-primary btn-lg" onClick={handleEnroll} disabled={enrolling} style={{ width: isMobile ? '100%' : 'auto', justifyContent: 'center' }}>
                 {enrolling ? t('processing') : <>{t('enroll_now')} <Zap size={18} /></>}
               </button>
             )}
@@ -606,11 +627,11 @@ export default function CourseDetailPage() {
       </div>
 
       {/* Visual Learning Path */}
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <h3 style={{ margin: 0 }}>{t('learning_path')} — {course.lessons?.length} {t('lessons')}</h3>
+      <div className="card" style={{ padding: isMobile ? '1rem 0.85rem' : '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.15rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+          <h3 style={{ margin: 0, fontSize: isMobile ? '1.05rem' : '1.25rem' }}>{t('learning_path')} — {course.lessons?.length} {t('lessons')}</h3>
           {enrolled && (
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               {completedIds.size} of {course.lessons?.length} done · {totalXP} XP available
             </span>
           )}
@@ -630,43 +651,41 @@ export default function CourseDetailPage() {
                 {/* Connector line */}
                 {i < course.lessons.length - 1 && (
                   <div style={{
-                    position: 'absolute', left: 17, top: 44, bottom: -8, width: 2,
+                    position: 'absolute', left: isMobile ? 14 : 17, top: 40, bottom: -8, width: 2,
                     background: done ? 'var(--success)' : 'var(--border-light)', zIndex: 0,
                   }} />
                 )}
 
                 {/* Node */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '0.6rem 0.5rem', flex: 1, zIndex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? '0.65rem' : '1rem', padding: isMobile ? '0.45rem 0.15rem' : '0.6rem 0.5rem', flex: 1, minWidth: 0, zIndex: 1 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                    width: isMobile ? 30 : 36, height: isMobile ? 30 : 36, borderRadius: '50%', flexShrink: 0,
                     background: done ? 'var(--success)' : isActive ? color : 'var(--bg-card)',
                     border: `2px solid ${done ? 'var(--success)' : isActive ? color : 'var(--border-light)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: isActive ? `0 0 12px ${color}40` : 'none',
                     transition: 'all 0.2s',
                   }}>
-                    {done ? <CheckCircle size={16} color="white" /> : isLocked ? <Lock size={14} color="var(--text-muted)" /> : <TypeIcon size={16} color={done || isActive ? 'white' : color} />}
+                    {done ? <CheckCircle size={isMobile ? 14 : 16} color="white" /> : isLocked ? <Lock size={isMobile ? 12 : 14} color="var(--text-muted)" /> : <TypeIcon size={isMobile ? 14 : 16} color={done || isActive ? 'white' : color} />}
                   </div>
 
                   {/* Lesson info card */}
                   <div
                     onClick={() => !isLocked && navigate(`/lessons/${lesson.id}`)}
                     style={{
-                      flex: 1, padding: '0.7rem 1rem',
+                      flex: 1, minWidth: 0, padding: isMobile ? '0.65rem 0.8rem' : '0.7rem 1rem',
                       background: done ? 'rgba(16,185,129,0.05)' : isActive ? `${color}08` : 'var(--bg-surface)',
                       border: `1px solid ${done ? 'rgba(16,185,129,0.2)' : isActive ? `${color}30` : 'var(--border-light)'}`,
                       borderRadius: 'var(--radius-sm)', cursor: isLocked ? 'not-allowed' : 'pointer',
                       opacity: isLocked ? 0.5 : 1, transition: 'all 0.2s',
-                      marginBottom: '0.5rem',
+                      marginBottom: '0.45rem',
                     }}
-                    onMouseEnter={e => !isLocked && (e.currentTarget.style.transform = 'translateX(4px)')}
-                    onMouseLeave={e => (e.currentTarget.style.transform = 'translateX(0)')}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 200 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '0.5rem' : '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', width: '100%', minWidth: 0 }}>
                         {lessonThumb && (
                           <div style={{
-                            width: 56, height: 56, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
+                            width: isMobile ? 46 : 56, height: isMobile ? 46 : 56, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
                             border: '1px solid var(--border-light)', background: 'var(--bg-card)',
                           }}>
                             <img
@@ -678,22 +697,22 @@ export default function CourseDetailPage() {
                             />
                           </div>
                         )}
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
-                            <span style={{ fontSize: '0.7rem', color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.68rem', color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                               {i + 1}. {TYPE_LABELS[lesson.type] || 'Lesson'}
                             </span>
-                            {isActive && <span style={{ fontSize: '0.65rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('up_next')}</span>}
-                            {done && <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('done')}</span>}
+                            {isActive && <span style={{ fontSize: '0.62rem', background: `${color}20`, color, padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('up_next')}</span>}
+                            {done && <span style={{ fontSize: '0.62rem', background: 'rgba(16,185,129,0.15)', color: 'var(--success)', padding: '0.1rem 0.4rem', borderRadius: 10, fontWeight: 700 }}>{t('done')}</span>}
                           </div>
-                          <div style={{ fontWeight: 600, fontSize: '0.88rem', color: done ? 'var(--success)' : 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 600, fontSize: isMobile ? '0.84rem' : '0.88rem', lineHeight: 1.35, color: done ? 'var(--success)' : 'var(--text-primary)' }}>
                             {lang === 'id' && lesson.title_id ? lesson.title_id : lesson.title}
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{estimateTime(lesson.type, lesson.content)}</span>
-                        <span className="badge badge-accent" style={{ fontSize: '0.7rem' }}><Zap size={10} />{lesson.xp_reward} XP</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0, alignSelf: isMobile ? 'flex-end' : 'center' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{estimateTime(lesson.type, lesson.content)}</span>
+                        <span className="badge badge-accent" style={{ fontSize: '0.68rem' }}><Zap size={10} />{lesson.xp_reward} XP</span>
                       </div>
                     </div>
                   </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { FlaskConical, Play, Shield, Terminal, Zap, Clock, ArrowUpDown } from 'lucide-react';
 
 const LAB_ICONS = {
@@ -18,6 +19,7 @@ export default function LabsPage() {
   const { authFetch, user } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const [labs, setLabs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState(() => {
@@ -41,22 +43,22 @@ export default function LabsPage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(124,58,237,0.1))', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)' }}>
-        <h1 style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <FlaskConical size={32} color="var(--accent)" /> Vibe Coding Labs
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1.25rem' : '2rem' }}>
+      <div style={{ padding: isMobile ? '1.25rem' : '2rem', background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(124,58,237,0.1))', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)' }}>
+        <h1 style={{ fontSize: isMobile ? '1.35rem' : '1.8rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <FlaskConical size={isMobile ? 24 : 32} color="var(--accent)" /> Vibe Coding Labs
         </h1>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: 600 }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.88rem' : '0.95rem', maxWidth: 600 }}>
           Interactive environments to test your prompt engineering, debug AI-generated code, and practice secure vibe coding. Complete labs to earn massive XP.
         </p>
       </div>
 
       {/* Sorting Controls */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginTop: '-0.5rem', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+      <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-start' : 'flex-end', alignItems: 'center', gap: '0.65rem', marginTop: '-0.25rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           <ArrowUpDown size={14} /> {t('sort_by_level')}
         </div>
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
           {[
             { key: 'default', label: t('sort_default') },
             { key: 'diff-asc', label: t('sort_beginner_first') },
@@ -66,7 +68,7 @@ export default function LabsPage() {
               key={opt.key}
               onClick={() => setSortBy(opt.key)}
               className={`btn btn-sm ${sortBy === opt.key ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+              style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
             >
               {opt.label}
             </button>
@@ -74,7 +76,7 @@ export default function LabsPage() {
         </div>
       </div>
 
-      <div className="grid-3">
+      <div className={isMobile ? '' : 'grid-3'} style={isMobile ? { display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' } : undefined}>
         {sortedLabs.map(lab => {
           const Icon = LAB_ICONS[lab.type] || FlaskConical;
           const isLocked = user?.plan === 'free' && lab.difficulty !== 'beginner';

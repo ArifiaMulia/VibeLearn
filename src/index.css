@@ -448,7 +448,7 @@ tbody td { padding: 0.9rem 1rem; font-size: 0.9rem; color: var(--text-secondary)
   .grid-3 { grid-template-columns: repeat(2,1fr); }
 }
 
-@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse), (pointer: coarse) and (max-width: 1024px) {
   /* ── Core layout ── */
   .main-content { margin-left: 0 !important; }
   .page-container { padding: 1rem; max-width: 100%; }
@@ -943,7 +943,7 @@ pre { max-width: 100%; overflow-x: auto; }
 .markdown-content, .markdown-content p, .markdown-content li, .markdown-content td { overflow-wrap: anywhere; }
 .markdown-content pre { overflow-x: auto; }
 
-@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse), (pointer: coarse) and (max-width: 1024px) {
   html, body, #root { max-width: 100vw; overflow-x: hidden; }
   body { font-size: 16px; }
   .app-layout { display: block; width: 100%; overflow-x: hidden; }
@@ -960,7 +960,8 @@ pre { max-width: 100%; overflow-x: auto; }
   /* Fixed-width floating panels never exceed the screen */
   [style*="width: 340px"], [style*="width: 360px"], [style*="width: 320px"],
   [style*="width: 300px"], [style*="width: 400px"] { max-width: calc(100vw - 1.5rem) !important; }
-  [style*="min-width: 220px"], [style*="min-width: 240px"], [style*="min-width: 200px"] { min-width: 0 !important; }
+  [style*="min-width: 220px"], [style*="min-width: 240px"], [style*="min-width: 200px"],
+  [style*="min-width: 260px"], [style*="min-width: 280px"] { min-width: 0 !important; }
 
   /* Section rhythm */
   [style*="padding: 5rem 5%"], [style*="padding: 6rem 5% 4.5rem"] { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
@@ -986,11 +987,11 @@ pre { max-width: 100%; overflow-x: auto; }
 }
 
 /* Floating helpers must clear the bottom navigation bar */
-@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse), (pointer: coarse) and (max-width: 1024px) {
   .float-above-nav { bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important; right: 0.85rem !important; }
 }
 
-@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse), (pointer: coarse) and (max-width: 1024px) {
   /* Data tables scroll inside their own box (never widen the page) */
   table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
   table td, table th { padding: 0.65rem 0.75rem !important; }
@@ -1001,7 +1002,7 @@ pre { max-width: 100%; overflow-x: auto; }
   h2[style*="display: flex"] { flex-wrap: wrap; }
 }
 
-@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse) {
+@media (max-width: 768px), (max-device-width: 768px) and (pointer: coarse), (pointer: coarse) and (max-width: 1024px) {
   .page-container div, .page-container section, .page-container form, .page-container article { min-width: 0; }
   input, select, textarea { max-width: 100%; }
 
@@ -1041,6 +1042,32 @@ pre { max-width: 100%; overflow-x: auto; }
   .markdown-content ul, .markdown-content ol { margin-left: 1.15rem !important; }
   .markdown-content pre { padding: 0.75rem !important; font-size: 0.78rem !important; }
 }
+
+/* Explicit .is-mobile-device root overrides (guaranteed even when WebAPK forces desktop CSS viewport) */
+html.is-mobile-device .main-content {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+}
+html.is-mobile-device .page-container {
+  padding: 0.9rem 0.85rem 1.25rem !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+html.is-mobile-device .grid-2,
+html.is-mobile-device .grid-3,
+html.is-mobile-device .grid-4 {
+  grid-template-columns: 1fr !important;
+}
+html.is-mobile-device .card,
+html.is-mobile-device .stat-card {
+  padding: 1rem !important;
+}
+html.is-mobile-device h1 { font-size: 1.45rem !important; line-height: 1.25 !important; }
+html.is-mobile-device h2 { font-size: 1.22rem !important; line-height: 1.3 !important; }
+html.is-mobile-device h3 { font-size: 1.05rem !important; line-height: 1.35 !important; }
 
 
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CourseCard from '../../components/CourseCard';
 import { Search, Filter, BookOpen, Zap, Star, ArrowRight } from 'lucide-react';
@@ -11,6 +12,7 @@ const CATEGORIES = ['all', 'fundamentals', 'prompting', 'project', 'quality', 's
 export default function CoursesPage() {
   const { authFetch } = useAuth();
   const { t, lang } = useLanguage();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const levelParam = searchParams.get('level') || 'all';
@@ -99,8 +101,8 @@ export default function CoursesPage() {
       )}
 
       {/* Filters */}
-      <div className="card" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+      <div className="card" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '0.75rem', alignItems: isMobile ? 'stretch' : 'center' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: 0, width: '100%' }}>
           <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             className="form-input"
@@ -110,14 +112,14 @@ export default function CoursesPage() {
             style={{ paddingLeft: '2.25rem' }}
           />
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: isMobile ? '0.15rem' : 0 }}>
           {LEVELS.map(l => (
-            <button key={l} onClick={() => setLevel(l)} className={`btn btn-sm ${level === l ? 'btn-primary' : 'btn-ghost'}`}>
+            <button key={l} onClick={() => setLevel(l)} className={`btn btn-sm ${level === l ? 'btn-primary' : 'btn-ghost'}`} style={{ flexShrink: 0 }}>
               {levelLabel(l)}
             </button>
           ))}
         </div>
-        <select className="form-select" style={{ width: 'auto' }} value={category} onChange={e => setCategory(e.target.value)}>
+        <select className="form-select" style={{ width: isMobile ? '100%' : 'auto' }} value={category} onChange={e => setCategory(e.target.value)}>
           {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
         </select>
       </div>
@@ -131,7 +133,7 @@ export default function CoursesPage() {
 
       {/* Grid */}
       {loading ? (
-        <div className="grid-3">{[...Array(6)].map((_, i) => <div key={i} className="skeleton" style={{ height: 300, borderRadius: 'var(--radius-lg)' }} />)}</div>
+        <div className={isMobile ? '' : 'grid-3'} style={isMobile ? { display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' } : undefined}>{[...Array(6)].map((_, i) => <div key={i} className="skeleton" style={{ height: 300, borderRadius: 'var(--radius-lg)' }} />)}</div>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <BookOpen size={48} color="var(--text-muted)" style={{ margin: '0 auto 1rem' }} />
@@ -142,7 +144,7 @@ export default function CoursesPage() {
           </button>
         </div>
       ) : (
-        <div className="grid-3">
+        <div className={isMobile ? '' : 'grid-3'} style={isMobile ? { display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' } : undefined}>
           {filtered.map((course, i) => {
             const enr = enrollments.find(e => e.course_id === course.id);
             return <CourseCard key={course.id} course={course} index={i} enrolled={enrolledIds.has(course.id)} progress={enr} />;
