@@ -3,12 +3,10 @@
  * Precaches app shell & opaque /icons/* gracefully so Chrome WebAPK & iOS standalone install never fail.
  */
 
-const CACHE_NAME = 'promptara-shell-v3.7.0';
+const CACHE_NAME = 'promptara-shell-v3.7.2';
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/offline.html',
   '/icons/icon.svg',
@@ -75,11 +73,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Never cache auth, SSO redirects, or other API calls
+  // Never cache auth, SSO redirects, hardening/SW scripts, or other API calls
   if (
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/.well-known/') ||
     url.pathname.startsWith('/_sso_') ||
+    url.pathname.endsWith('vn-hardening.js') ||
+    url.pathname.endsWith('pwa-sw.js') ||
+    url.pathname.endsWith('sw.js') ||
     url.pathname === '/logout' ||
     url.pathname === '/auth/logout' ||
     url.pathname === '/lark-callback' ||
@@ -94,32 +95,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests (HTML documents)
+  // Navigation requests (HTML documents) — never cache /index.html across SSO redirects
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            networkResponse.type === 'basic' &&
-            !networkResponse.redirected
-          ) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((c) => c.put('/index.html', clone)).catch(() => {});
-          }
-          return networkResponse;
-        })
-        .catch(async () => {
-          const cache = await caches.open(CACHE_NAME);
-          const cachedIndex = await cache.match('/index.html');
-          if (cachedIndex) return cachedIndex;
-          const cachedOffline = await cache.match(OFFLINE_URL);
-          return cachedOffline || new Response('Aplikasi sedang offline.', {
-            status: 503,
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-          });
-        })
+      fetch(request).catch(async () => {
+        const cache = await caches.open(CACHE_NAME);
+        const cachedOffline = await cache.match(OFFLINE_URL);
+        return cachedOffline || new Response('Aplikasi sedang offline.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+      })
     );
     return;
   }

@@ -9,10 +9,14 @@ const DEFAULT_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes default
 
 export function clearAuthLogoutCookies() {
   if (typeof document === 'undefined') return;
+  const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+  const secAttr = isHttps ? ' SameSite=Lax; Secure;' : ' SameSite=Lax;';
   const expired = 'Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;';
   for (const name of ['vl_logged_out', 'virtuenet_sso_logged_out', 'vl_lark_pending']) {
     document.cookie = `${name}=; ${expired}`;
+    document.cookie = `${name}=; ${expired}${secAttr}`;
     document.cookie = `${name}=; ${expired} domain=.virtuenet.space;`;
+    document.cookie = `${name}=; ${expired} domain=.virtuenet.space;${secAttr}`;
   }
 }
 
@@ -70,11 +74,42 @@ export function AuthProvider({ children }) {
   const verifiedTokenRef = useRef(null);
   const skipNextNullFetchRef = useRef(false);
 
+  const setSsoCookieClientSide = useCallback((jwtToken) => {
+    if (typeof document === 'undefined' || !jwtToken) return;
+    const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+    const secAttr = isHttps ? '; SameSite=Lax; Secure' : '; SameSite=Lax';
+    const val = encodeURIComponent(jwtToken);
+    document.cookie = `virtuenet_sso_jwt=${val}; path=/; max-age=2592000${secAttr}`;
+    document.cookie = `virtuenet_sso_jwt=${val}; domain=.virtuenet.space; path=/; max-age=2592000${secAttr}`;
+  }, []);
+
   const clearSsoCookieClientSide = () => {
     if (typeof document === 'undefined') return;
-    document.cookie = 'virtuenet_sso_jwt=; Max-Age=0; path=/;';
-    document.cookie = 'virtuenet_sso_jwt=; Max-Age=0; path=/; domain=.virtuenet.space;';
+    const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+    const secAttr = isHttps ? ' SameSite=Lax; Secure;' : ' SameSite=Lax;';
+    const expired = 'Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;';
+    document.cookie = `virtuenet_sso_jwt=; ${expired}`;
+    document.cookie = `virtuenet_sso_jwt=; ${expired}${secAttr}`;
+    document.cookie = `virtuenet_sso_jwt=; ${expired} domain=.virtuenet.space;`;
+    document.cookie = `virtuenet_sso_jwt=; ${expired} domain=.virtuenet.space;${secAttr}`;
   };
+
+  const applySessionFromAuthResponse = useCallback((data, { stripUrl = false } = {}) => {
+    const now = Date.now();
+    localStorage.removeItem('vl_explicit_logout');
+    localStorage.removeItem('vl_lark_pending');
+    if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('vl_lark_pending');
+    clearAuthLogoutCookies();
+    localStorage.setItem('vl_last_active', String(now));
+    lastActiveRef.current = now;
+    localStorage.setItem('vl_token', data.token);
+    localStorage.setItem('vl_user', JSON.stringify(data.user));
+    verifiedTokenRef.current = data.token;
+    if (stripUrl) stripAuthQueryParamsFromUrl();
+    setToken(data.token);
+    setUser(data.user);
+    return data.user;
+  }, []);
 
   const refreshSessionConfig = useCallback(() => {
     fetch(`${API}/auth/session-config`, { credentials: 'include' })
@@ -125,7 +160,10 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
 
-    const target = opts.navigateTo || '/logout';
+    const defaultLogoutTarget = typeof window !== 'undefined'
+      ? `https://assistant.virtuenet.space/api/auth/sso/logout?return_to=${encodeURIComponent(`${window.location.origin}/login`)}`
+      : '/logout';
+    const target = opts.navigateTo || defaultLogoutTarget;
     setTimeout(() => window.location.replace(target), 120);
   }, []);
 
@@ -139,23 +177,10 @@ export function AuthProvider({ children }) {
     if (urlSsoToken || larkPending) {
       localStorage.removeItem('vl_explicit_logout');
       clearAuthLogoutCookies();
+      if (urlSsoToken) setSsoCookieClientSide(urlSsoToken);
     }
 
-    const persistSession = (data) => {
-      const now = Date.now();
-      localStorage.removeItem('vl_explicit_logout');
-      localStorage.removeItem('vl_lark_pending');
-      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('vl_lark_pending');
-      clearAuthLogoutCookies();
-      localStorage.setItem('vl_last_active', String(now));
-      lastActiveRef.current = now;
-      localStorage.setItem('vl_token', data.token);
-      localStorage.setItem('vl_user', JSON.stringify(data.user));
-      verifiedTokenRef.current = data.token;
-      stripAuthQueryParamsFromUrl();
-      setToken(data.token);
-      setUser(data.user);
-    };
+    const persistSession = (data) => applySessionFromAuthResponse(data, { stripUrl: true });
 
     // 1. Prioritize fresh SSO token in URL even if an older vl_token exists in localStorage
     if (urlSsoToken) {
@@ -306,7 +331,7 @@ export function AuthProvider({ children }) {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, applySessionFromAuthResponse, setSsoCookieClientSide]);
 
   // Track user activity & enforce dynamic idle auto-logout (Session Governance)
   useEffect(() => {
@@ -359,29 +384,13 @@ export function AuthProvider({ children }) {
     const ping = () => {
       const lastActive = Number(localStorage.getItem('vl_last_active') || lastActiveRef.current || 0);
       if (Date.now() - lastActive < 180000) {
-        fetch(`${API}/auth/activity`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+        fetch(`${API}/auth/activity`, { method: 'POST', credentials: 'include', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
       }
     };
     ping();
     const id = setInterval(ping, 180000);
     return () => clearInterval(id);
   }, [token]);
-
-  const applySessionFromAuthResponse = (data) => {
-    const now = Date.now();
-    localStorage.removeItem('vl_explicit_logout');
-    localStorage.removeItem('vl_lark_pending');
-    if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('vl_lark_pending');
-    clearAuthLogoutCookies();
-    localStorage.setItem('vl_last_active', String(now));
-    lastActiveRef.current = now;
-    localStorage.setItem('vl_token', data.token);
-    localStorage.setItem('vl_user', JSON.stringify(data.user));
-    verifiedTokenRef.current = data.token;
-    setToken(data.token);
-    setUser(data.user);
-    return data.user;
-  };
 
   const login = async (email, password) => {
     const res = await fetch(`${API}/auth/login`, {
@@ -424,11 +433,43 @@ export function AuthProvider({ children }) {
   };
 
   const authFetch = useCallback(async (path, options = {}) => {
-    const res = await fetch(`${API}${path}`, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...options.headers },
+    const activeToken = localStorage.getItem('vl_token') || token;
+    const makeHeaders = (tkn) => ({
+      'Content-Type': 'application/json',
+      ...(tkn ? { Authorization: `Bearer ${tkn}` } : {}),
+      ...options.headers,
     });
-    if (res.status === 401) { logout(); throw new Error('Session expired'); }
+
+    let res = await fetch(`${API}${path}`, {
+      ...options,
+      credentials: 'include',
+      headers: makeHeaders(activeToken),
+    });
+
+    if (res.status === 401) {
+      try {
+        const meRes = await fetch(`${API}/auth/me`, { credentials: 'include' });
+        const meData = meRes.ok ? await meRes.json() : null;
+        if (meData?.user && meData?.token) {
+          applySessionFromAuthResponse(meData);
+          res = await fetch(`${API}${path}`, {
+            ...options,
+            credentials: 'include',
+            headers: makeHeaders(meData.token),
+          });
+        }
+      } catch { /* noop */ }
+
+      if (res.status === 401) {
+        clearLocalAuthStorage();
+        verifiedTokenRef.current = null;
+        skipNextNullFetchRef.current = true;
+        setToken(null);
+        setUser(null);
+        throw new Error('Session expired');
+      }
+    }
+
     if (res.status === 403) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.error || 'Insufficient permissions');
@@ -436,7 +477,7 @@ export function AuthProvider({ children }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
-  }, [token, logout]);
+  }, [token, applySessionFromAuthResponse]);
 
   const [previewRole, setPreviewRole] = useState(null);
   const [previewPlan, setPreviewPlan] = useState(null);

@@ -217,6 +217,9 @@ jobs:
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/icons/icon-512.png" | head -n 5
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/icons/icon-512-maskable.png" | head -n 5
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/pwa-sw.js" | head -n 5
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/assets/pwa-sw.js" | head -n 8
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/assets/vn-hardening.js" | head -n 8
+          curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/?sso_token=ci_probe_jwt" | grep -iE "HTTP/|set-cookie|cache-control"
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/assets/promptara.apk" | head -n 6
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/uploads/images/1793776302191-658592852.png" | head -n 5
           curl -fsS -I --retry 5 --retry-delay 2 --retry-connrefused "${API_URL}/uploads/images/1793776549788-625074971.png" | head -n 5
@@ -256,7 +259,6 @@ jobs:
 
             // 2. Verify internal connectivity to assistant-backend SSO verify service
             for (const ssoUrl of [
-              'http://assistant-backend.assistant-production.svc.cluster.local/api/auth/sso/verify',
               'http://assistant-backend.assistant-production.svc.cluster.local:3000/api/auth/sso/verify'
             ]) {
               try {
@@ -267,19 +269,21 @@ jobs:
               }
             }
 
-            // 3. Verify GET /api/auth/me?sso_token=<test_jwt> SSO token exchange & cookie issuance
+            // 3. Verify GET /api/auth/me?sso_token=<test_jwt> SSO token exchange, latency & cookie issuance
             const testSsoToken = jwt.sign(
               { open_id: 'ou_dbd8a60b19b568755414d83976ad4ab1', name: 'Arifia Mulia', role: 'administrator' },
               jwtSecret,
               { expiresIn: '5m' }
             );
+            const t0 = Date.now();
             const ssoRes = await fetch(base + '/api/auth/me?sso_token=' + encodeURIComponent(testSsoToken));
+            const ssoLatencyMs = Date.now() - t0;
             const ssoBody = await ssoRes.json();
             const ssoCookie = ssoRes.headers.get('set-cookie') || '';
             if (!ssoRes.ok || !ssoBody?.user?.email || !ssoBody?.token || !ssoCookie.includes('virtuenet_sso_jwt=')) {
               throw new Error('SSO /api/auth/me?sso_token failed: ' + ssoRes.status + ' body=' + JSON.stringify(ssoBody));
             }
-            console.log('✅ SSO Token Exchange /api/auth/me?sso_token=...:', ssoBody.user.email, 'role=' + ssoBody.user.role, 'cookie_issued=true');
+            console.log('✅ SSO Token Exchange /api/auth/me?sso_token=...:', ssoBody.user.email, 'role=' + ssoBody.user.role, 'cookie_issued=true', 'latencyMs=' + ssoLatencyMs);
 
             const first = await pool.query('SELECT id FROM users ORDER BY id LIMIT 1');
             const loginData = {

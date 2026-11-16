@@ -27,6 +27,13 @@ export default function LandingPage() {
       }
     })();
 
+  const hasActiveSsoCookie =
+    typeof document !== 'undefined' &&
+    document.cookie.split(';').some((c) => {
+      const t = c.trim();
+      return t.startsWith('virtuenet_sso_jwt=') && t.length > 'virtuenet_sso_jwt='.length;
+    });
+
   // Direct post-login & closed-loop routing:
   // 1. If the user is already authenticated, go straight into the app (/dashboard).
   // 2. If the app is in Closed-Loop mode and unauthenticated, go straight to /login (no second login/marketing page).
@@ -86,7 +93,7 @@ export default function LandingPage() {
     { value: '2', label: 'Languages' }, { value: '∞', label: 'Possibilities' },
   ];
 
-  if (authLoading && hasPendingSsoToken) {
+  if (authLoading && (hasPendingSsoToken || hasActiveSsoCookie)) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-base)' }}>
         <div style={{ textAlign: 'center' }}>

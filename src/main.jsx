@@ -9,7 +9,15 @@ window.addEventListener('pageshow', (e) => {
   try {
     const p = window.location.pathname;
     const isPublic = p === '/' || p === '/login' || p === '/logout' || p.startsWith('/verify/') || p === '/lark-callback';
-    if (e.persisted && !isPublic && !localStorage.getItem('vl_token')) window.location.replace('/login');
+    const params = new URLSearchParams(window.location.search || '');
+    const hasSsoQuery = Boolean(params.get('sso_token') || params.get('token'));
+    const hasSsoCookie = document.cookie.split(';').some((c) => {
+      const t = c.trim();
+      return t.startsWith('virtuenet_sso_jwt=') && t.length > 'virtuenet_sso_jwt='.length;
+    });
+    if (e.persisted && !isPublic && !localStorage.getItem('vl_token') && !hasSsoQuery && !hasSsoCookie) {
+      window.location.replace('/login');
+    }
   } catch { /* noop */ }
 });
 
@@ -34,7 +42,14 @@ window.addEventListener('orientationchange', () => setTimeout(fixDesktopViewport
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/pwa-sw.js', { scope: '/' }).catch(() => {})
+    if (typeof caches !== 'undefined') {
+      caches.keys().then((keys) => {
+        keys.forEach((k) => {
+          if (k !== 'promptara-shell-v3.7.2') caches.delete(k).catch(() => {});
+        });
+      }).catch(() => {});
+    }
+    navigator.serviceWorker.register('/assets/pwa-sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => {})
   })
 }
 

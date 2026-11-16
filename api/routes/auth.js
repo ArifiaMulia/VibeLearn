@@ -39,11 +39,17 @@ const SSO_BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 function clearLogoutStateCookies(res) {
-  res.clearCookie('vl_logged_out', { path: '/' });
-  res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
-  res.clearCookie('virtuenet_sso_logged_out', { path: '/' });
-  res.clearCookie('virtuenet_sso_logged_out', { path: '/', domain: '.virtuenet.space' });
-  res.clearCookie('vl_lark_pending', { path: '/' });
+  const opts = [
+    { path: '/' },
+    { path: '/', domain: '.virtuenet.space' },
+    { path: '/', secure: true, sameSite: 'lax' },
+    { path: '/', domain: '.virtuenet.space', secure: true, sameSite: 'lax' },
+  ];
+  for (const name of ['vl_logged_out', 'virtuenet_sso_logged_out', 'vl_lark_pending']) {
+    for (const opt of opts) {
+      res.clearCookie(name, opt);
+    }
+  }
 }
 
 const generateToken = (user, sid = null) =>
@@ -250,6 +256,7 @@ router.get('/me', async (req, res) => {
           const dev = await createOrUpdateDeviceSession(req, u);
           sid = dev.sessionId;
         }
+        clearLogoutStateCookies(res);
         return res.json({ user: u, token: bearerToken, sessionId: sid });
       }
     } catch {}
@@ -274,7 +281,6 @@ router.get('/me', async (req, res) => {
       if (!ssoUser && ssoJwt) {
         const verifyUrls = [
           process.env.SSO_VERIFY_URL,
-          'http://assistant-backend.assistant-production.svc.cluster.local/api/auth/sso/verify',
           'http://assistant-backend.assistant-production.svc.cluster.local:3000/api/auth/sso/verify',
           'https://assistant.virtuenet.space/api/auth/sso/verify',
         ].filter(Boolean);
@@ -351,18 +357,21 @@ router.get('/me', async (req, res) => {
         }
         if (email) {
           clearLogoutStateCookies(res);
-          if (explicitSsoToken) {
+          const ssoCookieToken = explicitSsoToken || ssoJwt;
+          if (ssoCookieToken) {
             const isSecure =
               req.secure ||
               req.headers['x-forwarded-proto'] === 'https' ||
               process.env.NODE_ENV === 'production';
-            res.cookie('virtuenet_sso_jwt', explicitSsoToken, {
+            const cookieOpts = {
               path: '/',
               maxAge: 30 * 24 * 60 * 60 * 1000,
               sameSite: 'lax',
               secure: Boolean(isSecure),
               httpOnly: false,
-            });
+            };
+            res.cookie('virtuenet_sso_jwt', ssoCookieToken, cookieOpts);
+            res.cookie('virtuenet_sso_jwt', ssoCookieToken, { ...cookieOpts, domain: '.virtuenet.space' });
           }
           let userResult = await pool.query(
             `SELECT * FROM users
