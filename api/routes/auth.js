@@ -35,6 +35,17 @@ const requireSuperAdmin = (req, res, next) =>
 const CLOSED_LOOP_MSG =
   'Mode Closed-Loop aktif: login password ditutup demi keamanan. Silakan masuk dengan akun Lark Prasetia atau gunakan Break-Glass 2FA (Ctrl+Shift+M).';
 
+const SSO_BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+function clearLogoutStateCookies(res) {
+  res.clearCookie('vl_logged_out', { path: '/' });
+  res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
+  res.clearCookie('virtuenet_sso_logged_out', { path: '/' });
+  res.clearCookie('virtuenet_sso_logged_out', { path: '/', domain: '.virtuenet.space' });
+  res.clearCookie('vl_lark_pending', { path: '/' });
+}
+
 const generateToken = (user, sid = null) =>
   jwt.sign(
     {
@@ -102,8 +113,7 @@ router.post('/login', async (req, res) => {
     });
 
     const token = generateToken(user, dev.sessionId);
-    res.clearCookie('vl_logged_out', { path: '/' });
-    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
+    clearLogoutStateCookies(res);
     res.json({
       user: {
         id: user.id,
@@ -169,8 +179,7 @@ router.post('/register', async (req, res) => {
     const { sendWelcomeEmail } = require('../services/emailService');
     sendWelcomeEmail(user.email, user.name).catch(() => {});
 
-    res.clearCookie('vl_logged_out', { path: '/' });
-    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
+    clearLogoutStateCookies(res);
     res.status(201).json({ user, token, sessionId: dev.sessionId });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Email already registered' });
@@ -210,13 +219,17 @@ router.get('/me', async (req, res) => {
   const bearerToken = authHeader && authHeader.split(' ')[1];
   const explicitSsoToken = req.query.sso_token || req.query.token;
   const larkPending = req.query.lark_pending === '1' || cookies['vl_lark_pending'] === '1';
-  const isLoggedOut = cookies['vl_logged_out'] === '1' && !explicitSsoToken && !larkPending;
+  const ssoLoggedOut = cookies['virtuenet_sso_logged_out'] === '1' && !explicitSsoToken && !larkPending;
+  const isLoggedOut = ssoLoggedOut || (
+    cookies['vl_logged_out'] === '1' &&
+    !explicitSsoToken &&
+    !larkPending &&
+    !cookies['virtuenet_sso_jwt']
+  );
   const ssoJwt = explicitSsoToken || (!isLoggedOut ? (cookies['virtuenet_sso_jwt'] || cookies['token']) : null);
 
   if (explicitSsoToken || larkPending) {
-    res.clearCookie('vl_logged_out', { path: '/' });
-    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
-    res.clearCookie('vl_lark_pending', { path: '/' });
+    clearLogoutStateCookies(res);
   }
 
   // 1. Try existing local Bearer token
@@ -259,49 +272,105 @@ router.get('/me', async (req, res) => {
       }
 
       if (!ssoUser && ssoJwt) {
-        const ssoVerifyUrl = process.env.SSO_VERIFY_URL || 'https://assistant.virtuenet.space/api/auth/sso/verify';
-        try {
-          const verifyRes = await fetch(`${ssoVerifyUrl}?token=${encodeURIComponent(ssoJwt)}`, {
-            headers: { Accept: 'application/json', Authorization: `Bearer ${ssoJwt}` },
-            signal: AbortSignal.timeout(4000),
-          });
-          if (verifyRes.ok) {
-            const data = await verifyRes.json();
-            if (data?.valid && data?.user) {
-              ssoUser = data.user;
-            } else if (data?.email || data?.open_id) {
-              ssoUser = data;
+        const verifyUrls = [
+          process.env.SSO_VERIFY_URL,
+          'http://assistant-backend.assistant-production.svc.cluster.local/api/auth/sso/verify',
+          'http://assistant-backend.assistant-production.svc.cluster.local:3000/api/auth/sso/verify',
+          'https://assistant.virtuenet.space/api/auth/sso/verify',
+        ].filter(Boolean);
+
+        for (const baseVerifyUrl of verifyUrls) {
+          try {
+            const sep = baseVerifyUrl.includes('?') ? '&' : '?';
+            const verifyRes = await fetch(`${baseVerifyUrl}${sep}token=${encodeURIComponent(ssoJwt)}`, {
+              headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${ssoJwt}`,
+                'User-Agent': SSO_BROWSER_UA,
+              },
+              signal: AbortSignal.timeout(3000),
+            });
+            if (verifyRes.ok) {
+              const data = await verifyRes.json();
+              if (data?.valid && data?.user) {
+                ssoUser = data.user;
+                break;
+              } else if (data?.email || data?.open_id || data?.openId) {
+                ssoUser = data;
+                break;
+              }
             }
+          } catch (verifyErr) {
+            console.warn(`SSO verify unreachable (${baseVerifyUrl}):`, verifyErr.message);
           }
-        } catch (verifyErr) {
-          console.warn('SSO verify endpoint unreachable, attempting JWT decode fallback:', verifyErr.message);
         }
       }
 
       if (!ssoUser && ssoJwt) {
         const decodedSso = jwt.decode(ssoJwt);
         const notExpired = !decodedSso?.exp || decodedSso.exp * 1000 > Date.now();
-        if (decodedSso && notExpired && (decodedSso.email || decodedSso.open_id)) {
-          ssoUser = decodedSso;
+        const isHintOnly = decodedSso?.token_type === 'idp_hint';
+        const nestedUser = decodedSso?.user && typeof decodedSso.user === 'object' ? decodedSso.user : null;
+        const candidateEmail = decodedSso?.email || nestedUser?.email;
+        const candidateOpenId =
+          decodedSso?.open_id || decodedSso?.openId || nestedUser?.open_id || nestedUser?.openId;
+        if (decodedSso && notExpired && !isHintOnly && (candidateEmail || candidateOpenId)) {
+          ssoUser = {
+            ...(nestedUser || {}),
+            ...decodedSso,
+            email: candidateEmail || '',
+            open_id: candidateOpenId || '',
+          };
         }
       }
 
       if (ssoUser) {
-        let email = (ssoUser.email || '').toLowerCase().trim();
-        if (!email && ssoUser.open_id === 'ou_5978bc3e371ea20b33ddf24dc99acc95') {
+        const openId = String(ssoUser.open_id || ssoUser.openId || '').trim() || null;
+        let email = String(ssoUser.email || '').toLowerCase().trim();
+        if (!email && openId === 'ou_5978bc3e371ea20b33ddf24dc99acc95') {
           email = 'ubai@prasetia.co.id';
         }
-        if (!email && ssoUser.open_id) {
-          email = `${ssoUser.open_id}@lark.vibelearn.id`;
+        if (!email && openId === 'ou_dbd8a60b19b568755414d83976ad4ab1') {
+          email = 'arifia.mulia@prasetia.co.id';
         }
-        const hasValidLarkOpenId = Boolean(ssoUser.open_id && String(ssoUser.open_id).startsWith('ou_'));
+        if (!email && openId) {
+          const openIdLookup = await pool.query(
+            'SELECT email FROM users WHERE lark_open_id = $1 LIMIT 1',
+            [openId]
+          );
+          if (openIdLookup.rows[0]?.email) {
+            email = String(openIdLookup.rows[0].email).toLowerCase().trim();
+          }
+        }
+        if (!email && openId) {
+          email = `${openId}@lark.vibelearn.id`;
+        }
+        const hasValidLarkOpenId = Boolean(openId && openId.startsWith('ou_'));
         if (email && (await getAccessMode()) === 'closed' && !hasValidLarkOpenId && !isAllowedClosedLoopEmail(email)) {
           return res.status(403).json({ error: CLOSED_LOOP_MSG, code: 'CLOSED_LOOP' });
         }
         if (email) {
-          res.clearCookie('vl_logged_out', { path: '/' });
-          res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
-          let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          clearLogoutStateCookies(res);
+          if (explicitSsoToken) {
+            const isSecure =
+              req.secure ||
+              req.headers['x-forwarded-proto'] === 'https' ||
+              process.env.NODE_ENV === 'production';
+            res.cookie('virtuenet_sso_jwt', explicitSsoToken, {
+              path: '/',
+              maxAge: 30 * 24 * 60 * 60 * 1000,
+              sameSite: 'lax',
+              secure: Boolean(isSecure),
+              httpOnly: false,
+            });
+          }
+          let userResult = await pool.query(
+            `SELECT * FROM users
+             WHERE LOWER(email) = $1 OR ($2::varchar IS NOT NULL AND lark_open_id = $2)
+             ORDER BY CASE WHEN LOWER(email) = $1 THEN 0 ELSE 1 END, id ASC
+             LIMIT 1`,
+            [email, openId]
+          );
           let user;
           const isSuper =
             email === 'ubai@prasetia.co.id' ||
@@ -316,7 +385,7 @@ router.get('/me', async (req, res) => {
               `INSERT INTO users (name, email, password, role, plan, avatar, lark_open_id)
                VALUES ($1, $2, $3, $4, 'pro', $5, $6)
                RETURNING *`,
-              [ssoUser.name || 'Lark User', email, hashedPassword, targetRole, ssoUser.avatar_url || null, ssoUser.open_id || null]
+              [ssoUser.name || 'Lark User', email, hashedPassword, targetRole, ssoUser.avatar_url || null, openId]
             );
             user = insertResult.rows[0];
             await pool
@@ -340,8 +409,8 @@ router.get('/me', async (req, res) => {
               await pool.query('UPDATE users SET avatar = $1 WHERE id = $2', [ssoUser.avatar_url, user.id]).catch(() => {});
               user.avatar = ssoUser.avatar_url;
             }
-            if (ssoUser.open_id && user.lark_open_id !== ssoUser.open_id) {
-              await pool.query('UPDATE users SET lark_open_id = $1 WHERE id = $2', [ssoUser.open_id, user.id]).catch(() => {});
+            if (openId && user.lark_open_id !== openId) {
+              await pool.query('UPDATE users SET lark_open_id = $1 WHERE id = $2', [openId, user.id]).catch(() => {});
             }
           }
 
@@ -413,7 +482,8 @@ const handleLogout = async (req, res) => {
   res.clearCookie('virtuenet_sso_jwt', { path: '/', domain: '.virtuenet.space' });
   res.clearCookie('token', { path: '/' });
   res.clearCookie('token', { path: '/', domain: '.virtuenet.space' });
-  res.cookie('vl_logged_out', '1', { path: '/', maxAge: 30 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
+  res.clearCookie('vl_logged_out', { path: '/' });
+  res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
   return res.json({ message: 'Logged out successfully' });
 };
 router.post('/logout', handleLogout);
@@ -454,8 +524,7 @@ router.post('/break-glass/login', async (req, res) => {
       ip,
     });
 
-    res.clearCookie('vl_logged_out', { path: '/' });
-    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
+    clearLogoutStateCookies(res);
     return res.json({
       success: true,
       method: result.method,
@@ -785,8 +854,7 @@ router.post('/lark/callback', async (req, res) => {
     });
 
     const token = generateToken(user, dev.sessionId);
-    res.clearCookie('vl_logged_out', { path: '/' });
-    res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space' });
+    clearLogoutStateCookies(res);
     res.json({
       user: {
         id: user.id,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, clearAuthLogoutCookies } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
 import {
   Eye, EyeOff, ArrowRight, BookOpen, FlaskConical, Trophy,
@@ -178,13 +178,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       localStorage.removeItem('vl_explicit_logout');
+      clearAuthLogoutCookies();
       localStorage.setItem('vl_lark_pending', '1');
       if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('vl_lark_pending', '1');
-      document.cookie = 'vl_logged_out=; Max-Age=0; path=/;';
-      document.cookie = 'vl_logged_out=; Max-Age=0; path=/; domain=.virtuenet.space;';
       document.cookie = 'vl_lark_pending=1; Max-Age=600; path=/; SameSite=Lax';
       const returnTo = `${window.location.origin}/dashboard`;
-      window.location.href = `https://assistant.virtuenet.space/api/auth/lark/login?return_to=${encodeURIComponent(returnTo)}`;
+      window.location.href = `https://assistant.virtuenet.space/api/auth/lark/login?interactive=1&return_to=${encodeURIComponent(returnTo)}`;
     } catch (err) {
       showError(err.message);
       setLoading(false);

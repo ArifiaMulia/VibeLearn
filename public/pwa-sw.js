@@ -3,7 +3,7 @@
  * Precaches app shell & opaque /icons/* gracefully so Chrome WebAPK & iOS standalone install never fail.
  */
 
-const CACHE_NAME = 'promptara-shell-v3.6.0-r4';
+const CACHE_NAME = 'promptara-shell-v3.7.0';
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [
@@ -75,13 +75,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Never cache auth or other API calls
+  // Never cache auth, SSO redirects, or other API calls
   if (
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/.well-known/') ||
+    url.pathname.startsWith('/_sso_') ||
+    url.pathname === '/logout' ||
+    url.pathname === '/auth/logout' ||
+    url.pathname === '/lark-callback' ||
+    url.searchParams.has('sso_token') ||
     url.searchParams.has('token') ||
     url.searchParams.has('session_token') ||
-    url.searchParams.has('code')
+    url.searchParams.has('code') ||
+    url.searchParams.has('state') ||
+    url.searchParams.has('logged_out') ||
+    url.searchParams.has('prompt')
   ) {
     return;
   }
@@ -91,7 +99,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            networkResponse.type === 'basic' &&
+            !networkResponse.redirected
+          ) {
             const clone = networkResponse.clone();
             caches.open(CACHE_NAME).then((c) => c.put('/index.html', clone)).catch(() => {});
           }

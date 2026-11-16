@@ -241,6 +241,46 @@ jobs:
             const jwt = require('jsonwebtoken');
             const { jwtSecret } = require('/app/config/jwtSecret');
             const pool = require('/app/db');
+
+            // 1. Verify /api/auth/login endpoint reachability
+            const loginProbeRes = await fetch(base + '/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: 'admin@vibelearn.id', password: 'ci-smoke-probe' })
+            });
+            const loginProbeBody = await loginProbeRes.json();
+            if (![401, 403].includes(loginProbeRes.status) && !loginProbeRes.ok) {
+              throw new Error('POST /api/auth/login unexpected status ' + loginProbeRes.status);
+            }
+            console.log('✅ POST /api/auth/login reachable:', loginProbeRes.status, loginProbeBody.code || loginProbeBody.error || 'ok');
+
+            // 2. Verify internal connectivity to assistant-backend SSO verify service
+            for (const ssoUrl of [
+              'http://assistant-backend.assistant-production.svc.cluster.local/api/auth/sso/verify',
+              'http://assistant-backend.assistant-production.svc.cluster.local:3000/api/auth/sso/verify'
+            ]) {
+              try {
+                const ssoPing = await fetch(ssoUrl, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(3000) });
+                console.log('✅ Assistant internal SSO probe:', ssoUrl, '->', ssoPing.status);
+              } catch (e) {
+                console.log('ℹ️ Assistant internal SSO probe skipped/unreachable:', ssoUrl, e.message);
+              }
+            }
+
+            // 3. Verify GET /api/auth/me?sso_token=<test_jwt> SSO token exchange & cookie issuance
+            const testSsoToken = jwt.sign(
+              { open_id: 'ou_dbd8a60b19b568755414d83976ad4ab1', name: 'Arifia Mulia', role: 'administrator' },
+              jwtSecret,
+              { expiresIn: '5m' }
+            );
+            const ssoRes = await fetch(base + '/api/auth/me?sso_token=' + encodeURIComponent(testSsoToken));
+            const ssoBody = await ssoRes.json();
+            const ssoCookie = ssoRes.headers.get('set-cookie') || '';
+            if (!ssoRes.ok || !ssoBody?.user?.email || !ssoBody?.token || !ssoCookie.includes('virtuenet_sso_jwt=')) {
+              throw new Error('SSO /api/auth/me?sso_token failed: ' + ssoRes.status + ' body=' + JSON.stringify(ssoBody));
+            }
+            console.log('✅ SSO Token Exchange /api/auth/me?sso_token=...:', ssoBody.user.email, 'role=' + ssoBody.user.role, 'cookie_issued=true');
+
             const first = await pool.query('SELECT id FROM users ORDER BY id LIMIT 1');
             const loginData = {
               user: { email: 'admin@vibelearn.id' },

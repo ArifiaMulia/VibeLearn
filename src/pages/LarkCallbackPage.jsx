@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, clearAuthLogoutCookies } from '../contexts/AuthContext';
 import { useAlert } from '../contexts/AlertContext';
 import { Bird } from 'lucide-react';
 
@@ -18,7 +18,9 @@ export default function LarkCallbackPage() {
     if (ssoToken) {
       loginAttempted.current = true;
       localStorage.removeItem('vl_explicit_logout');
+      clearAuthLogoutCookies();
       localStorage.setItem('vl_lark_pending', '1');
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('vl_lark_pending', '1');
       window.location.replace(`/dashboard?token=${encodeURIComponent(ssoToken)}`);
       return;
     }

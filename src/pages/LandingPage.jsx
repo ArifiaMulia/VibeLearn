@@ -16,6 +16,17 @@ export default function LandingPage() {
   const [apiPlans, setApiPlans] = useState([]);
   const [currency, setCurrency] = useState('IDR');
 
+  const hasPendingSsoToken =
+    typeof window !== 'undefined' &&
+    (() => {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        return Boolean(sp.get('sso_token') || sp.get('token'));
+      } catch {
+        return false;
+      }
+    })();
+
   // Direct post-login & closed-loop routing:
   // 1. If the user is already authenticated, go straight into the app (/dashboard).
   // 2. If the app is in Closed-Loop mode and unauthenticated, go straight to /login (no second login/marketing page).
@@ -24,10 +35,10 @@ export default function LandingPage() {
       navigate('/dashboard', { replace: true });
       return;
     }
-    if (!authLoading && branding.access_mode === 'closed') {
+    if (!authLoading && !hasPendingSsoToken && branding.access_mode === 'closed') {
       navigate('/login', { replace: true });
     }
-  }, [user, authLoading, branding.access_mode, navigate]);
+  }, [user, authLoading, hasPendingSsoToken, branding.access_mode, navigate]);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || '/api'}/subscriptions/plans`)
@@ -74,6 +85,17 @@ export default function LandingPage() {
     { value: '5+', label: 'Courses' }, { value: '20+', label: 'Labs' },
     { value: '2', label: 'Languages' }, { value: '∞', label: 'Possibilities' },
   ];
+
+  if (authLoading && hasPendingSsoToken) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-base)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="animate-spin" style={{ width: 40, height: 40, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', margin: '0 auto 1rem' }} />
+          <p style={{ color: 'var(--text-muted)' }}>Menyinkronkan sesi Lark SSO...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background:'var(--bg-base)', minHeight:'100vh', color:'var(--text-primary)', fontFamily:'var(--font-sans, system-ui)' }}>

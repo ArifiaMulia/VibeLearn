@@ -7,6 +7,58 @@ export const ROLES = { SUPER_ADMIN: 'super_admin', MASTER: 'master', PARTICIPANT
 const API = import.meta.env.VITE_API_URL || '/api';
 const DEFAULT_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes default
 
+export function clearAuthLogoutCookies() {
+  if (typeof document === 'undefined') return;
+  const expired = 'Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;';
+  for (const name of ['vl_logged_out', 'virtuenet_sso_logged_out', 'vl_lark_pending']) {
+    document.cookie = `${name}=; ${expired}`;
+    document.cookie = `${name}=; ${expired} domain=.virtuenet.space;`;
+  }
+}
+
+function getCookieValue(name) {
+  if (typeof document === 'undefined') return '';
+  const prefix = `${name}=`;
+  for (const part of document.cookie.split(';')) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(prefix)) {
+      try {
+        return decodeURIComponent(trimmed.slice(prefix.length));
+      } catch {
+        return trimmed.slice(prefix.length);
+      }
+    }
+  }
+  return '';
+}
+
+function clearLocalAuthStorage() {
+  try {
+    const KEEP = new Set(['vl_theme', 'vl_lang']);
+    Object.keys(localStorage).forEach((k) => { if (k.startsWith('vl_') && !KEEP.has(k)) localStorage.removeItem(k); });
+    ['token', 'jwt', 'auth_token', 'user'].forEach((k) => localStorage.removeItem(k));
+  } catch { /* noop */ }
+}
+
+function stripAuthQueryParamsFromUrl() {
+  if (typeof window === 'undefined' || !window.history?.replaceState) return;
+  try {
+    const currentUrl = new URL(window.location.href);
+    let changed = false;
+    for (const key of ['sso_token', 'token', 'session_token']) {
+      if (currentUrl.searchParams.has(key)) {
+        currentUrl.searchParams.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) {
+      const cleanSearch = currentUrl.searchParams.toString();
+      const cleanUrl = `${currentUrl.pathname}${cleanSearch ? `?${cleanSearch}` : ''}${currentUrl.hash || ''}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  } catch { /* noop */ }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('vl_token'));
@@ -15,6 +67,8 @@ export function AuthProvider({ children }) {
   const [sessionIdleLabel, setSessionIdleLabel] = useState('30m');
   const lastActiveRef = useRef(Date.now());
   const idleTimeoutRef = useRef(DEFAULT_IDLE_TIMEOUT_MS);
+  const verifiedTokenRef = useRef(null);
+  const skipNextNullFetchRef = useRef(false);
 
   const clearSsoCookieClientSide = () => {
     if (typeof document === 'undefined') return;
@@ -50,16 +104,15 @@ export function AuthProvider({ children }) {
   const logout = useCallback((reason = 'manual', opts = {}) => {
     const oldToken = localStorage.getItem('vl_token');
     try {
-      fetch(`${API}/auth/logout`, {
+      fetch(`${API}/auth/session-clear`, {
         method: 'POST', credentials: 'include', keepalive: true,
         headers: oldToken ? { Authorization: `Bearer ${oldToken}` } : {},
       }).catch(() => {});
     } catch { /* noop */ }
 
+    clearLocalAuthStorage();
+    verifiedTokenRef.current = null;
     try {
-      const KEEP = new Set(['vl_theme', 'vl_lang']);
-      Object.keys(localStorage).forEach((k) => { if (k.startsWith('vl_') && !KEEP.has(k)) localStorage.removeItem(k); });
-      ['token', 'jwt', 'auth_token', 'user'].forEach((k) => localStorage.removeItem(k));
       localStorage.setItem('vl_explicit_logout', '1');
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.clear();
@@ -77,73 +130,187 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlSsoToken = params ? (params.get('sso_token') || params.get('token')) : null;
+    const larkPending = localStorage.getItem('vl_lark_pending') === '1' ||
+      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vl_lark_pending') === '1');
+
+    if (urlSsoToken || larkPending) {
+      localStorage.removeItem('vl_explicit_logout');
+      clearAuthLogoutCookies();
+    }
+
+    const persistSession = (data) => {
+      const now = Date.now();
+      localStorage.removeItem('vl_explicit_logout');
+      localStorage.removeItem('vl_lark_pending');
+      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('vl_lark_pending');
+      clearAuthLogoutCookies();
+      localStorage.setItem('vl_last_active', String(now));
+      lastActiveRef.current = now;
+      localStorage.setItem('vl_token', data.token);
+      localStorage.setItem('vl_user', JSON.stringify(data.user));
+      verifiedTokenRef.current = data.token;
+      stripAuthQueryParamsFromUrl();
+      setToken(data.token);
+      setUser(data.user);
+    };
+
+    // 1. Prioritize fresh SSO token in URL even if an older vl_token exists in localStorage
+    if (urlSsoToken) {
+      const now = Date.now();
+      localStorage.setItem('vl_last_active', String(now));
+      lastActiveRef.current = now;
+      setLoading(true);
+      const qs = new URLSearchParams({ sso_token: urlSsoToken, lark_pending: '1' });
+      fetch(`${API}/auth/me?${qs.toString()}`, { credentials: 'include' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled) return;
+          if (data?.user && data?.token) {
+            persistSession(data);
+          } else {
+            stripAuthQueryParamsFromUrl();
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => { cancelled = true; };
+    }
+
+    // 2. Existing local token in state / localStorage
     if (token) {
-      const savedLastActive = Number(localStorage.getItem('vl_last_active') || 0);
-      if (savedLastActive > 0 && Date.now() - savedLastActive >= idleTimeoutRef.current) {
-        logout('idle');
+      if (verifiedTokenRef.current && verifiedTokenRef.current === token) {
+        const saved = localStorage.getItem('vl_user');
+        if (saved) { try { setUser(JSON.parse(saved)); } catch {} }
         setLoading(false);
         return;
       }
+
+      const savedLastActive = Number(localStorage.getItem('vl_last_active') || 0);
+      const isIdleStale = savedLastActive > 0 && Date.now() - savedLastActive >= idleTimeoutRef.current;
+
+      if (isIdleStale) {
+        // Clear stale local token & last_active without calling destructive /logout; fall through to /api/auth/me
+        clearLocalAuthStorage();
+        lastActiveRef.current = Date.now();
+        verifiedTokenRef.current = null;
+        setLoading(true);
+        fetch(`${API}/auth/me`, { credentials: 'include' })
+          .then((res) => (res.ok ? res.json() : { _unauth: res.status === 401 || res.status === 403 }))
+          .then((data) => {
+            if (cancelled) return;
+            if (data?.user && data?.token) {
+              persistSession(data);
+            } else {
+              skipNextNullFetchRef.current = true;
+              setToken(null);
+              setUser(null);
+            }
+          })
+          .catch(() => {
+            if (!cancelled) {
+              skipNextNullFetchRef.current = true;
+              setToken(null);
+              setUser(null);
+            }
+          })
+          .finally(() => {
+            if (!cancelled) setLoading(false);
+          });
+        return () => { cancelled = true; };
+      }
+
       const now = Date.now();
       lastActiveRef.current = savedLastActive > 0 ? savedLastActive : now;
       if (!savedLastActive) {
         localStorage.setItem('vl_last_active', String(now));
       }
+      let hydratedFromCache = false;
       const saved = localStorage.getItem('vl_user');
-      if (saved) { try { setUser(JSON.parse(saved)); } catch {} }
-      setLoading(false);
-    } else {
-      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const ssoToken = params ? (params.get('sso_token') || params.get('token')) : null;
-      const larkPending = localStorage.getItem('vl_lark_pending') === '1' || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vl_lark_pending') === '1');
-      if (ssoToken || larkPending) {
-        localStorage.removeItem('vl_explicit_logout');
-        if (typeof document !== 'undefined') {
-          document.cookie = 'vl_logged_out=; Max-Age=0; path=/;';
-          document.cookie = 'vl_logged_out=; Max-Age=0; path=/; domain=.virtuenet.space;';
-        }
-      }
-      const explicitLogout = localStorage.getItem('vl_explicit_logout') === '1';
-
-      if (explicitLogout && !ssoToken && !larkPending) {
-        setLoading(false);
-        return;
+      if (saved) {
+        try {
+          setUser(JSON.parse(saved));
+          hydratedFromCache = true;
+          setLoading(false);
+        } catch {}
       }
 
-      const qs = new URLSearchParams();
-      if (ssoToken) qs.set('sso_token', ssoToken);
-      if (larkPending) qs.set('lark_pending', '1');
-      const ssoUrl = qs.toString() ? `${API}/auth/me?${qs.toString()}` : `${API}/auth/me`;
-      fetch(ssoUrl, { credentials: 'include' })
-        .then((res) => res.ok ? res.json() : null)
+      // Verify stored token in background (and seamlessly refresh from SSO cookie if local JWT expired)
+      fetch(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+      })
+        .then(async (res) => {
+          if (res.ok) return res.json();
+          if (res.status === 401 || res.status === 403) return { _unauth: true };
+          return null;
+        })
         .then((data) => {
-          if (data && data.user && data.token) {
-            const now = Date.now();
-            localStorage.removeItem('vl_explicit_logout');
-            localStorage.removeItem('vl_lark_pending');
-            if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('vl_lark_pending');
-            localStorage.setItem('vl_last_active', String(now));
-            lastActiveRef.current = now;
-            localStorage.setItem('vl_token', data.token);
-            localStorage.setItem('vl_user', JSON.stringify(data.user));
-            setToken(data.token);
-            setUser(data.user);
-            if ((ssoToken || larkPending) && window.history?.replaceState) {
-              const cleanUrl = window.location.pathname === '/' || window.location.pathname === '/login'
-                ? '/dashboard'
-                : window.location.pathname;
-              window.history.replaceState({}, document.title, cleanUrl);
-            }
+          if (cancelled) return;
+          if (data?.user && data?.token) {
+            persistSession(data);
+          } else if (data?._unauth) {
+            clearLocalAuthStorage();
+            verifiedTokenRef.current = null;
+            skipNextNullFetchRef.current = true;
+            setToken(null);
+            setUser(null);
           }
         })
-        .catch(() => {})
-        .finally(() => setLoading(false));
+        .catch(() => {
+          if (!cancelled && !hydratedFromCache) setLoading(false);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => { cancelled = true; };
     }
-  }, [token, logout]);
+
+    // 3. No local token — try cookie / Edge SSO unless user explicitly logged out and has no active SSO cookie
+    if (skipNextNullFetchRef.current) {
+      skipNextNullFetchRef.current = false;
+      setLoading(false);
+      return;
+    }
+
+    let explicitLogout = localStorage.getItem('vl_explicit_logout') === '1';
+    const hasActiveSsoCookie = Boolean(getCookieValue('virtuenet_sso_jwt'));
+    const hasLoggedOutSsoCookie = getCookieValue('virtuenet_sso_logged_out') === '1';
+    if (explicitLogout && hasActiveSsoCookie && !hasLoggedOutSsoCookie) {
+      localStorage.removeItem('vl_explicit_logout');
+      explicitLogout = false;
+    }
+
+    if (explicitLogout && !larkPending) {
+      setLoading(false);
+      return;
+    }
+
+    const qs = new URLSearchParams();
+    if (larkPending) qs.set('lark_pending', '1');
+    const ssoUrl = qs.toString() ? `${API}/auth/me?${qs.toString()}` : `${API}/auth/me`;
+    fetch(ssoUrl, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.user && data?.token) {
+          persistSession(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [token]);
 
   // Track user activity & enforce dynamic idle auto-logout (Session Governance)
   useEffect(() => {
-    if (!token) return;
+    if (!token || loading) return;
 
     const recordActivity = () => {
       const now = Date.now();
@@ -184,7 +351,7 @@ export function AuthProvider({ children }) {
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
       clearInterval(idleCheckTimer);
     };
-  }, [token, logout, idleTimeoutMs]);
+  }, [token, loading, logout, idleTimeoutMs]);
 
   // Heartbeat every 3 min — only send if user was actually active in the last 3 minutes
   useEffect(() => {
@@ -203,10 +370,14 @@ export function AuthProvider({ children }) {
   const applySessionFromAuthResponse = (data) => {
     const now = Date.now();
     localStorage.removeItem('vl_explicit_logout');
+    localStorage.removeItem('vl_lark_pending');
+    if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('vl_lark_pending');
+    clearAuthLogoutCookies();
     localStorage.setItem('vl_last_active', String(now));
     lastActiveRef.current = now;
     localStorage.setItem('vl_token', data.token);
     localStorage.setItem('vl_user', JSON.stringify(data.user));
+    verifiedTokenRef.current = data.token;
     setToken(data.token);
     setUser(data.user);
     return data.user;
