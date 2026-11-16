@@ -39,17 +39,13 @@ const SSO_BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 function clearLogoutStateCookies(res) {
-  const opts = [
-    { path: '/' },
-    { path: '/', domain: '.virtuenet.space' },
-    { path: '/', secure: true, sameSite: 'lax' },
-    { path: '/', domain: '.virtuenet.space', secure: true, sameSite: 'lax' },
-  ];
-  for (const name of ['vl_logged_out', 'virtuenet_sso_logged_out', 'vl_lark_pending']) {
-    for (const opt of opts) {
-      res.clearCookie(name, opt);
-    }
-  }
+  if (res.locals?._logoutCookiesCleared) return;
+  if (res.locals) res.locals._logoutCookiesCleared = true;
+  res.clearCookie('vl_logged_out', { path: '/', sameSite: 'lax' });
+  res.clearCookie('vl_logged_out', { path: '/', domain: '.virtuenet.space', sameSite: 'lax' });
+  res.clearCookie('virtuenet_sso_logged_out', { path: '/', sameSite: 'lax' });
+  res.clearCookie('virtuenet_sso_logged_out', { path: '/', domain: '.virtuenet.space', sameSite: 'lax' });
+  res.clearCookie('vl_lark_pending', { path: '/', sameSite: 'lax' });
 }
 
 const generateToken = (user, sid = null) =>

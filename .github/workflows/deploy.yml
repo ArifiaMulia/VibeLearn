@@ -278,10 +278,12 @@ jobs:
             const t0 = Date.now();
             const ssoRes = await fetch(base + '/api/auth/me?sso_token=' + encodeURIComponent(testSsoToken));
             const ssoLatencyMs = Date.now() - t0;
-            const ssoBody = await ssoRes.json();
+            const ssoRaw = await ssoRes.text();
+            let ssoBody = null;
+            try { ssoBody = JSON.parse(ssoRaw); } catch {}
             const ssoCookie = ssoRes.headers.get('set-cookie') || '';
             if (!ssoRes.ok || !ssoBody?.user?.email || !ssoBody?.token || !ssoCookie.includes('virtuenet_sso_jwt=')) {
-              throw new Error('SSO /api/auth/me?sso_token failed: ' + ssoRes.status + ' body=' + JSON.stringify(ssoBody));
+              throw new Error('SSO /api/auth/me?sso_token failed: ' + ssoRes.status + ' body=' + ssoRaw.slice(0, 400));
             }
             console.log('✅ SSO Token Exchange /api/auth/me?sso_token=...:', ssoBody.user.email, 'role=' + ssoBody.user.role, 'cookie_issued=true', 'latencyMs=' + ssoLatencyMs);
 
