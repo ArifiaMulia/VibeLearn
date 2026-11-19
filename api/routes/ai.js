@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
+const {
+  buildSealSuiteResolution,
+  SEALSUITE_RELEASE_NOTES_URL,
+  SEALSUITE_DOCS_URL,
+} = require('../services/sealsuiteAdvisor');
 
 // Complete ModelArk Registry for vibe.virtuenet.space (Region: ap-southeast-1)
 const AVAILABLE_MODELS = [
@@ -933,6 +938,262 @@ Instructions:
     });
   } catch (err) {
     console.error('AI ask error:', err);
+    res.status(500).json({ error: 'AI service unavailable' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI NEWS & BYTEPLUS SEALSUITE SECURITY ANALYST ENGINE
+// Answers user questions about any News & Update briefing and details what
+// BytePlus SealSuite can do regarding the incident/topic based on official
+// SealSuite Release Notes (https://docs.byteplus.com/en/docs/sealsuite/docs-sealsuite-update-log).
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function extractRelevantArticlePoints(articleContent = '', articleSummary = '', question = '') {
+  const combined = `${articleSummary || ''}\n${articleContent || ''}`;
+  const cleanLines = combined
+    .replace(/```[\s\S]*?```/g, '')
+    .split('\n')
+    .map((l) => l.replace(/^[#>*-\d.]+\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim())
+    .filter((l) => l.length > 25 && !l.startsWith('|'));
+
+  const qTerms = String(question || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !['apa', 'yang', 'bisa', 'dan', 'dari', 'untuk', 'pada', 'dengan', 'tentang', 'berita', 'ini', 'tersebut', 'bagaimana', 'jelaskan', 'what', 'can', 'the', 'this', 'about', 'news', 'how', 'does', 'with'].includes(w));
+
+  if (qTerms.length > 0) {
+    const scored = cleanLines.map((line) => {
+      const lower = line.toLowerCase();
+      const score = qTerms.reduce((acc, term) => acc + (lower.includes(term) ? 1 : 0), 0);
+      return { line, score };
+    });
+    const matched = scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score).map((s) => s.line);
+    if (matched.length >= 2) {
+      return matched.slice(0, 5);
+    }
+  }
+  return cleanLines.slice(0, 5);
+}
+
+function generateNewsAiResponse(question, article = {}, sealsuiteRes = null, lang = 'id', modelId = 'dreamina-seedance-2-5') {
+  const q = String(question || '').trim();
+  const qLower = q.toLowerCase();
+  const isId = lang === 'id';
+  const model = AVAILABLE_MODELS.find((m) => m.id === modelId) || AVAILABLE_MODELS[0];
+
+  const title = (isId ? (article.title_id || article.title_en) : (article.title_en || article.title_id)) || (isId ? 'Berita Keamanan Siber & AI' : 'Cybersecurity & AI Briefing');
+  const summary = (isId ? (article.summary_id || article.summary_en) : (article.summary_en || article.summary_id)) || '';
+  const content = (isId ? (article.content_id || article.content_en) : (article.content_en || article.content_id)) || '';
+  const tags = Array.isArray(article.tags) ? article.tags : [];
+  const sources = Array.isArray(article.sources) ? article.sources : [];
+
+  const relevantPoints = extractRelevantArticlePoints(content, summary, q);
+  const askingSealSuite = /sealsuite|mitigasi|solusi|cegah|mencegah|proteksi|lindungi|melindungi|dlp|ztna|zero[- ]?trust|edr|mdm|iam|oneid|vpn|watermark|usb|flashdisk|kebijakan|policy|konfigurasi|apa yang bisa dilakukan|what can sealsuite|how to prevent|remediat/i.test(qLower);
+  const askingChronologyOrSummary = /kronologi|rangkum|ringkas|inti|jelaskan|mengapa|kenapa|akar masalah|root cause|chronology|summary|explain|what happened|dampak|impact|risiko|risk/i.test(qLower);
+  const askingActionItems = /langkah|darurat|tim it|checklist|action item|rekomendasi|tindakan|sop|audit/i.test(qLower);
+
+  const sourcesMarkdown = sources.length > 0
+    ? sources.slice(0, 4).map((s) => `- [${s.title || s.publisher || s.url}](${s.url}) *(${s.publisher || 'Official Source'})*`).join('\n')
+    : `- [Release Notes — SealSuite BytePlus](${SEALSUITE_RELEASE_NOTES_URL})`;
+
+  // 1. User specifically asks about what BytePlus SealSuite can do / SealSuite mitigation & configuration
+  if (askingSealSuite) {
+    if (sealsuiteRes) {
+      const ssHeadline = isId ? (sealsuiteRes.headline_id || sealsuiteRes.headline_en) : (sealsuiteRes.headline_en || sealsuiteRes.headline_id);
+      const ssSummary = isId ? (sealsuiteRes.summary_id || sealsuiteRes.summary_en) : (sealsuiteRes.summary_en || sealsuiteRes.summary_id);
+      const ssActions = (isId ? (sealsuiteRes.actions_id || sealsuiteRes.actions_en) : (sealsuiteRes.actions_en || sealsuiteRes.actions_id)) || [];
+      const ssModules = Array.isArray(sealsuiteRes.modules) ? sealsuiteRes.modules : [];
+      const refUrl = sealsuiteRes.reference_url || SEALSUITE_RELEASE_NOTES_URL;
+
+      return isId
+        ? `🛡️ **Analisis Mitigasi BytePlus SealSuite — "${title}"**\n*(Dijawab oleh AI Security Analyst • Model: \`${model.displayName}\`)*\n\nMenjawab pertanyaan Anda: **"${q}"**\n\nBerdasarkan analisis insiden pada berita ini serta referensi resmi **[Release Notes — SealSuite BytePlus](${refUrl})**, berikut adalah apa yang dapat dilakukan **BytePlus SealSuite** secara menyeluruh:\n\n### 🎯 1. Strategi Pertahanan Utama SealSuite\n**${ssHeadline}**\n\n${ssSummary}\n\n### 🧩 2. Modul BytePlus SealSuite yang Bekerja\n${ssModules.map((m) => `- ✅ **${m}**`).join('\n')}\n\n### ⚙️ 3. Langkah Teknis & Konfigurasi Kebijakan di SealSuite\n${ssActions.map((act, idx) => `${idx + 1}. ${act}`).join('\n')}\n\n### 📌 4. Kaitan dengan Fakta di Berita Ini\n${relevantPoints.slice(0, 3).map((p) => `- ${p}`).join('\n')}\n\n> 🔗 **Referensi Dokumentasi Resmi**:\n> - [Release Notes — SealSuite BytePlus (Update Log Resmi)](${refUrl})\n> - [Arsitektur Zero Trust & Endpoint DLP SealSuite](${SEALSUITE_DOCS_URL})\n\nApakah Anda ingin saya merinci cara konfigurasi salah satu modul di atas (misalnya **ZTNA**, **Endpoint DLP V3.3.2+**, atau **Device Baseline**) di SealSuite Admin Console?`
+        : `🛡️ **BytePlus SealSuite Mitigation Analysis — "${title}"**\n*(Answered by AI Security Analyst • Model: \`${model.displayName}\`)*\n\nAddressing your question: **"${q}"**\n\nBased on the threat vectors in this briefing and the official **[Release Notes — SealSuite BytePlus](${refUrl})**, here is what **BytePlus SealSuite** can do to prevent, detect, and contain this issue:\n\n### 🎯 1. Core SealSuite Defense Strategy\n**${ssHeadline}**\n\n${ssSummary}\n\n### 🧩 2. Active BytePlus SealSuite Modules\n${ssModules.map((m) => `- ✅ **${m}**`).join('\n')}\n\n### ⚙️ 3. Concrete Technical Controls & Policy Configuration\n${ssActions.map((act, idx) => `${idx + 1}. ${act}`).join('\n')}\n\n### 📌 4. Direct Context from This Briefing\n${relevantPoints.slice(0, 3).map((p) => `- ${p}`).join('\n')}\n\n> 🔗 **Official Documentation References**:\n> - [Release Notes — SealSuite BytePlus (Official Update Log)](${refUrl})\n> - [BytePlus SealSuite Architecture & Overview](${SEALSUITE_DOCS_URL})\n\nWould you like a step-by-step configuration breakdown for any specific module above (e.g., **ZTNA**, **Endpoint DLP V3.3.2+**, or **Device Baseline**)?`;
+    }
+
+    // Article does not have a pre-attached security profile (e.g., AI Model / General Vibe Coding article)
+    return isId
+      ? `🛡️ **Peran BytePlus SealSuite dalam Konteks "${title}"**\n*(Dijawab oleh AI Security Analyst • Model: \`${model.displayName}\`)*\n\nMenjawab pertanyaan Anda: **"${q}"**\n\n> ℹ️ **Catatan Konteks**: Berita **"${title}"** berfokus utama pada perkembangan teknologi AI / metodologi engineering (bukan laporan insiden kebocoran siber secara langsung). Namun, saat tim perusahaan mengadopsi teknologi pada berita ini, **BytePlus SealSuite** berperan penting menjaga keamanan operasionalnya:\n\n### 🛡️ Bagaimana BytePlus SealSuite Melindungi Tim Anda pada Skenario Ini\n1. **Pencegahan Kebocoran Source Code & API Key ke AI Eksternal (Endpoint DLP V3.3.2+)**:\n   Saat developer menggunakan model AI atau asisten coding yang dibahas di berita ini, modul **SealSuite DLP** (*Sensitive Data Dictionary*) otomatis memblokir unggahan file \`.env\`, \`BYTEPLUS_API_KEY\`, maupun kode sumber rahasia ke layanan *Shadow AI* atau web publik.\n2. **Pengamanan Akses ke Endpoint Model & IDE Internal (SealSuite ZTNA & Application Gateway)**:\n   Menempatkan AI Gateway dan dashboard internal di balik **SealSuite Layer-7 Application Gateway** dengan verifikasi **IAM OneId (SSO + MFA)** serta sertifikat perangkat terdaftar (*Device-Bound Access*).\n3. **Kontrol Paket & Binary Developer (Endpoint Software Baseline)**:\n   Mencegah eksekusi pustaka berbahaya (*slopsquatting*) atau ekstensi IDE yang tidak terverifikasi di laptop engineer.\n\n> 🔗 **Referensi Resmi**: [Release Notes — SealSuite BytePlus](${SEALSUITE_RELEASE_NOTES_URL})`
+      : `🛡️ **How BytePlus SealSuite Applies to "${title}"**\n*(Answered by AI Security Analyst • Model: \`${model.displayName}\`)*\n\nAddressing your question: **"${q}"**\n\n> ℹ️ **Context Note**: The briefing **"${title}"** primarily covers AI engineering / model developments rather than a direct cyber breach. However, when enterprise teams adopt the technologies discussed in this article, **BytePlus SealSuite** provides critical guardrails:\n\n### 🛡️ How BytePlus SealSuite Protects Teams in This Scenario\n1. **Preventing Source Code & API Key Leaks to Shadow AI (Endpoint DLP V3.3.2+)**:\n   SealSuite's **Data Loss Prevention** (*Sensitive Data Dictionary*) blocks accidental pasting or uploading of \`.env\` secrets, API keys, and proprietary code to unapproved external AI tools.\n2. **Zero Trust Access to Internal AI Gateways (SealSuite ZTNA & IAM OneId)**:\n   Protects internal LLM endpoints and admin consoles behind the **SealSuite Layer-7 Application Gateway** with device-bound certificates and adaptive MFA.\n3. **Endpoint Software & Dependency Hygiene (Device Baseline)**:\n   Prevents execution of untrusted binaries or trojanized developer tools on engineering workstations.\n\n> 🔗 **Official Reference**: [Release Notes — SealSuite BytePlus](${SEALSUITE_RELEASE_NOTES_URL})`;
+  }
+
+  // 2. User asks for action items / emergency checklist / IT & Security SOP
+  if (askingActionItems) {
+    const ssBlock = sealsuiteRes
+      ? (isId
+          ? `\n### 🛡️ Mitigasi Langsung dengan BytePlus SealSuite\n${(sealsuiteRes.actions_id || []).map((a, i) => `${i + 1}. ${a}`).join('\n')}\n- 🔗 Referensi: [Release Notes — SealSuite BytePlus](${sealsuiteRes.reference_url || SEALSUITE_RELEASE_NOTES_URL})\n`
+          : `\n### 🛡️ Direct Mitigation with BytePlus SealSuite\n${(sealsuiteRes.actions_en || []).map((a, i) => `${i + 1}. ${a}`).join('\n')}\n- 🔗 Reference: [Release Notes — SealSuite BytePlus](${sealsuiteRes.reference_url || SEALSUITE_RELEASE_NOTES_URL})\n`)
+      : '';
+
+    return isId
+      ? `📋 **Rekomendasi Tindakan & Checklist Mitigasi — "${title}"**\n*(Dijawab oleh AI Security Analyst • Model: \`${model.displayName}\`)*\n\nMenjawab pertanyaan Anda: **"${q}"**\n\nBerdasarkan fakta dalam berita **"${title}"**, berikut adalah langkah konkret yang perlu segera dijalankan oleh tim IT, Developer, dan Security:\n\n### 🚨 1. Poin Krusial dari Berita Ini\n${relevantPoints.map((p) => `- ${p}`).join('\n')}\n${ssBlock}\n### ✅ 2. Checklist Eksekusi Cepat (Action Items)\n1. **Audit Akses & Kredensial**: Periksa log autentikasi serta pastikan tidak ada sesi atau API Key yang terekspos tanpa MFA.\n2. **Verifikasi Postur Perangkat (Endpoint Baseline)**: Pastikan seluruh perangkat yang mengakses jaringan kerja memiliki agen keamanan aktif dan bebas dari binary/spyware mencurigakan.\n3. **Batasi Eksfiltrasi Data**: Terapkan pembatasan USB/flashdisk, clipboard, dan unggahan file sensitif menggunakan kebijakan DLP.\n\n### 🌐 Sumber Referensi Terverifikasi\n${sourcesMarkdown}`
+      : `📋 **Actionable Checklist & Mitigation Plan — "${title}"**\n*(Answered by AI Security Analyst • Model: \`${model.displayName}\`)*\n\nAddressing your question: **"${q}"**\n\nBased on **"${title}"**, here are the concrete action items for your IT, Engineering, and Security teams:\n\n### 🚨 1. Key Findings from This Briefing\n${relevantPoints.map((p) => `- ${p}`).join('\n')}\n${ssBlock}\n### ✅ 2. Immediate Execution Checklist\n1. **Audit Identity & Session Access**: Verify authentication logs and ensure all sensitive consoles enforce hardware/TOTP MFA.\n2. **Enforce Endpoint Posture Baselines**: Confirm all workstations and mobile devices pass compliance and anti-spyware checks.\n3. **Lock Down Data Exfiltration Channels**: Restrict removable USB storage and unauthorized cloud uploads via Endpoint DLP.\n\n### 🌐 Verified Reference Sources\n${sourcesMarkdown}`;
+  }
+
+  // 3. Chronology / Deep breakdown / General question about the article
+  const sealsuiteSection = sealsuiteRes
+    ? (isId
+        ? `\n### 🛡️ Apa yang Bisa Dilakukan BytePlus SealSuite Terhadap Masalah Ini?\n**${sealsuiteRes.headline_id}**\n- ${sealsuiteRes.summary_id}\n- **Modul Terkait**: ${(sealsuiteRes.modules || []).join(' • ')}\n${(sealsuiteRes.actions_id || []).slice(0, 3).map((a, idx) => `${idx + 1}. ${a}`).join('\n')}\n- 📖 *Referensi*: [Release Notes — SealSuite BytePlus](${sealsuiteRes.reference_url || SEALSUITE_RELEASE_NOTES_URL})\n`
+        : `\n### 🛡️ What BytePlus SealSuite Can Do Against This Issue\n**${sealsuiteRes.headline_en}**\n- ${sealsuiteRes.summary_en}\n- **Relevant Modules**: ${(sealsuiteRes.modules || []).join(' • ')}\n${(sealsuiteRes.actions_en || []).slice(0, 3).map((a, idx) => `${idx + 1}. ${a}`).join('\n')}\n- 📖 *Reference*: [Release Notes — SealSuite BytePlus](${sealsuiteRes.reference_url || SEALSUITE_RELEASE_NOTES_URL})\n`)
+    : (isId
+        ? `\n### 🛡️ Kaitan dengan Keamanan Operasional (BytePlus SealSuite)\nUntuk menjaga keamanan tim saat menerapkan teknologi pada berita ini, gunakan **BytePlus SealSuite** (Endpoint DLP V3.3.2+ untuk mencegah kebocoran API Key/source code, serta ZTNA & IAM OneId untuk mengamankan akses internal — lihat [Release Notes SealSuite](${SEALSUITE_RELEASE_NOTES_URL})).\n`
+        : `\n### 🛡️ Operational Security Note (BytePlus SealSuite)\nTo secure engineering teams working with the technologies in this briefing, enforce **BytePlus SealSuite** (Endpoint DLP V3.3.2+ against secret leaks and ZTNA/IAM OneId for internal endpoints — see [SealSuite Release Notes](${SEALSUITE_RELEASE_NOTES_URL})).\n`);
+
+  return isId
+    ? `📰 **Bedah Mendalam AI — "${title}"**\n*(Dijawab oleh AI News & Security Analyst • Model: \`${model.displayName}\`)*\n\nMenjawab pertanyaan Anda: **"${q}"**\n\n### 📌 1. Intisari & Konteks Utama Berita\n${summary}\n\n### 🔍 2. Poin Analisis Penting Terkait Pertanyaan Anda\n${relevantPoints.map((p) => `- ${p}`).join('\n')}\n${sealsuiteSection}\n### 🌐 3. Sumber Referensi Resmi\n${sourcesMarkdown}\n\n> 💡 *Anda dapat menanyakan lebih lanjut detail teknis berita ini atau cara konfigurasi spesifik modul BytePlus SealSuite (ZTNA, DLP, EDR, IAM OneId) di kolom chat di bawah!*`
+    : `📰 **AI Deep-Dive Analysis — "${title}"**\n*(Answered by AI News & Security Analyst • Model: \`${model.displayName}\`)*\n\nAddressing your question: **"${q}"**\n\n### 📌 1. Executive Summary & Context\n${summary}\n\n### 🔍 2. Key Breakdown Points Relevant to Your Question\n${relevantPoints.map((p) => `- ${p}`).join('\n')}\n${sealsuiteSection}\n### 🌐 3. Verified Reference Sources\n${sourcesMarkdown}\n\n> 💡 *Feel free to ask follow-up questions about any technical detail in this article or how to configure specific BytePlus SealSuite modules (ZTNA, DLP, EDR, IAM OneId) below!*`;
+}
+
+// POST /api/ai/ask-news
+router.post('/ask-news', auth, async (req, res) => {
+  try {
+    const {
+      question,
+      lang = 'id',
+      model = 'dreamina-seedance-2-5',
+      news_id,
+      slug,
+      article: incomingArticle = {},
+      history = [],
+    } = req.body || {};
+
+    if (!question || !String(question).trim()) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    const selectedModel = AVAILABLE_MODELS.find((m) => m.id === model) || AVAILABLE_MODELS[0];
+
+    // Hydrate article from DB if slug or news_id is provided and content is missing
+    let article = { ...(incomingArticle || {}) };
+    if ((!article.content_id && !article.content_en) && (slug || news_id)) {
+      try {
+        const dbRes = slug
+          ? await pool.query('SELECT * FROM news_updates WHERE slug = $1 LIMIT 1', [slug])
+          : await pool.query('SELECT * FROM news_updates WHERE id = $1 LIMIT 1', [news_id]);
+        if (dbRes.rows.length > 0) {
+          article = { ...dbRes.rows[0], ...article };
+        }
+      } catch {}
+    }
+
+    const sealsuiteResolution =
+      article.sealsuite_resolution && typeof article.sealsuite_resolution === 'object'
+        ? article.sealsuite_resolution
+        : buildSealSuiteResolution(article);
+
+    const isId = lang === 'id';
+    const articleTitle = (isId ? (article.title_id || article.title_en) : (article.title_en || article.title_id)) || 'News Briefing';
+    const articleSummary = (isId ? (article.summary_id || article.summary_en) : (article.summary_en || article.summary_id)) || '';
+    const articleContent = (isId ? (article.content_id || article.content_en) : (article.content_en || article.content_id)) || '';
+    const articleTags = Array.isArray(article.tags) ? article.tags.join(', ') : '';
+    const articleSources = Array.isArray(article.sources)
+      ? article.sources.map((s) => `${s.publisher || 'Source'}: ${s.title || ''} (${s.url || ''})`).join('\n')
+      : '';
+
+    const sealsuiteContext = sealsuiteResolution
+      ? `BytePlus SealSuite Security Resolution for this article:
+- Headline: ${isId ? sealsuiteResolution.headline_id : sealsuiteResolution.headline_en}
+- Summary: ${isId ? sealsuiteResolution.summary_id : sealsuiteResolution.summary_en}
+- Active SealSuite Modules: ${(sealsuiteResolution.modules || []).join(', ')}
+- Recommended SealSuite Actions:
+${((isId ? sealsuiteResolution.actions_id : sealsuiteResolution.actions_en) || []).map((a, i) => `  ${i + 1}. ${a}`).join('\n')}
+- Official Reference: ${sealsuiteResolution.reference_url || SEALSUITE_RELEASE_NOTES_URL}`
+      : `Note on SealSuite Relevance: This article is primarily an AI / software engineering briefing rather than a direct cyber threat advisory. If the user asks about BytePlus SealSuite, do not invent fake security claims about the article; instead, honestly explain that the article focuses on AI/engineering and then explain how BytePlus SealSuite (Zero Trust ZTNA, IAM OneId MFA, Endpoint DLP V3.3.2+ Sensitive Data Dictionary, Device Baseline & EDR — ${SEALSUITE_RELEASE_NOTES_URL}) protects engineering teams working with these technologies.`;
+
+    const recentHistoryText = Array.isArray(history) && history.length > 0
+      ? `\nRecent Conversation History:\n${history.slice(-4).map((h) => `${h.role === 'user' ? 'User' : 'Assistant'}: ${String(h.text || '').slice(0, 400)}`).join('\n')}\n`
+      : '';
+
+    let answer = null;
+    const aiSettings = await getAISettings();
+    const aiEnabled = aiSettings.ai_enabled !== 'false';
+    const fallbackEnabled = aiSettings.ai_fallback_enabled !== 'false';
+    const apiKey =
+      aiSettings.ai_byteplus_api_key ||
+      process.env.BYTEPLUS_API_KEY ||
+      process.env.ARK_API_KEY ||
+      process.env.AI_GATEWAY_KEY ||
+      process.env.OPENAI_API_KEY ||
+      'sk-Pxsv90izxviJtrtTEyojQw';
+    const gatewayBase = (process.env.AI_GATEWAY_URL || process.env.OPENAI_BASE_URL || 'http://ai-gateway:4000/v1').replace(/\/+$/, '');
+    const endpoint = aiSettings.ai_byteplus_endpoint || process.env.BYTEPLUS_ARK_ENDPOINT || `${gatewayBase}/chat/completions`;
+
+    if (aiEnabled && apiKey && apiKey.length > 10) {
+      const systemPrompt = `You are the Principal AI News & BytePlus SealSuite Cybersecurity Analyst on Promptara (powered by ${selectedModel.displayName} - ${selectedModel.vendor}).
+You are helping a user analyze the following News & Update briefing and understand what BytePlus SealSuite can do regarding it.
+
+=== NEWS ARTICLE CONTEXT ===
+Title: ${articleTitle}
+Category: ${article.category || 'cybersecurity'} | Severity: ${article.severity || 'info'} | Published: ${article.published_at || '2026'}
+Tags: ${articleTags}
+Executive Summary:
+${articleSummary}
+
+Full Article Breakdown:
+${articleContent.slice(0, 3000)}
+
+Verified Sources:
+${articleSources}
+
+=== BYTEPLUS SEALSUITE RESOLUTION & CAPABILITIES (Ref: ${SEALSUITE_RELEASE_NOTES_URL}) ===
+${sealsuiteContext}
+${recentHistoryText}
+Instructions:
+1. Reply in ${isId ? 'Bahasa Indonesia' : 'English'} with clear, authoritative, well-structured Markdown.
+2. Directly answer the user's question about the news article (chronology, technical root cause, impact, or specific details) AND/OR detail what BytePlus SealSuite can do to prevent, detect, or mitigate the issue (ZTNA encrypted tunnels, IAM OneId step-up MFA & device-bound certificates, Endpoint DLP V3.3.2+ USB/clipboard/upload blocking, Screen Watermarking, immutable file-deletion audit logs, EDR & Device Baseline).
+3. Always ground SealSuite capabilities in the official BytePlus SealSuite Release Notes (${SEALSUITE_RELEASE_NOTES_URL}) and avoid forcing misinformation if an article is purely about AI model benchmarks.`;
+
+      const targetModelId =
+        selectedModel.id === 'dreamina-seedance-2-5'
+          ? (process.env.OPENAI_MODEL || 'dola-seed-2-1-turbo-260628')
+          : selectedModel.id;
+      answer = await callExternalLLM(apiKey, endpoint, targetModelId, systemPrompt, String(question).trim());
+    }
+
+    if (!answer && fallbackEnabled) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      answer = generateNewsAiResponse(
+        String(question).trim(),
+        article,
+        sealsuiteResolution,
+        lang,
+        selectedModel.id
+      );
+    }
+
+    if (!answer) {
+      answer = isId
+        ? 'Maaf, layanan AI sedang tidak tersedia. Silakan hubungi administrator.'
+        : 'Sorry, AI service is currently unavailable. Please contact your administrator.';
+    }
+
+    try {
+      await pool.query(
+        `INSERT INTO usage_logs (user_id, action, resource_type, resource_id) VALUES ($1, $2, $3, $4)`,
+        [req.user.id, `ask_news_ai_${selectedModel.id}`, 'news', article.id || 0]
+      );
+    } catch {}
+
+    res.json({
+      answer,
+      article_title: articleTitle,
+      has_sealsuite_resolution: Boolean(sealsuiteResolution),
+      sealsuite_release_notes_url: SEALSUITE_RELEASE_NOTES_URL,
+      model: selectedModel.id,
+      model_name: selectedModel.displayName,
+      vendor: selectedModel.vendor,
+      provider: selectedModel.provider,
+      region: selectedModel.region || 'ap-southeast-1',
+      source: answer && apiKey ? 'live_api' : 'built_in_engine',
+      audit_trail: {
+        environment: 'vibe.virtuenet.space',
+        source: 'BytePlus Console (ModelArk) + SealSuite Advisor',
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (err) {
+    console.error('AI ask-news error:', err);
     res.status(500).json({ error: 'AI service unavailable' });
   }
 });

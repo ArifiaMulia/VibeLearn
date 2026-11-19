@@ -10,6 +10,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import MobileInstallModal from '../components/MobileInstallModal';
+import NewsAiAssistant from '../components/NewsAiAssistant';
 
 const CATEGORY_META = {
   all: {
@@ -97,9 +98,31 @@ export default function NewsUpdatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSlug, setExpandedSlug] = useState(null);
   const [openSealSuiteSlugs, setOpenSealSuiteSlugs] = useState({});
+  const [openAiSlugs, setOpenAiSlugs] = useState({});
+  const [aiInitialPrompts, setAiInitialPrompts] = useState({});
+  const [aiModels, setAiModels] = useState([]);
+  const [selectedAiModel, setSelectedAiModel] = useState(
+    () => localStorage.getItem('promptara_ai_model') || 'dreamina-seedance-2-5'
+  );
 
   const toggleSealSuite = (slug) => {
     setOpenSealSuiteSlugs(prev => ({ ...prev, [slug]: !prev[slug] }));
+  };
+
+  const toggleAiAssistant = (slug, promptText = '') => {
+    if (promptText) {
+      setOpenAiSlugs(prev => ({ ...prev, [slug]: true }));
+      setAiInitialPrompts(prev => ({ ...prev, [slug]: promptText }));
+    } else {
+      setOpenAiSlugs(prev => ({ ...prev, [slug]: !prev[slug] }));
+    }
+  };
+
+  const handleSelectAiModel = (modelId) => {
+    setSelectedAiModel(modelId);
+    try {
+      localStorage.setItem('promptara_ai_model', modelId);
+    } catch {}
   };
   const [showAddModal, setShowAddModal] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
@@ -197,6 +220,16 @@ export default function NewsUpdatesPage() {
   }, [searchQuery]);
 
   useEffect(() => { loadNews(false); }, [loadNews]);
+
+  useEffect(() => {
+    authFetch('/ai/models')
+      .then(res => {
+        if (res && Array.isArray(res.models)) {
+          setAiModels(res.models);
+        }
+      })
+      .catch(() => {});
+  }, [authFetch]);
 
   // Real-time: poll a tiny "version" probe; when something new lands, refetch silently.
   useEffect(() => {
@@ -1006,6 +1039,41 @@ export default function NewsUpdatesPage() {
                                 .join('\n') || ''}
                             </ReactMarkdown>
                           </div>
+
+                          {/* Ask AI specifically about this SealSuite resolution */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.25rem' }}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleAiAssistant(
+                                  item.slug,
+                                  isId
+                                    ? '🛡️ Jelaskan lebih detail apa yang bisa dilakukan BytePlus SealSuite dan cara konfigurasi kebijakannya (ZTNA, DLP, EDR, IAM OneId) untuk mengatasi masalah pada berita ini!'
+                                    : '🛡️ Explain in detail what BytePlus SealSuite can do and how to configure its policies (ZTNA, DLP, EDR, IAM OneId) to address the issue in this news!'
+                                )
+                              }
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.38rem 0.8rem',
+                                borderRadius: 8,
+                                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(124, 58, 237, 0.2))',
+                                border: '1px solid rgba(16, 185, 129, 0.45)',
+                                color: '#34d399',
+                                fontSize: '0.74rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                width: isMobile ? '100%' : 'auto',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <Sparkles size={13} />
+                              {isId
+                                ? 'Tanya AI Lebih Lanjut tentang Solusi SealSuite Ini →'
+                                : 'Ask AI Further About This SealSuite Solution →'}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1080,6 +1148,28 @@ export default function NewsUpdatesPage() {
                           : (isId ? 'Bagikan' : 'Share')}
                       </button>
 
+                      {/* Ask AI & SealSuite Analyst Button */}
+                      <button
+                        type="button"
+                        data-testid={`ask-news-ai-btn-${item.slug}`}
+                        onClick={() => toggleAiAssistant(item.slug)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.32rem',
+                          padding: isMobile ? '0.42rem 0.7rem' : '0.4rem 0.8rem', borderRadius: 8,
+                          background: openAiSlugs[item.slug]
+                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(124, 58, 237, 0.25))'
+                            : 'linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(16, 185, 129, 0.12))',
+                          border: `1px solid ${openAiSlugs[item.slug] ? '#10b981' : 'rgba(139, 92, 246, 0.45)'}`,
+                          color: openAiSlugs[item.slug] ? '#34d399' : '#c4b5fd',
+                          fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer'
+                        }}
+                      >
+                        <Sparkles size={13} color={openAiSlugs[item.slug] ? '#34d399' : '#a78bfa'} />
+                        {openAiSlugs[item.slug]
+                          ? (isId ? 'Tutup AI' : 'Close AI')
+                          : (isId ? 'Tanya AI & SealSuite' : 'Ask AI & SealSuite')}
+                      </button>
+
                       <button
                         onClick={() => setExpandedSlug(isExpanded ? null : item.slug)}
                         style={{
@@ -1100,6 +1190,25 @@ export default function NewsUpdatesPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Interactive AI News & BytePlus SealSuite Analyst Panel */}
+                  {openAiSlugs[item.slug] && (
+                    <NewsAiAssistant
+                      article={item}
+                      models={aiModels}
+                      selectedModel={selectedAiModel}
+                      onSelectModel={handleSelectAiModel}
+                      initialPrompt={aiInitialPrompts[item.slug] || ''}
+                      onClearInitialPrompt={() =>
+                        setAiInitialPrompts(prev => {
+                          const next = { ...prev };
+                          delete next[item.slug];
+                          return next;
+                        })
+                      }
+                      onClose={() => setOpenAiSlugs(prev => ({ ...prev, [item.slug]: false }))}
+                    />
+                  )}
                 </div>
 
                 {/* Expanded Deep-Dive Content + Source Links */}

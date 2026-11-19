@@ -309,6 +309,20 @@ jobs:
             await check('System Settings', '/api/settings', { headers });
             await check('AI Settings', '/api/settings/ai', { headers });
             await check('AI Models', '/api/ai/models', { headers });
+            const newsAiRes = await fetch(base + '/api/ai/ask-news', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                slug: 'penyadapan-presiden-indonesia-lims-mitigasi-sealsuite-zero-trust',
+                question: 'Apa yang bisa dilakukan SealSuite terhadap kasus penyadapan pada berita ini?',
+                lang: 'id'
+              })
+            });
+            const newsAiData = await newsAiRes.json();
+            if (!newsAiRes.ok || !newsAiData?.answer || !newsAiData?.has_sealsuite_resolution) {
+              throw new Error('POST /api/ai/ask-news failed: ' + newsAiRes.status + ' ' + JSON.stringify(newsAiData));
+            }
+            console.log('✅ AI News & SealSuite Analyst /api/ai/ask-news:', newsAiData.model_name, 'has_sealsuite=' + newsAiData.has_sealsuite_resolution, 'answerLen=' + newsAiData.answer.length);
             await check('Certificate Verify', '/api/certificates/verify/CERT-1-1');
 
             const fs = require('fs');
